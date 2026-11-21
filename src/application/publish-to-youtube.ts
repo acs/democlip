@@ -1,26 +1,32 @@
 // The publish-to-YouTube use case: put the clip's export on the person's own channel.
 //
-// It has the shape of the Bluesky publish — read the clip, decide what to write, hand
-// it on — and two things that are this destination's own.
+// It has the shape of the Bluesky publish — read the clip, decide what to write, hand it
+// on — and two things that are this destination's own.
 //
 // The **ceiling is asked before anything is encoded**: a default account may upload at
 // most fifteen minutes, and a clip past it can never go, so encoding it first would be
-// minutes of work spent for a refusal the destination would give anyway. And an upload
-// finishing is **not** a video being ready: YouTube transcodes afterwards, so the
-// status is polled until the video is ready or has failed, and only then is the address
-// the person is given true.
+// minutes of work spent for a refusal the destination would give anyway.
 //
-// None of the browser work — the token, the chunks, the polling — happens here. It is
-// all behind `YouTubeDeps`, so the sequencing runs in node against a fake.
+// And the upload **ends when YouTube has taken the video**, not when YouTube has finished
+// with it. The app is allowed one call — `videos.insert` — because it asks for the upload
+// scope and nothing that reads the person's account; watching the video being processed
+// would need `videos.list`, which the scope does not authorize, and asking a person to
+// hand over read access to their channel to draw a progress line is not a trade worth
+// making. So the address the person is given is true and immediate, and what YouTube is
+// still doing with the video is said in words rather than pretended to be known
+// (`research.md` D4).
+//
+// None of the browser work — the token, the chunks — happens here. It is all behind
+// `YouTubeDeps`, so the sequencing runs in node against a fake.
 
 import type { Clip } from '../domain/clip/Clip.js';
 import type { ExportPlan, ExportSettings } from '../domain/clip/ExportPlan.js';
 import { UploadableVideo, VIDEO_MAX_SECONDS } from '../domain/youtube/UploadableVideo.js';
 import { VideoDetails, watchUrl } from '../domain/youtube/VideoDetails.js';
-import type { VideoStatus, YouTubeService } from './youtube-service.js';
+import type { YouTubeService } from './youtube-service.js';
 import { planExport } from './export-clip.js';
 
-export type YouTubeStage = 'encoding' | 'uploading' | 'processing';
+export type YouTubeStage = 'encoding' | 'uploading';
 
 export interface YouTubePublicationProgress {
   stage: YouTubeStage;
@@ -40,24 +46,13 @@ export interface YouTubeDeps {
   /** Write the plan as MP4. The browser half; faked in tests. */
   encode: (plan: ExportPlan) => Promise<Blob>;
   now?: () => Date;
-  wait?: (ms: number) => Promise<void>;
   onProgress?: (progress: YouTubePublicationProgress) => void;
-  pollIntervalMs?: number;
-  maxPolls?: number;
 }
 
 export interface YouTubePublication {
   readonly id: string;
   readonly url: string;
 }
-
-// A second between polls, as the Bluesky path uses. The budget follows the clip,
-// because YouTube transcodes and that is not real time: a flat minute is outlived by a
-// long clip, and the publish would then fail on a video the service was still working
-// on. Twice the clip's length, floored, so even a very short one is given a minute.
-const POLL_INTERVAL_MS = 1000;
-const MIN_POLLS = 60;
-const POLLS_PER_CLIP_SECOND = 2;
 
 export async function publishToYouTube(
   clip: Clip,
@@ -86,43 +81,5 @@ export async function publishToYouTube(
     deps.onProgress?.({ stage: 'uploading', progress: Math.round(fraction * 100) });
   });
 
-  const interval = deps.pollIntervalMs ?? POLL_INTERVAL_MS;
-  const maxPolls = deps.maxPolls ?? Math.max(MIN_POLLS, Math.ceil(plan.total * POLLS_PER_CLIP_SECOND));
-  const wait = deps.wait ?? ((ms: number) => new Promise<void>(resolve => setTimeout(resolve, ms)));
-  const status = await waitForVideo(deps, uploaded.id, wait, maxPolls, interval);
-  if (status.state !== 'ready') {
-    throw new Error(whyNotReady(status, Math.round((maxPolls * interval) / 60_000)));
-  }
-
   return { id: uploaded.id, url: watchUrl(uploaded.id) };
-}
-
-/**
- * Poll the destination until the video is ready, or has failed, or we give up.
- *
- * The video's own readiness is the answer, not the upload's completion: YouTube
- * transcodes after the bytes are up, so a video that is still processing is reported as
- * such and the wait goes on.
- */
-async function waitForVideo(
-  deps: YouTubeDeps,
-  videoId: string,
-  wait: (ms: number) => Promise<void>,
-  maxPolls: number,
-  interval: number,
-): Promise<VideoStatus> {
-  let status = await deps.service.videoStatus(videoId);
-  for (let polls = 0; status.state === 'processing' && polls < maxPolls; polls++) {
-    deps.onProgress?.({ stage: 'processing', progress: status.progress });
-    await wait(interval);
-    status = await deps.service.videoStatus(videoId);
-  }
-  return status;
-}
-
-function whyNotReady(status: VideoStatus, minutes: number): string {
-  if (status.state === 'failed') {
-    return `YouTube could not take the video: ${status.reason || 'it did not say why'}`;
-  }
-  return `YouTube is still processing the video after ${minutes} minutes`;
 }

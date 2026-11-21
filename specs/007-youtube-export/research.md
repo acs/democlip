@@ -101,20 +101,35 @@ primary, it reports no progress and cannot resume; but kept as the fallback abov
 the remainder in one `PUT` after a session is started — rejected, it loses the progress a long
 clip needs.
 
-## D4 — YouTube's processing is watched, not assumed
+## D4 — There is no wait: the upload ends when YouTube has taken the video
 
-**Decision**: once the bytes are up and the video resource comes back with its id, the app
-polls the video's own status (a `videos.list` for its `status` and `processingDetails`) until
-it is ready or failed, as a bounded wait that follows the clip's length.
+**Decision**: once the bytes are up and `videos.insert` has answered with the video's id, the
+app is **done**. It does not poll the video's status; it says in words that YouTube finishes
+processing the video afterwards.
 
-**Rationale**: an upload completing is not a video being ready — YouTube transcodes and scans
-afterwards — so the app that said "up" when the bytes landed would tell the person something
-untrue (FR-016). Polling gives the dialog the third stage it needs (FR-013) and lets a
-processing failure be said plainly. One call a second is cheap against the 10,000-unit bucket.
+**What the real session settled.** This was a watcher, and only a real upload could have found
+the fault in it. Watching a video being processed is `videos.list`, which is authorized by the
+account-reading scopes (`youtube.readonly`, `youtube`) and **not** by the `youtube.upload`
+scope the app asks for. The first real upload went up — the session started, the chunks landed,
+the video exists — and then the app's own status read was refused with *"Request had
+insufficient authentication scopes"*, so a **successful upload was reported as a failure**,
+which is the worst thing it could have done. The same fault, found a step earlier, was behind
+the channel read (D7's neighbour): a read the scope does not authorize, turned into a refusal.
 
-**Alternatives considered**: answering as soon as the upload returns — rejected, it conflates
-"sent" with "ready" and makes the progress line a lie; watching nothing and letting the person
-look it up — rejected, the spec asks the app to say where it has got to.
+**Rationale for what replaced it.** The alternative — asking for `youtube.readonly` — means
+asking a person to hand over read access to their whole channel in order to draw a progress
+line: a much bigger ask than the feature is worth, and it would make the app's "upload only, no
+read of anything else" untrue. So the honest shape is the smaller one: **one call, because the
+destination allows one.** The video *is* up when the app says so, which is what the person
+wants to know; what YouTube is still doing with it is said, not watched. The destination is
+still the authority on whether an account may upload, because that answer comes from
+`videos.insert` itself.
+
+**Alternatives considered**: `youtube.readonly` for a progress line — rejected as too big an
+ask; an unauthenticated status read — impossible, the endpoint requires a token; calling the
+upload "processing" without watching — rejected, it is the same claim without the evidence;
+treating a refused status read as done and keeping the call — rejected, a request that cannot
+succeed with this scope and a lie in the code.
 
 ## D5 — The length is the limit that binds; the size is not
 
@@ -197,7 +212,7 @@ exists to prevent.
   the video's address — by **unit tests in node** beside each class;
 - the use case's sequencing — the ceiling refused before any encoding, each stage, a failed
   upload, a poll that gives up — by a **unit test in node** with a fake service;
-- the adapter's mapping — the session start, a chunk, a resume, the status, the errors — by a
+- the adapter's mapping — the session start, a chunk, a resume, the errors — by a
   **unit test with an injected `fetch`** and a fake token, as `infra/bluesky.test.ts` does;
 - the menu entry, the dialog's states, the progress lines and the refusals — by a
   **committed check in `e2e/`**, with the Google script and the upload stood in by `page.route`

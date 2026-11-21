@@ -147,44 +147,22 @@ describe('HttpYouTubeService.uploadVideo', () => {
     const expired = new HttpYouTubeService({ token: async () => { throw new Error('the Google sign-in has expired — sign in again'); } }, scripted([]).fetchFn);
     await expect(expired.uploadVideo(video, details, () => {})).rejects.toThrow(/sign-in has expired/);
   });
-});
 
-describe('HttpYouTubeService.videoStatus', () => {
-  const statusOf = async (item: unknown): Promise<unknown> => {
-    const { fetchFn, calls } = scripted([json({ items: [item] })]);
-    const status = await service(fetchFn).videoStatus('abc123');
-    expect(calls[0].url).toContain('part=status%2CprocessingDetails');
-    expect(calls[0].url).toContain('id=abc123');
-    return status;
-  };
-
-  it('is ready once YouTube has finished with the video', async () => {
-    expect(await statusOf({ status: { uploadStatus: 'processed' } })).toEqual({ state: 'ready' });
-    expect(await statusOf({ processingDetails: { processingStatus: 'succeeded' } })).toEqual({ state: 'ready' });
-  });
-
-  it('is still processing, with the percentage the destination gives', async () => {
-    expect(await statusOf({
-      status: { uploadStatus: 'uploaded' },
-      processingDetails: { processingStatus: 'processing', processingProgress: { partsProcessed: 1, partsTotal: 4 } },
-    })).toEqual({ state: 'processing', progress: 25 });
-  });
-
-  it('says why when YouTube could not take the video', async () => {
-    expect(await statusOf({
-      processingDetails: { processingStatus: 'failed', processingFailureReason: 'unsupported codec' },
-    })).toEqual({ state: 'failed', reason: 'unsupported codec' });
-    expect(await statusOf({ status: { uploadStatus: 'rejected' } }))
-      .toEqual({ state: 'failed', reason: 'rejected' });
-  });
-
-  it('is a failure when YouTube does not have the video at all', async () => {
-    const { fetchFn } = scripted([json({ items: [] })]);
-    expect(await service(fetchFn).videoStatus('gone')).toEqual({ state: 'failed', reason: 'YouTube does not have that video' });
-  });
-
-  it('says the sign-in has expired when the destination turns the call away', async () => {
+  it('says the sign-in has expired when the destination turns the session away', async () => {
     const { fetchFn } = scripted([problem(401, 'authError')]);
-    await expect(service(fetchFn).videoStatus('abc123')).rejects.toThrow(/sign-in has expired/);
+    await expect(service(fetchFn).uploadVideo(video, details, () => {}))
+      .rejects.toThrow(/sign-in has expired/);
+  });
+
+  it('asks YouTube for nothing but the upload', async () => {
+    // One call, because the scope allows one: the app never reads the video back, so it
+    // cannot fail on a read the person did not agree to. Everything the update does after
+    // the upload is words, not a request.
+    const { fetchFn, calls } = scripted([session('https://upload/1'), created('abc123')]);
+    await service(fetchFn).uploadVideo(video, details, () => {});
+    expect(calls.map(call => call.init.method)).toEqual(['POST', 'PUT']);
+    // The upload endpoint is `.../upload/youtube/v3/videos`; the *read* endpoint is
+    // `.../youtube/v3/videos`, and nothing asks it anything.
+    expect(calls.some(call => call.url.startsWith('https://www.googleapis.com/youtube/v3/'))).toBe(false);
   });
 });

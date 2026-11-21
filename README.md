@@ -180,7 +180,7 @@ democlip/
 │   │   ├── codecs.ts       # WebM mime / codec selection
 │   │   ├── export-target.ts # which container an export writes (WebM, MP4) and its codecs
 │   │   ├── bluesky.ts      # the OAuth session + XRPC calls; loaded only when publishing
-│   │   ├── youtube.ts      # the Google token, the resumable upload and the status poll; loaded on demand
+│   │   ├── youtube.ts      # the Google token and the resumable upload; loaded on demand
 │   │   └── download.ts     # Blob download trigger, behind DownloadPort
 │   └── ui/               # View layer (DOM) — one module per widget, grouped by domain concept
 │       ├── dom.ts          # Central element registry + status/toast helpers

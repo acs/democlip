@@ -18,7 +18,6 @@ import {
 const STAGE: Record<YouTubeProgress['stage'], string> = {
   encoding: 'Writing the MP4…',
   uploading: 'Uploading to YouTube…',
-  processing: 'YouTube is processing the video…',
 };
 
 const SIGNIN_NOTE = 'Sign in with your Google account — Google asks you to approve right here, and nothing is uploaded until you press Upload. The sign-in is not kept: it lasts this page.';

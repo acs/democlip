@@ -47,6 +47,12 @@ user stories stand on. This is steps 2, 3 and 4 of `plan.md`.
 
 **⚠️ CRITICAL**: no user story work begins until this phase is done.
 
+> **Amended while testing (2026-11-22).** T006–T008 were built with a second port call,
+> `videoStatus`, and a poll after the upload. A real upload showed that `videos.list` is not
+> authorized by the `youtube.upload` scope, so the poll made a *successful* upload fail. The
+> port has one call; the plan, the research (D4), the contract and the data model carry the
+> change, and the tasks below keep the words they had when they were done.
+
 - [X] T003 [P] Create `Visibility` — private, unlisted or public, refused otherwise, **private** when not said — in `src/domain/youtube/Visibility.ts` with its test in `src/domain/youtube/Visibility.test.ts` (`data-model.md` `Visibility`, `VideoDetails.visibility`) (branch `feat/youtube-domain`)
 - [X] T004 [P] Create `VideoDetails` in `src/domain/youtube/VideoDetails.ts` with its test `src/domain/youtube/VideoDetails.test.ts`: a blank title filled from the moment and a title past 100 characters refused (`data-model.md` `VideoDetails.title`), a description past 5000 refused (`data-model.md` `VideoDetails.description`), the app's own category (`data-model.md` `VideoDetails.categoryId`), `record()` always carrying an explicit `privacyStatus` (`data-model.md` `VideoDetails.record()`, `contracts/youtube-api.md` §5 D6), and `watchUrl(id)` (branch `feat/youtube-domain`)
 - [X] T005 [P] Create `UploadableVideo` in `src/domain/youtube/UploadableVideo.ts` with its test `src/domain/youtube/UploadableVideo.test.ts`: a `video/mp4` blob only, never empty, at most `VIDEO_MAX_BYTES`, and `VIDEO_MAX_SECONDS` carried with it (`data-model.md` `UploadableVideo.blob`, `UploadableVideo` `VIDEO_MAX_BYTES`/`VIDEO_MAX_SECONDS`) (branch `feat/youtube-domain`)

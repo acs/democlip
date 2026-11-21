@@ -184,9 +184,11 @@ The second destination, and the Bluesky one's shape a second time: write the kep
 it on, wait for the service to finish with it. Almost nothing else is shared. The sign-in is
 Google's **token model** — a popup consent that needs a press, with a token that is
 short-lived and never written down, where Bluesky's is a trip to a server and back. The video
-travels as a **resumable session**, watched by the byte. And YouTube **transcodes after the
-bytes are up**, so "sent" and "ready" are two different moments and only the second is the
-end of an upload.
+travels as a **resumable session**, watched by the byte. And the app is allowed **one call**:
+it asks for the *upload* scope and nothing that reads the person's account, so `videos.insert`
+is the whole of an upload, and what YouTube does with the video afterwards is **said rather
+than watched** — the video is on the channel as soon as it is up, and YouTube finishes
+processing it just after.
 
 **Publish** stays the app's word for the act, whichever destination a clip goes to;
 **upload** is the destination's own word for the transfer of the bytes, and so the name of
@@ -197,15 +199,15 @@ that step. A clip is not *exported* to a service — an export writes a file.
 | **YouTube video** | the MP4 the app sends YouTube, carrying the destination's own ceilings: `video/mp4`, at most 256 GB, and — for a default account — at most fifteen minutes | `UploadableVideo` (`src/domain/youtube/UploadableVideo.ts`) |
 | **video details** | what the video says: its title, its description, who may see it, and the category the app sends. A title left blank is **defaulted**, never uploaded empty | `VideoDetails` (`src/domain/youtube/VideoDetails.ts`) |
 | **visibility** | who may see the finished video — private, unlisted or public. **Private** is where it starts, and it is sent **explicitly**, because an unset one means *public* to YouTube | `Visibility` (`src/domain/youtube/Visibility.ts`) |
-| **upload** | the transfer of the video's bytes to YouTube: a resumable session whose chunks are sent in turn, and resumed from the range the service answers when one is interrupted | `YouTubeService.uploadVideo` (the port); the session and its chunks in `src/infra/youtube.ts` |
-| **video status** | where YouTube has got to with an uploaded video, watched until it is **ready** rather than calling the upload the end | `YouTubeService.videoStatus`, `VideoStatus` |
+| **upload** | the transfer of the video's bytes to YouTube: a resumable session whose chunks are sent in turn, and resumed from the range the service answers when one is interrupted. Nothing is read back — the scope allows the insert and no more | `YouTubeService.uploadVideo` (the port); the session and its chunks in `src/infra/youtube.ts` |
 | **YouTube account** | the person's own Google account, and the channel a clip goes to. Signed in with a popup that needs a press, remembered for the page, and **never written down** — the token model keeps no refresh token. The channel is named **when YouTube will say**: the upload scope does not authorize reading it, so the app names the account instead and leaves the upload to decide | `signIn()`, `youTubeChannel()` in `src/infra/youtube.ts` |
 | **client registration** | the app's own Google OAuth client ID: public, not a secret, served beside the app so a fork sets its own | `web/public/youtube-client.json` |
 
 What it does not do: nothing is uploaded before a person has signed in **and** pressed Upload;
-no token is kept anywhere; YouTube's own length ceiling is refused **before** anything is
-encoded, rather than after minutes of work; and the app never makes a video more visible than
-the person chose.
+no token is kept anywhere; **nothing about the person's account is read** — the app asks for
+the upload scope alone, so no claim is made about the video that it cannot see; YouTube's own
+length ceiling is refused **before** anything is encoded, rather than after minutes of work;
+and the app never makes a video more visible than the person chose.
 
 ## The view, and what has a lifetime
 

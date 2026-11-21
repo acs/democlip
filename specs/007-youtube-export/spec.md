@@ -16,6 +16,22 @@
 - Q: Who should be able to use it? → A: For now, **the app's owner and a few accounts the app is set up for**. Opening it to everyone — which waits on the video service's own review of the upload permission — is a later change, and nothing here waits on it.
 - Q: Does a finished upload end the session, as an export or a post does today? → A: **Yes**, for consistency with an export and a post; the kept copy goes with it.
 
+### Session 2026-11-22
+
+Recorded while the real session was run. Both come from what the app's one scope allows, and
+both changed the specification rather than the other way round.
+
+- Q: Does the person see YouTube processing the video? → A: **No.** The app asks for the upload
+  scope alone, and `videos.list` — which watching the processing needs — is not authorized by
+  it. The upload **ends when YouTube has taken the video**: the address is offered at once, and
+  the app says in words that YouTube finishes processing it just after. Asking a person to hand
+  over read access to their channel to draw a progress line was rejected as too big an ask
+  (FR-013, FR-016).
+- Q: Does the app say which channel a clip will go to? → A: **When YouTube will name it.** The
+  channel read is not authorized by the upload scope either, so the app says whose *account* is
+  signed in and leaves the upload to decide; YouTube's own `youtubeSignupRequired` is what says
+  an account has no channel (FR-007, FR-008).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Send a finished clip to my own channel (Priority: P1)
@@ -30,7 +46,7 @@ The clip is cut and annotated and the person is happy with it. From the same pla
 
 1. **Given** a clip and a person not yet signed in, **When** they pick YouTube, **Then** the app asks them to sign in to their Google account and nothing is uploaded until they do.
 2. **Given** a signed-in person, **When** they press Upload, **Then** a video appears on their own channel holding the clip's cuts and annotations, at the same moments and places.
-3. **Given** an upload in flight, **When** the person watches the app, **Then** they can see how far it has got, and that YouTube is still processing when the bytes are up.
+3. **Given** an upload in flight, **When** the person watches the app, **Then** they can see how far it has got, and when it is up the app says that YouTube finishes processing it just after — it does not claim to have watched that part.
 4. **Given** an upload that has finished, **When** YouTube has processed the video, **Then** the app shows a link to the video.
 5. **Given** a clip with sound, **When** it is uploaded, **Then** the video's sound is the clip's own sound, mixed as in the review.
 
@@ -109,7 +125,7 @@ A clip too long, or too large, for the person's own account is refused **before*
 - **FR-010**: The recording MUST NOT be re-encoded beyond writing the export: an uploaded video's picture and sound MUST be the clip's own, as the file exports are.
 - **FR-011**: The app MUST offer a title, a description and a visibility before the upload, and MUST start the visibility at **private**.
 - **FR-012**: The app MUST give an empty title a sensible default rather than uploading an untitled video.
-- **FR-013**: The app MUST report where the upload has got to — writing the video, uploading it, the service processing it — and MUST offer the finished video as a link.
+- **FR-013**: The app MUST report where the upload has got to — writing the video, and uploading it — and MUST offer the finished video as a link, saying in words that YouTube finishes processing it just after the upload rather than claiming a readiness the app cannot see.
 
 **Limits, refusal, failure**
 

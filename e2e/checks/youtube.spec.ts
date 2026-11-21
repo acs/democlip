@@ -93,7 +93,9 @@ async function standInGoogle(page: Page, standIn: StandIn = {}): Promise<Asked[]
     if (request.method() === 'PUT') {
       return route.fulfill({ status: 201, headers: cors, json: { id: 'vid123' } });
     }
-    return route.fulfill({ headers: cors, json: { items: [{ status: { uploadStatus: 'processed' } }] } });
+    // Nothing else is expected: the app asks YouTube for the upload and for nothing after
+    // it (`research.md` D4). A tripwire, so a read that creeps back in fails loudly.
+    return route.fulfill({ status: 500, headers: cors, json: { error: { message: 'the app asked for something it should not' } } });
   });
 
   return asked;
@@ -313,6 +315,10 @@ test('uploading writes the video, sends the details, and answers with the link',
 
   // The video's own address, as a link a person can open.
   await expect(page.locator('#yt-status a')).toHaveAttribute('href', 'https://youtu.be/vid123');
+  // And only two calls: the session, and the chunk the bytes went in. The app reads nothing
+  // back — the scope it asks for does not allow it, and the update says so in words instead.
+  const upload = asked.filter(call => !call.url.includes('/channels'));
+  expect(upload.map(call => call.method)).toEqual(['POST', 'PUT']);
   // And the details went with it: the visibility is always sent, explicitly.
   const session = asked.find(call => call.method === 'POST' && call.body);
   expect(JSON.parse(session?.body ?? '{}')).toMatchObject({

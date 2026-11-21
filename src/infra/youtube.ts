@@ -1,4 +1,4 @@
-// The YouTube client: the Google sign-in, the resumable upload, and the status poll.
+// The YouTube client: the Google sign-in and the resumable upload.
 //
 // The app is a browser with no server, which is what Google's **token model** is for:
 // `google.accounts.oauth2` opens a consent dialog from the person's own press and hands
@@ -21,7 +21,7 @@
 // script, the consent, the channel — cannot be, and the end-to-end suite stands it in.
 
 import type {
-  UploadProgress, UploadedVideo, VideoStatus, YouTubeService,
+  UploadProgress, UploadedVideo, YouTubeService,
 } from '../application/youtube-service.js';
 import type { UploadableVideo } from '../domain/youtube/UploadableVideo.js';
 import type { VideoDetails } from '../domain/youtube/VideoDetails.js';
@@ -30,8 +30,7 @@ const UPLOAD_ENDPOINT = 'https://www.googleapis.com/upload/youtube/v3/videos';
 const DATA_ENDPOINT = 'https://www.googleapis.com/youtube/v3';
 const SCRIPT_URL = 'https://accounts.google.com/gsi/client';
 /** Upload only: nothing else of the account is asked for. */
-const SCOPE = 'https://www.googleapis.com/auth/youtube.upload';
-const CLIENT_FILE = 'youtube-client.json';
+const SCOPE = 'https://www.googleapis.com/auth/youtube.upload';const CLIENT_FILE = 'youtube-client.json';
 /**
  * The chunk the bytes are sent in. The resumable protocol requires a multiple of
  * 256 KB, and a larger chunk is more efficient; the last chunk may be shorter.
@@ -130,20 +129,6 @@ export class HttpYouTubeService implements YouTubeService {
       }
       throw new Error(await reasonFor(response, 'YouTube refused the upload'));
     }
-  }
-
-  async videoStatus(videoId: string): Promise<VideoStatus> {
-    const token = await this.auth.token();
-    const url = new URL(`${DATA_ENDPOINT}/videos`);
-    url.searchParams.set('part', 'status,processingDetails');
-    url.searchParams.set('id', videoId);
-    const response = await this.fetchFn(url, { headers: { authorization: `Bearer ${token}` } });
-    if (!response.ok) {
-      throw new Error(await reasonFor(response, 'YouTube would not say how the video is doing'));
-    }
-    const item = (await readJson<VideosList>(response))?.items?.[0];
-    if (!item) return { state: 'failed', reason: 'YouTube does not have that video' };
-    return statusOf(item);
   }
 
   /** Open a resumable session and answer with where the bytes go. */
@@ -365,17 +350,6 @@ interface ResourceError {
   };
 }
 
-interface VideosList {
-  items?: Array<{
-    status?: { uploadStatus?: string };
-    processingDetails?: {
-      processingStatus?: string;
-      processingFailureReason?: string;
-      processingProgress?: { partsProcessed?: number; partsTotal?: number };
-    };
-  }>;
-}
-
 /**
  * `Range: bytes=0-999` — the bytes YouTube has, indexed from zero. The next byte is one
  * past the last one it names. No header means nothing has arrived.
@@ -389,31 +363,6 @@ async function idOf(response: Response): Promise<string> {
   const body = await readJson<{ id?: string }>(response);
   if (!body?.id) throw new Error('YouTube did not say which video it made');
   return body.id;
-}
-
-/**
- * Where YouTube has got to. The video's own readiness is the answer — `processed`, or a
- * processing status of `succeeded` — because an upload finishing is not a video being
- * ready: the service transcodes afterwards.
- */
-function statusOf(item: NonNullable<VideosList['items']>[number]): VideoStatus {
-  const upload = item.status?.uploadStatus;
-  const processing = item.processingDetails;
-  const state = processing?.processingStatus;
-
-  if (upload === 'failed' || upload === 'rejected' || state === 'failed' || state === 'terminated') {
-    return {
-      state: 'failed',
-      reason: processing?.processingFailureReason || upload || 'it did not say why',
-    };
-  }
-  if (upload === 'processed' || state === 'succeeded') return { state: 'ready' };
-
-  const progress = processing?.processingProgress;
-  const percent = progress?.partsTotal
-    ? Math.round(((progress.partsProcessed ?? 0) / progress.partsTotal) * 100)
-    : undefined;
-  return { state: 'processing', progress: percent };
 }
 
 /**

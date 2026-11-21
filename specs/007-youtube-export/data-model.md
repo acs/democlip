@@ -101,34 +101,28 @@ interface UploadedVideo {
   readonly id: string;                 // the id YouTube gave it
 }
 
-interface VideoStatus {
-  readonly state: 'processing' | 'ready' | 'failed';
-  readonly progress?: number;          // 0..100 while processing, when the service says
-  readonly reason?: string;            // why it failed, when it did
-}
-
 interface YouTubeService {
   /** Send the video, reporting how much of it has gone. */
-  uploadVideo(video: UploadableVideo, progress: UploadProgress): Promise<UploadedVideo>;
-  /** Where YouTube has got to with an uploaded video. */
-  videoStatus(videoId: string): Promise<VideoStatus>;
+  uploadVideo(video: UploadableVideo, details: VideoDetails, progress: UploadProgress): Promise<UploadedVideo>;
 }
 ```
 
 **Rules**
 
+- **one call, because the destination allows one.** The app asks for the upload scope and
+  nothing that reads the account, so `videos.insert` is the whole of an upload. Watching the
+  video be processed is `videos.list`, which that scope does not authorize (D4);
 - the port holds **what the use case sequences and nothing else** — a sign-in, a channel name
   and a token are the view's and the adapter's, not the use case's, exactly as Bluesky's is;
 - `uploadVideo` reporting a fraction is what makes the second stage of the progress line
-  possible; the chunking that produces it is the adapter's (D3);
-- `videoStatus` is what keeps "sent" and "ready" apart (D4, FR-016).
+  possible; the chunking that produces it is the adapter's (D3).
 
 ## New entity — `YouTubePublication`, what a publish comes to
 
 `src/application/publish-to-youtube.ts` — the use case, the shape of `publishToBluesky`.
 
 ```ts
-type YouTubeStage = 'encoding' | 'uploading' | 'processing';
+type YouTubeStage = 'encoding' | 'uploading';
 
 interface YouTubePublicationProgress {
   readonly stage: YouTubeStage;
@@ -148,7 +142,7 @@ interface YouTubePublication {
 function publishToYouTube(
   clip: Clip,
   settings: YouTubePublicationSettings,
-  deps: { service: YouTubeService; encode: (plan: ExportPlan) => Promise<Blob>; now?, wait?, onProgress?, pollIntervalMs?, maxPolls? },
+  deps: { service: YouTubeService; encode: (plan: ExportPlan) => Promise<Blob>; now?; onProgress? },
 ): Promise<YouTubePublication>;
 ```
 
@@ -157,10 +151,11 @@ function publishToYouTube(
 - **the ceiling is asked before anything is encoded**: `planExport` first, then a length check
   against `VIDEO_MAX_SECONDS`, then the encode — so an over-long clip costs nothing but the
   plan (FR-014, SC-003);
-- **the stages are reported in order** — encoding, uploading, processing — and the answer is
-  the video's id and its address, which is what the dialog shows as a link (FR-013);
-- **the wait follows the clip**, as Bluesky's poll budget does, because the destination
-  transcodes a long video for longer than a short one;
+- the upload **ends when the destination has taken the video** — the id, and therefore the
+  address, is what the insert answers with. Nothing is read back: `videos.list` is not
+  authorized by the one scope the app asks for, so no readiness is claimed (D4, FR-013);
+- the destination's own answer is the one that counts, for whether the account may upload
+  (`youtubeSignupRequired`) and for everything else it refuses;
 - the sequencing — not the browser work — runs here, so a node test with a fake service can
   hold every rule above.
 
@@ -257,7 +252,6 @@ readonly out: {
 | the dialog, signed in | the person presses **Upload** | the clip is planned; over the ceiling it is refused here, before any encoding (FR-014) |
 | a clip within the ceiling | the encode runs | stage *encoding*; the person watches the percentage (FR-013) |
 | the MP4 written | it is handed to the destination | stage *uploading*; the bytes go in chunks, resumably (D3) |
-| the bytes up, a video id back | the status is polled | stage *processing* until ready or failed (D4) |
-| the video ready | the upload finishes | the address is shown as a link; the kept copy is let go — the session ends (FR-017) |
+| the bytes up, a video id back | the upload finishes | the address is shown as a link, with a word that YouTube finishes processing it just after; the kept copy is let go — the session ends (FR-013, FR-017) |
 | an upload that failed or was interrupted | — | the reason is shown; the clip is unchanged and the session is not ended (FR-015) |
 | an upload in flight | the person closes the dialog or the tab | nothing is reported as done; the destination's own session expires on its own (FR-016) |

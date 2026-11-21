@@ -37,12 +37,12 @@ npx vitest run src/infra/youtube.test.ts
 - **`UploadableVideo`** refuses a blob that is not `video/mp4`, an empty one, and one over
   256 GB — and carries the 15-minute ceiling the use case asks;
 - **the use case** refuses a clip over the ceiling **before** the encode is called (the fake's
-  encode counts its calls), reports the three stages in order, answers the video's id and
+  encode counts its calls), reports both stages in order, answers the video's id and
   `watchUrl`, reports a failed upload without ending the session, and gives up on a poll that
   never comes ready with a sentence;
 - **the adapter**, with an injected `fetch` and a fake token: the session start carries the
   right headers and the explicit `privacyStatus`, a chunk carries the right `Content-Range`,
-  a `308` resumes from the `Range`, the status maps `processing`/`succeeded`/`failed`, and the
+  a `308` resumes from the `Range`, nothing is read back after the upload, and the
   errors become the sentences in `contracts/youtube-api.md` §5.
 
 **What this does not prove**: anything about the page, the picture, the file or Google — those
@@ -68,7 +68,7 @@ touches the network**.
 | Signed in, stood in | with the script returning a token and the channel stood in, the compose view shows whose channel it will go to, and the title, the description and the visibility — **private** at the start (FR-007, FR-011) |
 | An empty title | uploading with the title left blank shows the app's own default title in the request the check reads back (FR-012) |
 | Over the ceiling | a clip longer than 15 minutes is refused **before** any upload, with a reason, and the fake service received nothing (FR-014, SC-003) |
-| The stages | the progress line reads *encoding*, then *uploading*, then *processing*, and the link to the video appears when it is ready (FR-013) |
+| The stages | the progress line reads *encoding*, then *uploading*, and the link to the video appears as soon as YouTube has taken it — with the app saying YouTube finishes processing it just after, and **no** request to read the video back (FR-013) |
 | A refusal | an upload the stood-in service refuses shows the reason, leaves the clip untouched, and leaves the dialog usable (FR-015) |
 | The session | after a finished upload the kept copy is let go — the app is back where an export leaves it (FR-017) |
 
@@ -115,7 +115,8 @@ Three things no check can do, and all three are a person's:
 - **the video's pixels on YouTube** — the checks assert the renderers ran and the file was
   written; what YouTube shows after transcoding is the real session's.
 - **the destination's allowance and processing** — real quota and real transcoding are the
-  destination's to give and to take; the checks use a stood-in service.
+  destination's to give and to take; the checks use a stood-in service, and the app cannot see
+  the processing at all — it asks for the upload scope alone (`research.md` D4).
 - **a channel YouTube will not name** — `channels.list` is not authorized by the upload
   scope, so the app may not be able to say which channel a clip will go to. It says whose
   *account* instead, and lets the upload be tried; whether the account may upload at all is

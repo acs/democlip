@@ -81,23 +81,28 @@ Content-Range: bytes <first>-<last>/<total>
 single-request form (`uploadType=multipart`) needs no second URL and uploads the same bytes.
 Whether the fallback is needed is settled by the real session (step 7), not by a guess.
 
-## 3. The wait
+## 3. Why there is no wait
+
+The app does not ask YouTube how the video is doing, and the reason is the scope:
 
 ```http
 GET https://www.googleapis.com/youtube/v3/videos?part=status,processingDetails&id=<id>
 ```
 
-| Field | The app reads it as |
-|---|---|
-| `status.uploadStatus` | `processed` — ready; `failed` or `rejected` — failed |
-| `processingDetails.processingStatus` | `processing` — still going; `succeeded` — ready; `failed` or `terminated` — failed |
-| `processingDetails.processingProgress` | `partsProcessed` against `partsTotal`, for the percentage |
+`videos.list` is authorized by the account-reading scopes (`youtube.readonly`, `youtube`) and
+**not** by the `youtube.upload` scope the app asks for, so that call cannot be made at all —
+the destination answers *"Request had insufficient authentication scopes"*. An upload that
+succeeded must never be turned into a failure by a read the person did not agree to.
 
 **Guarantees**
 
-- **the video's readiness, not the upload's completion, is what ends the wait** (D4, FR-016);
-- the poll is bounded, with a budget that follows the clip's length, and giving up is said in
-  a sentence rather than a hang.
+- **the upload ends when YouTube has taken the video**, which the insert itself answers with:
+  the id, and therefore the address;
+- **what YouTube does afterwards is said, not watched** — the video is on the channel as soon
+  as it is uploaded, and YouTube finishes processing it just after. The dialog says exactly
+  that rather than claiming a readiness the app cannot see;
+- **the destination is still the authority** on whether the account may upload: that answer
+  comes from `videos.insert` (`youtubeSignupRequired`, §5), not from a read.
 
 ## 4. Whose channel it is — when YouTube will say
 

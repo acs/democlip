@@ -10,8 +10,9 @@ A clip goes from the review to the person's own YouTube channel in one pass: **Y
 the Export menu, a Google sign-in in that window, a title, a description and a visibility
 (private at the start), and an upload. The kept clip is written as **MP4** — the same
 encoder the Bluesky path already uses — sent to YouTube's own upload endpoint as a
-**resumable session**, watched until YouTube has finished with it, and answered with the
-video's own address (FR-001…FR-017).
+**resumable session**, and answered with the video's own address — and what YouTube does with
+the video afterwards is **said rather than watched**, because the one scope the app asks for
+allows the upload and nothing that reads the account (`research.md` D4).
 
 The shape is the Bluesky path, a second time: pure rules in `src/domain/youtube/`
 (`Visibility`, `VideoDetails`, `UploadableVideo`), a use case in `src/application/` with the
@@ -60,9 +61,9 @@ mobile.
 publish operation gains a destination.
 
 **Performance Goals**: the encode is unchanged (offline, ~10× real time); the upload is
-bounded by the network and reports its own byte progress; the status poll is one cheap call
-a second, with a budget that follows the clip as Bluesky's does. A clip over the ceiling is
-refused in under a second, before any encoding (SC-003).
+bounded by the network and reports its own byte progress; and nothing is read back, so the
+app never waits on a call the scope does not allow. A clip over the ceiling is refused in
+under a second, before any encoding (SC-003).
 
 **Constraints**: pure browser — no server, and no secret held anywhere (the client ID is
 public); the app must say plainly when it is not configured, or when Google refuses an
@@ -164,8 +165,8 @@ green and the end-to-end suite green.
 |---|---|---|---|
 | 1 | **Words and map.** Add **upload**, **visibility**, **video status**, **YouTube account** and **client registration** to `GLOSSARY.md` with a *Publishing to YouTube* section; update the Overview and Domain-model skills' maps and `FEATURES.md`. No code. | Docs review. | `docs/youtube-words` |
 | 2 | **The rules.** `src/domain/youtube/`: `Visibility` (private, unlisted or public, private by default), `VideoDetails` (a title defaulted when empty and capped at 100 characters, a description capped at 5000, the visibility, the category the app sends, and `watchUrl(id)`), and `UploadableVideo` (an `video/mp4` blob, non-empty, under 256 GB — YouTube's own limits — plus the 15-minute ceiling this app enforces). | `npx vitest run src/domain/youtube` | `feat/youtube-domain` |
-| 3 | **The use case and its port.** `src/application/youtube-service.ts` (the port: `uploadVideo` with byte progress, and `videoStatus`) and `publish-to-youtube.ts` (plan the clip, refuse over the ceiling *before* encoding, encode MP4, upload, poll until ready or failed, answer the video's id and address). | `npx vitest run src/application/publish-to-youtube.test.ts` — the refusal before any encode, every stage, a failure, a poll that gives up | `feat/youtube-publish` |
-| 4 | **The client.** `src/infra/youtube.ts`: the token client behind `google.accounts.oauth2` (loaded on demand), the resumable upload (the session URI from `Location`, the bytes in chunks with progress), the status poll, the channel it will go to, `signOut`, and `configured()` read from `web/public/youtube-client.json`. | `npx vitest run src/infra/youtube.test.ts` with an injected `fetch` and a fake token: the session start, a chunk, a resume, the status mapping, and the errors (`quotaExceeded`, a refusal, an expired token) | `feat/youtube-client` |
+| 3 | **The use case and its port.** `src/application/youtube-service.ts` (the port: `uploadVideo` with byte progress) and `publish-to-youtube.ts` (plan the clip, refuse over the ceiling *before* encoding, encode MP4, upload, answer the video's id and address). | `npx vitest run src/application/publish-to-youtube.test.ts` — the refusal before any encode, both stages, an encode that fails, a destination that refuses | `feat/youtube-publish` |
+| 4 | **The client.** `src/infra/youtube.ts`: the token client behind `google.accounts.oauth2` (loaded on demand), the resumable upload (the session URI from `Location`, the bytes in chunks with progress), the channel read as best effort, `signOut`, and `configured()` read from `web/public/youtube-client.json`. | `npx vitest run src/infra/youtube.test.ts` with an injected `fetch` and a fake token: the session start, a chunk, a resume, that nothing is read back, and the errors (`quotaExceeded`, `accessNotConfigured`, `youtubeSignupRequired`, a refusal, an expired token) | `feat/youtube-client` |
 | 5 | **The way in.** The Export-menu entry (`exp-youtube`), the dialog and its flow (`ui/publishing/youtube-{dialog,flow}.ts`), the markup and the CSS, the wiring in `main.ts`, and the app saying plainly when it is not configured. The README's one-time setup: a Google OAuth client, the authorized origins, the consent screen's test users, and the client-ID file. | `e2e/checks/youtube.spec.ts`: the menu shows YouTube; the dialog opens on the Google view with no sign-in; with the script and the service stood in, the compose view, the progress lines and the link; with no client ID served, a plain refusal with no request sent; a clip over the ceiling refused before any upload. | `feat/youtube-ui` |
 | 6 | **The agent's publish.** `out.publish` gains a `destination` and the YouTube details; `publish_clip` gains `destination` (`bluesky` \| `youtube`), `title` and `visibility`. The sign-in is still the person's: with nobody signed in, a destination is refused with a reason and nothing leaves the page. | Node tests beside the surface and the tool list; one e2e check that a YouTube publish through the surface, with nobody signed in, is refused with a reason and sends nothing. | `feat/youtube-agent` |
 | 7 | **The real session, and the honest gaps.** The two no check can do, run by the user: a real Google consent in that window, and a real upload to a real channel — which also settles the one thing only the real thing can (D3: whether the upload endpoint exposes `Location` to a browser). The full gate, and the gaps. | The three levels of the Verification skill; the suite green; the user's session reported in the pull request. | `docs/youtube-final` |
