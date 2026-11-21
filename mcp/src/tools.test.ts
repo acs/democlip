@@ -90,6 +90,16 @@ describe('the tool list', () => {
       required: ['target'],
       properties: { target: { enum: ['webm', 'mp4'] }, annotations: { enum: ['drawn', 'carried'] } },
     });
+    // A publish names where it goes — a post on Bluesky, or a video on YouTube — and
+    // one operation gaining a destination is no second tool. The visibility is the app's
+    // own three words, and private is where a video starts.
+    expect(byName.get('publish_clip')!.inputSchema).toMatchObject({
+      properties: {
+        destination: { enum: ['bluesky', 'youtube'] },
+        visibility: { enum: ['private', 'unlisted', 'public'] },
+      },
+    });
+    expect(byName.get('publish_clip')!.inputSchema.required ?? []).toEqual([]);
   });
 
   it('offers exactly one tool that names a path, and it is the app\u2019s own Import', () => {

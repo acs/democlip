@@ -92,11 +92,23 @@ export interface AgentSurface {
     play(): Result;
     pause(): Result;
   };
-  /** What leaves the browser: the file, and the post. */
+  /** What leaves the browser: the file, the post, and the video. */
   readonly out: {
     /** `annotations` is `drawn` (in the picture) or `carried` (beside it, for a sidecar). */
     export(target: string, annotations?: string): Promise<Result<{ filename: string }>>;
-    publish(options: { text?: string; alt?: string }): Promise<Result<{ url: string }>>;
+    /**
+     * Publish the clip: a video post on **Bluesky** (what it did before there were two),
+     * or a video on the person's own **YouTube** channel. A destination's sign-in is the
+     * person's, in that window; with nobody signed in the call is refused with a reason
+     * and nothing leaves the page.
+     */
+    publish(options: {
+      destination?: string;
+      text?: string;
+      alt?: string;
+      title?: string;
+      visibility?: string;
+    }): Promise<Result<{ url: string }>>;
   };
 }
 

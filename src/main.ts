@@ -37,6 +37,7 @@ import { chooseFile, onFileChosen } from './ui/recording/import-flow.js';
 import { exportMenu } from './ui/exporting/export-menu.js';
 import { publishDialog } from './ui/publishing/publish-dialog.js';
 import { youtubeDialog } from './ui/publishing/youtube-dialog.js';
+import { youTubeAccount, uploadClip } from './ui/publishing/youtube-flow.js';
 import { blueskyAccount, publishClip } from './ui/publishing/publish-flow.js';
 import { keep } from './ui/keeping/keep.js';
 import { resumeClip } from './ui/keeping/resume-flow.js';
@@ -200,6 +201,13 @@ function init(): void {
             return account ? { handle: account.handle } : null;
           },
           publish: (text, alt, handlers) => publishClip(text, alt, handlers),
+        },
+        {
+          account: async () => {
+            const account = await youTubeAccount();
+            return account ? { channel: account.title } : null;
+          },
+          upload: (settings, handlers) => uploadClip(settings, handlers),
         },
       ),
     });

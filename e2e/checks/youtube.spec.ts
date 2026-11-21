@@ -207,6 +207,38 @@ test('an upload the destination refuses says why, and leaves the dialog usable',
   await expect(page.locator('#yt-go')).toBeEnabled();
 });
 
+/** Publish through the app's automation surface, as the MCP server does. */
+async function publishThroughSurface(page: Page, options: Record<string, unknown>): Promise<{ ok: boolean; reason?: string; url?: string }> {
+  return page.evaluate(async opts => {
+    const surface = (window as unknown as { democlip?: { out: { publish: (o: unknown) => Promise<unknown> } } }).democlip;
+    if (!surface) throw new Error('the page has no automation surface');
+    return await surface.out.publish(opts) as { ok: boolean; reason?: string; url?: string };
+  }, options);
+}
+
+test('a YouTube publish through the surface is refused with nobody signed in', async ({ page }) => {
+  const asked: string[] = [];
+  page.on('request', request => { if (request.url().startsWith('https://www.googleapis.com/')) asked.push(request.url()); });
+
+  const app = boot(page);
+  await app.gotoAgent();
+  const takes = await makeTakes(page, { width: 640, height: 360, seconds: 1 });
+  await app.seed(takes);
+  await app.review();
+
+  // A destination is one operation's second place to go, so the refusal is a result an
+  // agent can read — and nothing is sent.
+  const refused = await publishThroughSurface(page, { destination: 'youtube' });
+  expect(refused.ok).toBe(false);
+  expect(refused.reason).toMatch(/nobody is signed in to upload to YouTube/);
+
+  const unknown = await publishThroughSurface(page, { destination: 'peertube' });
+  expect(unknown.ok).toBe(false);
+  expect(unknown.reason).toMatch(/bluesky or youtube/);
+
+  expect(asked).toHaveLength(0);
+});
+
 test('uploading writes the video, sends the details, and answers with the link', async ({ page }) => {
   const asked = await standInGoogle(page);
   await clientId(page, 'stub.apps.googleusercontent.com');
