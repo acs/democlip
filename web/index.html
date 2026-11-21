@@ -278,6 +278,7 @@
   <button class="export-item" id="exp-mp4" role="menuitem"><span class="export-item-name">MP4 file</span><span class="export-item-note">Plays anywhere — QuickTime</span></button>
   <button class="export-item" id="exp-editing" role="menuitem"><span class="export-item-name">WebM for editing</span><span class="export-item-note">Picture alone — annotations travel beside it</span></button>
   <button class="export-item" id="exp-bluesky" role="menuitem"><span class="export-item-name">Bluesky</span><span class="export-item-note">Publish as a video post</span></button>
+  <button class="export-item" id="exp-youtube" role="menuitem"><span class="export-item-name">YouTube</span><span class="export-item-note">Upload to your own channel</span></button>
 </div>
 
 <!-- PUBLISH DIALOG -->
@@ -314,6 +315,49 @@
 
     <p class="pub-status" id="pub-status"></p>
     <p class="pub-error" id="pub-error" style="display:none"></p>
+  </div>
+</div>
+<!-- UPLOAD TO YOUTUBE DIALOG -->
+<div class="pub-bd" id="yt-bd">
+  <div class="pub-panel" role="dialog" aria-modal="true" aria-label="Upload to YouTube">
+    <button class="pub-close" id="yt-close" aria-label="Close">×</button>
+    <h2 class="pub-title">Upload to YouTube</h2>
+
+    <div id="yt-signin-view">
+      <p class="pub-note" id="yt-note"></p>
+      <button class="pub-btn" id="yt-signin">Sign in with Google</button>
+    </div>
+
+    <div id="yt-compose-view" style="display:none">
+      <div class="pub-row">
+        <span class="pub-as" id="yt-as"></span>
+        <button class="pub-link" id="yt-signout">Sign out</button>
+      </div>
+      <div class="pub-field">
+        <label class="pub-label" for="yt-title">Title <span class="pub-hint">left blank, the app names it</span></label>
+        <input class="pub-input" id="yt-title" placeholder="A demo of the thing">
+      </div>
+      <div class="pub-field">
+        <label class="pub-label" for="yt-description">Description <span class="pub-hint">optional</span></label>
+        <textarea class="pub-input pub-text" id="yt-description" rows="3" placeholder="What the video shows"></textarea>
+      </div>
+      <div class="pub-field">
+        <label class="pub-label" for="yt-visibility">Who can see it</label>
+        <select class="pub-input" id="yt-visibility">
+          <option value="private" selected>Private — only you</option>
+          <option value="unlisted">Unlisted — anyone with the link</option>
+          <option value="public">Public — everyone</option>
+        </select>
+      </div>
+      <p class="pub-note" style="margin:0">A default YouTube account takes videos up to 15 minutes. YouTube transcodes the video after it arrives, so the app waits for that rather than calling the upload the end.</p>
+      <div class="pub-actions">
+        <button class="pub-btn ghost" id="yt-cancel">Cancel</button>
+        <button class="pub-btn" id="yt-go">Upload</button>
+      </div>
+    </div>
+
+    <p class="pub-status" id="yt-status"></p>
+    <p class="pub-error" id="yt-error" style="display:none"></p>
   </div>
 </div>
 <video id="sv" style="display:none" autoplay muted playsinline></video>
