@@ -79,6 +79,7 @@ channel — all three are the user's session, below.
 
 ```bash
 npm --prefix mcp test
+npx vitest run src/ui/agent/out.test.ts
 ```
 
 **What must pass**: the tool list still has one `publish_clip`; its schema takes the
@@ -96,13 +97,16 @@ Three things no check can do, and all three are a person's:
 - **a real upload to a real channel.** Upload a short clip and open the link. The suite stands
   the service in; only a real channel proves the real thing — and only a real upload shows the
   video at the cuts and annotations the review held.
-- **the two things that only the real thing can settle** (`research.md` D3, D7):
-  - whether the browser may read the **`Location`** header of the resumable session start —
-    if not, the `uploadType=multipart` fallback is used, and the plan says so rather than the
-    change failing quietly;
-  - whether YouTube requires the video's **"made for kids"** declaration on insert. If it
-    does, the refusal is reported plainly and a declaration becomes a choice in the dialog; it
-    is not assumed either way.
+- **the things that only the real thing can settle** (`research.md` D3, D7):
+  - whether YouTube's own session start exposes its **`Location`** header to a browser. The
+    suite's stand-in has to expose it, and `Range` with it, or the page cannot read either —
+    which is the CORS rule rather than a choice of the app's. Google's endpoint is documented
+    to support CORS and its own JavaScript client starts resumable sessions from a browser, so
+    the app reads the header it needs and the plan keeps the `uploadType=multipart` fallback
+    in reserve; a real upload is what confirms Google's own answer.
+  - whether YouTube requires the video's **"made for kids"** declaration on insert. It is not
+    sent: declaring it for a person is a claim about their content, and the refusal, if it
+    comes, is reported plainly. Only a real insert answers this either way.
 
 ## 5. What cannot be checked here
 
