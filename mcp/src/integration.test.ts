@@ -122,20 +122,28 @@ describe('the server, end to end', () => {
     expect(imported.take?.seconds ?? 0).toBeGreaterThan(0.3);
     expect(imported.take?.seconds ?? 0).toBeLessThanOrEqual(stopped.take?.seconds ?? 0);
 
-    // The clip holds both takes, and both arrows: the one that left is still over the
-    // take it was drawn on — the clip grew, so its fractions shrank with it — and the one
-    // from the sidecar is its own, over the stretch the file was given.
+    // The clip holds both takes, and both arrows: the one that left is still over the take
+    // it was drawn on — the clip grew, so its fractions shrank with it — and the one from
+    // the sidecar is its own, over the stretch the file was given.
     const described = answered<{
-      takes: unknown[];
+      takes: Array<{ seconds: number }>;
       annotations: Array<{ kind: string; span: { s: number; e: number } }>;
     }>(await handleToolCall(options(), 'describe_clip', {}));
     expect(described.takes).toHaveLength(2);
     expect(described.annotations.map(annotation => annotation.kind)).toEqual(['arrow', 'arrow']);
 
+    const [first, second] = described.takes;
+    const total = first.seconds + second.seconds;
+    const landed = first.seconds / total;            // where the file begins in the clip
     const [left, carried] = described.annotations;
-    expect(left.span.s).toBeLessThan(0.5);          // over the first take, where it was
-    expect(carried.span.s).toBeGreaterThan(0.5);    // over the half the file landed in
-    expect(carried.span.e).toBeGreaterThan(0.9);
+
+    expect(left.span.s).toBeGreaterThan(0);
+    expect(left.span.e).toBeLessThan(landed);        // the take it was drawn on
+    expect(carried.span.s).toBeGreaterThan(landed);  // the stretch the file was given...
+    expect(carried.span.e).toBeLessThanOrEqual(1);
+    // ...as wide as it was: the arrow covered 0.6 of the clip, and covers 0.6 of the
+    // file — which is that much of the clip's second share.
+    expect(carried.span.e - carried.span.s).toBeCloseTo(0.6 * (second.seconds / total), 2);
   });
 
   it('hands back the app\u2019s own words for a file it will not take', async () => {
