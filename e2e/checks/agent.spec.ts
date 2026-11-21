@@ -5,6 +5,14 @@
 // the promise that keeps a normal page just the app. The recording half is driven with
 // the stand-in share, so the app's handling of a share is covered; the real picker
 // stays the user's session.
+//
+// A check costs a browser boot, so the cases are grouped by what they are about rather
+// than broken up for their own sake — the gate and the version, the clip and its undo,
+// each annotation kind, the sources and the takes, the file and the post. What is a
+// rule rather than a page — a refused stretch, a kind the app does not have, a value
+// the kind will not take, the undo's own book-keeping — is proved in node beside the
+// operation (`src/ui/agent/surface.test.ts`, `edit.test.ts`) and is not booted a
+// browser for. What a person must be able to *see* is here.
 
 import { expect, test, type Page } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
@@ -53,7 +61,7 @@ async function reviewed(page: Page): Promise<void> {
   await app.review();
 }
 
-test('the surface is published on a page that asked, and on no other', async ({ page }) => {
+test('the surface is published only on a page that asked, and says which version it is', async ({ page }) => {
   const app = boot(page);
 
   await app.goto();
@@ -61,6 +69,12 @@ test('the surface is published on a page that asked, and on no other', async ({ 
   // The badge is the visible half of the same gate, so it is absent too — not merely
   // hidden behind a class that a stray rule could reveal.
   await expect(page.locator('#agent-chip')).toBeHidden();
+
+  // Nothing was published to be found, and using the app does not publish it: the gate
+  // is the page's own flag and nothing else.
+  expect(await page.evaluate(() => Object.keys(globalThis).filter(k => k === 'democlip'))).toEqual([]);
+  await page.locator('#screen-btn').click();
+  expect(await published(page)).toBe('undefined');
 
   await app.gotoAgent();
   expect(await published(page)).toBe('object');
@@ -76,16 +90,13 @@ test('the surface is published on a page that asked, and on no other', async ({ 
   const title = (await badge.getAttribute('title')) ?? '';
   expect(title).toMatch(/agent/i);
   expect(title.length).toBeGreaterThan(40);
-});
 
-test('the surface reports the app\u2019s own version', async ({ page }) => {
-  await boot(page).gotoAgent();
+  // The version the surface reports is the app's own: the same one the header wears.
   const version = await call<string>(page, 'version');
-  const shown = (await page.locator('#ver').textContent()) ?? '';
-  expect(shown).toBe(`v${version}`);
+  expect((await page.locator('#ver').textContent()) ?? '').toBe(`v${version}`);
 });
 
-test('describe reports the clip, and a cut through the surface lands where a person sees it', async ({ page }) => {
+test('a cut through the surface lands where a person sees it, and the app\u2019s own undo takes it back', async ({ page }) => {
   await reviewed(page);
 
   const before = await call<{ length: number; takes: unknown[]; cuts: unknown[] }>(page, 'describe');
@@ -103,9 +114,14 @@ test('describe reports the clip, and a cut through the surface lands where a per
   await expect(page.locator('#t-cut')).toContainText('CUT');
   await expect(page.locator('#cut-undo')).toBeVisible();
   await expect(page.locator('#t-clip')).toHaveText('3.00s');
+
+  // And the person presses the app's own undo — not the surface's — which takes the
+  // change back in one action, whoever made it.
+  await page.locator('#cut-undo').click();
+  await expect(page.locator('#t-clip')).toHaveText('4.00s');
 });
 
-test('an annotation made through the surface is drawn on the picture and marked on the lane', async ({ page }) => {
+test('an arrow made through the surface is drawn on the picture and marked on the lane', async ({ page }) => {
   await reviewed(page);
 
   const made = await call<{ ok: boolean; id?: string }>(page, 'edit.annotate', 'arrow', {
@@ -224,33 +240,21 @@ test('a property change through the surface repaints, and one undo puts it back'
   await expectArrowPainted(page, 'red');
 });
 
-test('a refusal is a value, and leaves the clip alone', async ({ page }) => {
-  await reviewed(page);
+test('what a person must do by hand is refused by the surface, with the reason', async ({ page }) => {
+  await boot(page).gotoAgent();
 
-  const refused = await call<{ ok: boolean; reason: string }>(page, 'edit.cut', 0.5, 0.505);
-  expect(refused.ok).toBe(false);
-  expect(refused.reason).toBeTruthy();
+  // Choosing what is shared is a hand's, in the browser's own picker.
+  const shared = await call<{ ok: boolean; reason: string }>(page, 'takes.turnSourceOn', 'screen');
+  expect(shared.ok).toBe(false);
+  expect(shared.reason).toContain('picker');
 
-  // Nothing happened: the clip is still its whole length and has no cuts.
-  const described = await call<{ length: number; cuts: unknown[] }>(page, 'describe');
-  expect(described.length).toBeCloseTo(4);
-  expect(described.cuts).toHaveLength(0);
-
-  // An operation the app does not have is refused too, with a reason.
-  const unknown = await call<{ ok: boolean; reason: string }>(page, 'edit.annotate', 'hologram', { span: { s: 0.1, e: 0.5 } });
-  expect(unknown.ok).toBe(false);
-  expect(unknown.reason).toContain('hologram');
+  // And a take needs a picture, so there is nothing to start.
+  const started = await call<{ ok: boolean; reason: string }>(page, 'takes.start');
+  expect(started.ok).toBe(false);
+  expect(started.reason).toContain('picture');
 });
 
-test('choosing what is shared is not the surface\u2019s to do', async ({ page }) => {
-  await reviewed(page);
-
-  const refused = await call<{ ok: boolean; reason: string }>(page, 'takes.turnSourceOn', 'screen');
-  expect(refused.ok).toBe(false);
-  expect(refused.reason).toContain('picker');
-});
-
-test('the press for the screen source asks for a share, and carries the activation the picker needs', async ({ page }) => {
+test('the press for the screen source carries the activation the picker needs, and a take lands in the clip', async ({ page }) => {
   await installStandInShare(page);
   const app = boot(page);
   await app.gotoAgent();
@@ -261,15 +265,6 @@ test('the press for the screen source asks for a share, and carries the activati
 
   await expect.poll(async () => (await askedFor(page)) !== null).toBe(true);
   expect(await activationAtShare(page)).toBe(true);
-});
-
-test('a take started and stopped through the surface lands in the clip', async ({ page }) => {
-  await installStandInShare(page);
-  const app = boot(page);
-  await app.gotoAgent();
-
-  await page.locator('#screen-btn').click();
-  await expect.poll(async () => (await askedFor(page)) !== null).toBe(true);
 
   const started = await call<{ ok: boolean }>(page, 'takes.start');
   expect(started.ok).toBe(true);
@@ -286,39 +281,13 @@ test('a take started and stopped through the surface lands in the clip', async (
   expect(described.takes).toHaveLength(1);
 });
 
-test('a take with no picture is refused, with the reason a person would be told', async ({ page }) => {
-  await boot(page).gotoAgent();
-
-  const refused = await call<{ ok: boolean; reason: string }>(page, 'takes.start');
-  expect(refused.ok).toBe(false);
-  expect(refused.reason).toContain('picture');
-});
-
-test('a change the agent made is taken back by the app\u2019s own undo, in one action', async ({ page }) => {
-  await reviewed(page);
-
-  await call(page, 'edit.cut', 0.25, 0.5);
-  await expect(page.locator('#t-clip')).toHaveText('3.00s');
-
-  // The person presses the app's own undo — not the surface's — and the change goes
-  // back in one action, whoever made it.
-  await page.locator('#cut-undo').click();
-  await expect(page.locator('#t-clip')).toHaveText('4.00s');
-});
-
-test('a page that did not ask carries no surface at all, before or after it is used', async ({ page }) => {
-  const app = boot(page);
-  await app.goto();
-
-  // Not merely absent: nothing was published to be found, and the app carries on
-  // being the app.
-  expect(await page.evaluate(() => Object.keys(globalThis).filter(k => k === 'democlip'))).toEqual([]);
-  await page.locator('#screen-btn').click();
-  expect(await published(page)).toBe('undefined');
-});
-
 test('an export through the surface writes the file a person would get, holding the edit', async ({ page }) => {
   await reviewed(page);
+
+  // A target the app does not write is refused, naming it, before anything is encoded.
+  const refused = await call<{ ok: boolean; reason: string }>(page, 'out.export', 'gif');
+  expect(refused.ok).toBe(false);
+  expect(refused.reason).toContain('gif');
 
   // An edit the file must carry: a second of the four gone, and an arrow over it.
   await call(page, 'edit.cut', 0.25, 0.5);
@@ -362,14 +331,6 @@ test('a publish with nobody signed in is refused, and nothing leaves the machine
   expect(refused.reason).toContain('signed in');
   // Nothing was sent to the service: no post was attempted at all.
   expect(toTheService).toEqual([]);
-});
-
-test('an export target the app does not write is refused', async ({ page }) => {
-  await reviewed(page);
-
-  const refused = await call<{ ok: boolean; reason: string }>(page, 'out.export', 'gif');
-  expect(refused.ok).toBe(false);
-  expect(refused.reason).toContain('gif');
 });
 
 /** Decode a downloaded file's metadata in the page and read its duration. */
