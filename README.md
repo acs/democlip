@@ -39,6 +39,7 @@ The headline capabilities; the **[full list is in FEATURES.md](FEATURES.md)**.
 - **Add more takes** — Record again appends to the end of the clip, with a fade and a dissolve across the join
 - **Import a video file** — bring a WebM or MP4 in as a take to cut, annotate and export alongside your recordings; nothing is re-recorded
 - **Export to a file, encoded offline** — WebM for size or MP4 for compatibility, written in the browser by WebCodecs about 10× faster than the clip, with a duration and cue points any player can scrub
+- **A clip that leaves and comes back** — **WebM for editing** writes the picture alone with its **annotations** beside it, so the video can be improved with anything you have and imported back with the annotations still yours to move
 - **Nothing leaves your machine** — recording, playback and export are entirely local; publishing to Bluesky is optional, and only happens when you ask
 - **Light / dark and installable** — CSS-variable theming, and a PWA that installs as a desktop app
 
@@ -52,7 +53,7 @@ The headline capabilities; the **[full list is in FEATURES.md](FEATURES.md)**.
 4. Press Record again to add another take to the end of the clip — the timeline then holds every take, and the cuts you already made are kept — or press **Import** to bring a **WebM or MP4** file already on your machine in as a take beside them
 5. The timeline holds a playback control and an audio track
 6. Play it back (**P** or ▶), or click anywhere on the timeline to bring the playhead there — it holds the frame rather than playing, so you can find the exact moment. To cut a section out, click where it starts and where it ends, then press the **scissors** (or click inside the shaded section): it leaves the timeline and the rest closes up. To point at a detail instead, press the **arrow** on the section and drag across the preview — the arrow is shown over that stretch in playback and in the export — or press the **image** beside it to put a picture over the stretch (choose a file, paste one, or drop one on the preview) and drag its corners to resize it (hold **Shift** to stretch it freely), or press the **text** button to type a line, which grows and shrinks as you drag a corner. Click an annotation on the picture to move, aim or resize it, click its mark on the timeline lane to jump to it, copy it and paste a new one at the playhead (**⌘/Ctrl+C**, **⌘/Ctrl+V**), or delete it by pressing **Delete** with it picked, or by tapping the **×** that appears on it (and the **copy** beside it puts another like it on the picture). The **undo** on the section drops the selection, and the **undo** in the header brings back whatever you last did, a cut or an annotation. Marks and the selected section can be dragged to reposition them, with the frame under them following, or nudged a frame at a time with **←** / **→** (hold **Shift** for a second)
-7. Press **Export ▾** and pick where the clip goes — a **WebM** file (small and sharp), an **MP4** file (plays anywhere), or **Bluesky** to publish it as a video post. The encode runs offline, over the clip with its cuts taken out, roughly ten times faster than the clip, and the timeline counts down how much is left to write
+7. Press **Export ▾** and pick where the clip goes — a **WebM** file (small and sharp), an **MP4** file (plays anywhere), or **Bluesky** to publish it as a video post. The encode runs offline, over the clip with its cuts taken out, roughly ten times faster than the clip, and the timeline counts down how much is left to write. **WebM for editing** is the one for a clip that is coming back: it writes the picture **alone**, with a `.json` **sidecar** beside it holding the annotations, and **Import** takes the video and the sidecar together, so the clip returns from whatever worked on it with its annotations whole
 
 ---
 
@@ -84,10 +85,14 @@ an image annotation — no path and nothing to upload.
 
 The agent's reach is the app's own operations and nothing more — cut, annotate,
 place the picture on your clipboard, set a property, remove, undo, seek, record a
-take, export, publish, and read the
-clip. There is no way for it to run code in the page, and the recording is never
-re-encoded. An export writes the same file a person would get, to your Downloads
-folder. A publish goes from **your** Bluesky account, signed in in that window —
+take, import a video file as a take, export, publish, and read the
+clip. One of them names a file on your machine, and only one: `import_take`, which
+is the app's own **Import** told what to bring in. There is no way for it to run code
+in the page, and the recording is never re-encoded. An export writes the same file a
+person would get, to your Downloads folder — and that file can come back in as a
+take, so a clip can leave, be worked on by whatever you have, and be picked up again,
+its annotations coming back with it when they were written beside the video.
+A publish goes from **your** Bluesky account, signed in in that window —
 and a harness can deny that one tool while keeping the rest.
 
 The transport can't be bounded — a DevTools Protocol port can do anything to a page —

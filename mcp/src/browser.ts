@@ -51,6 +51,13 @@ export interface LaunchOptions {
    * left out, a headful session opens Chrome and a headless check uses the bundled one.
    */
   readonly channel?: 'chrome' | 'msedge' | 'chromium' | null;
+  /**
+   * Extra flags for the browser, for a caller that needs something the machine does not
+   * have. A check that records a take has no camera to record with, so it asks for
+   * Chromium's fake one — the same two flags the end-to-end suite launches with. A
+   * session for a person passes none: it records what is really there.
+   */
+  readonly args?: readonly string[];
 }
 
 const LABELS: Readonly<Record<string, string>> = {
@@ -86,7 +93,7 @@ async function launch(profile: string, options: LaunchOptions): Promise<Launched
   const common = {
     headless,
     viewport: null,
-    args: ['--no-first-run', '--no-default-browser-check'],
+    args: ['--no-first-run', '--no-default-browser-check', ...(options.args ?? [])],
   };
 
   if (options.executablePath) {
@@ -108,7 +115,7 @@ async function launch(profile: string, options: LaunchOptions): Promise<Launched
 
   if (channel && !headless && process.platform === 'darwin') {
     try {
-      return await launchAsAnApp(profile, channel);
+      return await launchAsAnApp(profile, channel, options.args ?? []);
     } catch (error) {
       // A channel the caller asked for is their choice, and its failure is theirs to
       // see. A default may fall back — and the browser it fell back to says why, later.
@@ -145,7 +152,7 @@ async function launch(profile: string, options: LaunchOptions): Promise<Launched
  * instead, it is an ordinary Chrome launch, and the grant they gave Chrome applies.
  * The debugging port is on loopback and lives only as long as the session.
  */
-async function launchAsAnApp(profile: string, channel: string): Promise<Launched> {
+async function launchAsAnApp(profile: string, channel: string, extra: readonly string[] = []): Promise<Launched> {
   const app = LABELS[channel] ?? channel;
   const port = await freePort();
   await run('open', [
@@ -155,6 +162,7 @@ async function launchAsAnApp(profile: string, channel: string): Promise<Launched
     `--user-data-dir=${profile}`,
     '--no-first-run',
     '--no-default-browser-check',
+    ...extra,
   ]);
 
   const endpoint = `http://127.0.0.1:${port}`;

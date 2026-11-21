@@ -9,6 +9,7 @@
 // publish is refused with a reason and nothing is sent.
 
 import type { ExportTarget } from '../../domain/export/ExportTarget.js';
+import type { AnnotationExport } from '../../domain/clip/ExportPlan.js';
 import type { PublishHandlers } from '../publishing/publish-flow.js';
 import type { Result } from './surface.js';
 
@@ -19,7 +20,7 @@ export type ExportResult =
   | { kind: 'failed'; reason: string };
 
 export interface Exporter {
-  export(target: ExportTarget): Promise<ExportResult>;
+  export(target: ExportTarget, annotations: AnnotationExport): Promise<ExportResult>;
 }
 
 export interface Publisher {
@@ -30,19 +31,26 @@ export interface Publisher {
 }
 
 export interface Out {
-  export(target: string): Promise<Result<{ filename: string }>>;
+  export(target: string, annotations?: string): Promise<Result<{ filename: string }>>;
   publish(options: { text?: string; alt?: string }): Promise<Result<{ url: string }>>;
 }
 
 const TARGETS: readonly string[] = ['webm', 'mp4'];
+const ANNOTATIONS: readonly string[] = ['drawn', 'carried'];
 
 export function createOut(exporter: Exporter, publisher: Publisher): Out {
   return {
-    async export(target) {
+    async export(target, annotations = 'drawn') {
       if (!TARGETS.includes(target)) {
         return { ok: false, reason: `the app exports ${TARGETS.join(' or ')}, not ${target}` };
       }
-      const outcome = await exporter.export(target as ExportTarget);
+      if (!ANNOTATIONS.includes(annotations)) {
+        return {
+          ok: false,
+          reason: `the app writes the annotations ${ANNOTATIONS.join(' or ')} — in the picture, or beside it — not ${annotations}`,
+        };
+      }
+      const outcome = await exporter.export(target as ExportTarget, annotations as AnnotationExport);
       if (outcome.kind === 'exported') return { ok: true, filename: outcome.filename };
       return { ok: false, reason: outcome.reason };
     },

@@ -3,7 +3,9 @@ import { describe, expect, it } from 'vitest';
 import { findTool, toolDefinitions, toolList } from './tools.js';
 
 // What the server offers is a promise: the app's own operations, named in its words,
-// and nothing else. These are the checks that keep that list honest.
+// plus the two deliveries the browser's own doors need (the picker's press, and the
+// file input). These are the checks that keep that list honest — including how far it
+// reaches.
 
 describe('the tool list', () => {
   it('offers one tool per operation, named in the app\u2019s vocabulary', () => {
@@ -20,6 +22,7 @@ describe('the tool list', () => {
       'stop_take',
       'turn_source_on',
       'turn_source_off',
+      'import_take',
       'export_clip',
       'publish_clip',
     ]);
@@ -76,18 +79,30 @@ describe('the tool list', () => {
     expect(byName.get('add_image')!.inputSchema.properties).toMatchObject({
       span: { type: 'object' },
     });
-    // An export writes one of the two containers the app writes.
+    // An import takes one file, named as a path — the only path any tool takes.
+    expect(byName.get('import_take')!.inputSchema).toMatchObject({
+      required: ['path'],
+      properties: { path: { type: 'string' } },
+    });
+    // An export writes one of the two containers the app writes, and says where its
+    // annotations go: drawn into the picture, or carried in a sidecar beside it.
     expect(byName.get('export_clip')!.inputSchema).toMatchObject({
       required: ['target'],
-      properties: { target: { enum: ['webm', 'mp4'] } },
+      properties: { target: { enum: ['webm', 'mp4'] }, annotations: { enum: ['drawn', 'carried'] } },
     });
   });
 
-  it('offers no tool that reads or writes a file of its own', () => {
+  it('offers exactly one tool that names a path, and it is the app\u2019s own Import', () => {
+    // The bound is the list itself, so it is spelled out here. One tool may name a file:
+    // `import_take` fills the app's own file input, so what it brings in is what the
+    // app's own rule accepts, and a person could have chosen the same file by hand.
     // `export_clip` writes a file, but it is the file the *app* writes, taken from the
-    // browser's own download. `add_image` reads the person's clipboard, which is not a
-    // file and takes no path: no tool takes a path, and none reaches the disk.
-    const paths = toolList().flatMap(tool => Object.keys(tool.inputSchema.properties ?? {}));
-    expect(paths.some(key => /path|file|dir/i.test(key))).toBe(false);
+    // browser's own download; `add_image` reads the person's clipboard, which is not a
+    // file and takes no path. A second tool that took a path would fail here, and would
+    // have to be argued for rather than slipped in.
+    const named = toolList()
+      .filter(tool => Object.keys(tool.inputSchema.properties ?? {}).some(key => /path|file|dir/i.test(key)))
+      .map(tool => tool.name);
+    expect(named).toEqual(['import_take']);
   });
 });

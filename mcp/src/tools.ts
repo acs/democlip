@@ -2,12 +2,19 @@
 //
 // One tool per operation the app has, named in the app's own vocabulary, so a person
 // reading a chat recognises what was done. Every tool ends in an operation the surface
-// publishes, and the two lists cannot drift apart. There is no tool that evaluates code,
-// scripts the page, reads or writes a file, or reaches the network except through
-// `publish_clip`. One tool reads the person's own clipboard — `add_image` — because a
-// browser hands a picture only to a page a hand has just touched, and a chat is not
-// that; what it reads is the picture the person already copied, and it goes nowhere but
-// the clip.
+// publishes, and the two lists cannot drift apart — apart from the two the *server*
+// delivers, because they are the browser's own doors and the page cannot open them for
+// itself: `turn_source_on` for `screen` presses the app's Screen button, so the picker
+// gets the activation it insists on, and `import_take` fills the app's file input,
+// because a page cannot read a disk. There is no tool that evaluates code, scripts the
+// page, or reaches the network except through `publish_clip`.
+//
+// Two tools reach outside the clip by design: `add_image` reads the person's own
+// clipboard, which is not a file and takes no path, because a browser hands a picture
+// only to a page a hand has just touched; and `import_take` names a path — the only one
+// any tool takes. The *browser* reads that file, not the server, and what becomes of it
+// is the app's own rule, so what an agent may bring in is exactly what a person could
+// have chosen in the app's own Import.
 //
 // An app-level refusal is a **result**, not a transport error: the surface answers
 // `{ ok: false, reason }` and the tool hands that back, so the agent can read it and
@@ -15,8 +22,10 @@
 
 import type { Session } from './session.js';
 import { pressScreenButton, screenCaptureBlocked } from './press.js';
-import { watchDownload } from './downloads.js';
+import { watchDownloads } from './downloads.js';
 import { readClipboardPicture } from './clipboard.js';
+import { importTakeFile } from './import.js';
+import { callSurface } from './surface.js';
 
 export type Args = Readonly<Record<string, unknown>>;
 
@@ -46,28 +55,6 @@ const fraction = (description: string): unknown => ({
   maximum: 1,
   description,
 });
-
-/**
- * Reach the app's automation surface in the page and call one of its operations.
- * The path is dotted for a group: `edit.cut`, `view.seek`.
- */
-export async function callSurface<T>(session: Session, path: string, ...args: unknown[]): Promise<T> {
-  return session.page.evaluate(
-    ({ path, args }) => {
-      const surface = (globalThis as { democlip?: Record<string, unknown> }).democlip;
-      if (!surface) throw new Error('the page has no automation surface');
-      const parts = path.split('.');
-      let owner: unknown = surface;
-      for (const part of parts.slice(0, -1)) {
-        owner = (owner as Record<string, unknown> | undefined)?.[part];
-      }
-      const fn = (owner as Record<string, unknown> | undefined)?.[parts[parts.length - 1]];
-      if (typeof fn !== 'function') throw new Error(`the app offers no ${path}`);
-      return (fn as (...a: unknown[]) => unknown).apply(owner, args);
-    },
-    { path, args },
-  ) as Promise<T>;
-}
 
 /** What the clip is: the length, the takes, the cuts, the annotations and their properties. */
 const describeClip: Tool = {
@@ -226,30 +213,60 @@ const turnSourceOff: Tool = {
   run: (session, args) => callSurface(session, 'takes.turnSourceOff', args.source),
 };
 
-/** Encode the clip and write it to a file. */
+/** Bring a video file already on the machine in as a take. */
+const importTake: Tool = {
+  name: 'import_take',
+  description:
+    'Bring a video file already on this machine into the clip as a take: WebM or MP4, the two containers an export can read back. It is appended to the end of the clip holding its own length and sound, and the review opens on it. `path` is an absolute path — the one path any tool takes — and it is how a clip that was improved outside the app comes back. A sidecar written beside the file (what `export_clip` with `annotations: "carried"` leaves) is read with it, and the annotations it holds are put back over the stretch the file is given.',
+  inputSchema: objectSchema({
+    path: { type: 'string', description: 'The file to bring in, as an absolute path on this machine' },
+  }, ['path']),
+  run: (session, args) => importTakeFile(session, String(args.path ?? '')),
+};
+
+/** Encode the clip and write it to a file, with its annotations beside it if asked. */
 const exportClip: Tool = {
   name: 'export_clip',
   description:
-    'Encode the clip offline and write it to a file, answering with the path it was written to and its size. `target` is "webm" or "mp4". The file holds exactly the cuts and annotations the person watched.',
-  inputSchema: objectSchema({ target: { type: 'string', enum: ['webm', 'mp4'], description: 'Which container' } }, ['target']),
+    'Encode the clip offline and write it to a file, answering with the path it was written to and its size. `target` is "webm" or "mp4". The file holds exactly the cuts the person watched, and the annotations too — unless `annotations` is "carried": then the file is the picture alone, a sidecar holding the annotations is written beside it, and both paths are answered with. That is the pair a clip goes out to be worked on with, and `import_take` brings it back whole.',
+  inputSchema: objectSchema({
+    target: { type: 'string', enum: ['webm', 'mp4'], description: 'Which container' },
+    annotations: {
+      type: 'string',
+      enum: ['drawn', 'carried'],
+      description: 'Drawn into the picture (the default), or carried in a sidecar beside it',
+    },
+  }, ['target']),
   async run(session, args) {
     const target = String(args.target ?? '');
     if (target !== 'webm' && target !== 'mp4') {
       return { ok: false, reason: `the app exports webm or mp4, not ${target}` };
     }
-    // The browser hands the finished file back as a download, so the watcher goes up
-    // before the export is asked for — a download already fired is one you cannot wait
-    // for.
-    const watcher = watchDownload(session.page, session.downloadsDir);
+    const annotations = args.annotations === undefined ? 'drawn' : String(args.annotations);
+    if (annotations !== 'drawn' && annotations !== 'carried') {
+      return {
+        ok: false,
+        reason: `the annotations are drawn into the picture or carried beside it, not ${annotations}`,
+      };
+    }
+    // A file that carries its annotations is written with a sidecar beside it: two
+    // downloads, the video first — and the watcher goes up before the export is asked for.
+    const watcher = watchDownloads(session.page, session.downloadsDir, annotations === 'carried' ? 2 : 1);
     const outcome = await callSurface<{ ok: boolean; filename?: string; reason?: string }>(
-      session, 'out.export', target,
+      session, 'out.export', target, annotations,
     );
     if (!outcome.ok) {
       watcher.stop();
       return outcome;
     }
-    const saved = await watcher.saved;
-    return { ok: true, path: saved.path, bytes: saved.bytes, filename: outcome.filename };
+    const [video, sidecar] = await watcher.saved;
+    return {
+      ok: true,
+      path: video.path,
+      bytes: video.bytes,
+      filename: outcome.filename,
+      ...(sidecar ? { annotations: sidecar.path } : {}),
+    };
   },
 };
 
@@ -280,6 +297,7 @@ export function toolList(): readonly Tool[] {
     stopTake,
     turnSourceOn,
     turnSourceOff,
+    importTake,
     exportClip,
     publishClip,
   ];

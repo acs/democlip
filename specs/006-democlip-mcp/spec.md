@@ -115,7 +115,7 @@ The person can see everything the agent does and undo any of it; the agent can d
 
 **Being driven at all**
 
-- **FR-015**: The agent's reach MUST be the app's own operations and nothing more: no arbitrary scripting of the page, no reaching outside the clip.
+- **FR-015**: The agent's reach MUST be the app's own operations and nothing more: no arbitrary scripting of the page, no reaching outside the clip — except `import_take`, which names a file for the app's own Import, the one path any tool takes (see the tools contract, *Guarantees*).
 - **FR-016**: The operations offered to an agent MUST be named in the app's own vocabulary, so a person reading the chat recognises what was done.
 - **FR-017**: Adding an operation for something the app already does MUST NOT change how the app behaves for a person.
 - **FR-018**: The agent's side MUST be part of this project and released with the app, sharing its version, so that how a clip is written down cannot drift between them; a clip that does not match MUST be refused rather than half-read.

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { planExport } from './export-clip.js';
 import { Clip } from '../domain/clip/Clip.js';
+import { Arrow } from '../domain/annotation/Arrow.js';
 import { Span } from '../domain/clip/Span.js';
 import { Take } from '../domain/clip/Take.js';
 import type { TakeRepository } from '../domain/clip/TakeRepository.js';
@@ -35,7 +36,7 @@ const clipOf = (...durations: number[]): Clip => {
   return clip;
 };
 
-const settings = { audio: false, fadeSeconds: 0.08 };
+const settings = { audio: false, fadeSeconds: 0.08, annotations: 'drawn' as const };
 
 describe('planExport', () => {
   it('plans the whole clip', () => {
@@ -59,6 +60,20 @@ describe('planExport', () => {
   });
 
   it('carries whether the clip has sound', () => {
-    expect(planExport(clipOf(4), { audio: true, fadeSeconds: 0.08 })?.audio).toBe(true);
+    expect(planExport(clipOf(4), { audio: true, fadeSeconds: 0.08, annotations: 'drawn' })?.audio).toBe(true);
+  });
+
+  it('draws no annotations into a file that carries them beside it', () => {
+    const clip = clipOf(4);
+    const arrow = Arrow.create(Span.of(0.25, 0.5), { x: 0.1, y: 0.1 }, { x: 0.5, y: 0.5 }, 'an-1');
+    clip.addAnnotation(arrow!);
+
+    const drawn = planExport(clip, settings)!;
+    const carried = planExport(clip, { ...settings, annotations: 'carried' })!;
+
+    expect(drawn.annotationsAt(1.5)).toHaveLength(1);      // a moment the arrow is over
+    expect(carried.annotationsAt(1.5)).toHaveLength(0);    // the file holds the picture only
+    // ...and the clip still knows them: that is what is written beside the file.
+    expect(clip.annotationsAsExported()).toHaveLength(1);
   });
 });

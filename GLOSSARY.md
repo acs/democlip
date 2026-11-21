@@ -118,6 +118,42 @@ nothing is drawn there — and putting the cut back brings it back.
 | **dissolve** | the picture blending from the last frame of a take into the first frames of the next, over the same 80 ms — and, the same way, an annotation blending onto the picture over the first and last moments of its stretch | `DISSOLVE_S`, `Span.fadeAt()` |
 | **crop region** | the rectangle of the screen being recorded — the red box — as fractions of the capture. A region stays inside the picture and is never empty | `CropRegion` (`src/domain/capture/CropRegion.ts`) |
 
+## A clip that leaves and comes back
+
+A clip can go out as a file, be worked on by whatever the machine has — ffmpeg, an
+editor, anything that writes a WebM or an MP4 — and be brought back in as a take, with
+its annotations. This is the **round trip**, and these are its words:
+
+| word | what it is | in the code |
+|---|---|---|
+| **sidecar** | the annotations written **beside** a file rather than drawn into it, so that a clip which leaves can come back whole. Named after the video with `.democlip.json` in place of the video's extension — `democlip-1755021992.webm` beside `democlip-1755021992.democlip.json`, one name and one timestamp — written by the export and read back beside it | `AnnotationSidecar` (`src/domain/clip/AnnotationSidecar.ts`); the file itself in `src/infra/annotation-sidecar.ts` |
+| **drawn** / **carried** | the two ways a clip's annotations can leave: **drawn** into the picture, for a file to watch, or **carried** in a sidecar, for a file to work on and bring back. Drawing them in *and* carrying them would put each of them in the picture twice over | `AnnotationExport` (`src/domain/clip/ExportPlan.ts`); *Export ▾ → WebM for editing* |
+
+The steps, and what each one is:
+
+1. **Export for editing** — *Export ▾ → WebM for editing* in the app, or `export_clip`
+   with `annotations: "carried"`. The file holds the cuts applied, joined, and the
+   picture **alone**: the annotations are carried, not drawn.
+2. **The sidecar is written beside it** — the clip's annotations as the *file* holds them:
+   each stretch moved into the file's own time, since the cuts are applied there, with the
+   length they are fractions of. A picture an image annotation draws travels in it too,
+   because a picture is bytes where an arrow is numbers.
+3. **The file is worked on.** The sidecar is not touched: it belongs to the file, and the
+   file keeps its name — that is how it is found again.
+4. **Import** — the app's **Import** (choose the video and the `.json` together, since a
+   page cannot look in a folder), or `import_take` with the video's path, which reads the
+   sidecar beside it. The take is appended, holding its own length and sound, exactly as a
+   press of Record appends one.
+5. **The annotations come back** — as annotations **of their own**, over the stretch the
+   file was given: fractions of the file, placed where the file landed. Their own, because
+   the clip may still hold the ones that left — appending is what an import does — and
+   those stay over the take they were drawn on.
+
+What it does not do: the cuts were applied, so none of them come back, and the app's undo
+reaches its own edits and not across a round trip. A sidecar is taken only while the
+lengths agree — a file of quite another length is another clip, where the same fractions
+would point at other moments.
+
 ## Publishing to Bluesky
 
 Publishing takes the export one step further: the kept clip is written as **MP4**,
@@ -206,9 +242,14 @@ A person asks their agent to start a session. An **MCP server** — a local prog
 the person's **agent harness** starts — opens a browser on DemoClip, on a profile
 of its own, and offers the agent the app's own **operations** as tools: cut,
 annotate, place the picture on the clipboard, change a property, undo, seek, record a
-take, export, publish. The agent
+take, import a video file as a take, export, publish. The agent
 calls them, and the person watches each change land in that window and can take
 any of it back with the app's own undo.
+
+One operation names a file on the machine rather than a moment of the clip, and only
+one: **import**. It is the app's own Import, which a person reaches with a picker, so
+what an agent may bring in is what the app's own rule would have taken from a hand —
+and the file is the only **path** any tool is given.
 
 What the agent may drive is the **automation surface**: one object the app
 publishes **only when the page asks for it**, holding the app's own operations and
@@ -224,7 +265,7 @@ page offers and what it says cannot disagree, because one flag decides both.
 |---|---|---|
 | **agent session** | one sitting driven by an agent: the browser the server opened, the clip in it, and the person watching. One at a time | `mcp/src/server.ts`; the browser `mcp/src/browser.ts` |
 | **agent harness** | the chat that starts the server and offers its tools to the model — OpenCode first | the person's own tool, configured with `mcp` |
-| **operation** | one thing an agent may do, named in the app's vocabulary: cut, annotate, place the clipboard's picture, set a property, remove, undo, seek, record a take, export, publish | `AgentSurface` (`src/ui/agent/surface.ts`) |
+| **operation** | one thing an agent may do, named in the app's vocabulary: cut, annotate, place the clipboard's picture, set a property, remove, undo, seek, record a take, import a file as a take, export, publish — the import being the one the server hands to the app's own file input rather than calls on the surface, because a page cannot read a disk | `AgentSurface` (`src/ui/agent/surface.ts`); the delivery in `mcp/src/import.ts` |
 | **clipboard picture** | the picture the person put on their own clipboard, read by the server from the host's clipboard and placed as an image annotation. The one picture source an agent has for now — a file and a drag come later — and read in the server, not the page, because a browser gives a picture only to a focused window a hand has just touched | `mcp/src/clipboard.ts`; placed through `edit.annotate('image', …)` |
 | **automation surface** | what the app offers to be driven, deliberately bounded to its own operations. Published on the page only when the page asks (`?agent=1`); a page that did not ask carries nothing | `src/ui/agent/`, published by `src/main.ts` |
 | **agent badge** | the chip reading **Agent**, beside the status chip, worn only by a page that asked to be driven — the visible half of the same gate as the surface. Explained by its own tooltip: the help is for a person's first use, and this is not that | `#agent-chip` (`web/index.html`, `web/styles.css`), revealed by `src/main.ts` |

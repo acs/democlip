@@ -4,6 +4,7 @@ import { Clip, type ClipEvent } from './Clip.js';
 import { Span } from './Span.js';
 import { Take } from './Take.js';
 import { Arrow } from '../annotation/Arrow.js';
+import { AnnotationSet } from '../annotation/AnnotationSet.js';
 import type { Annotation } from '../annotation/Annotation.js';
 import type { TakeRepository } from './TakeRepository.js';
 
@@ -285,5 +286,48 @@ describe('Clip, annotations', () => {
     clip.addAnnotation(arrow('a', 0.1, 0.3));
     clip.clear();
     expect(clip.annotations.isEmpty).toBe(true);
+  });
+});
+
+describe('Clip, leaving as a file and coming back', () => {
+  it('writes its annotations as a file of the kept stretches holds them', () => {
+    const clip = clipOf(4, 4);                     // 8s
+    clip.addAnnotation(arrow('a', 0.25, 0.375));   // 2s-3s
+    clip.approve(Span.of(0, 0.125));               // 0s-1s gone, so the file holds 7s
+
+    const [written] = clip.annotationsAsExported();
+
+    // The arrow is one second into the file, which is seven long, and one second wide.
+    expect(clip.keptLength()).toBeCloseTo(7);
+    expect(written.s).toBeCloseTo(1 / 7);
+    expect(written.e).toBeCloseTo(2 / 7);
+    expect(written.kind).toBe('arrow');
+  });
+
+  it('writes nothing for an annotation the cuts took entirely', () => {
+    const clip = clipOf(4);
+    clip.addAnnotation(arrow('a', 0.25, 0.375));   // 1s-1.5s
+    clip.approve(Span.of(0.2, 0.4));               // ...and that stretch is gone
+
+    expect(clip.annotationsAsExported()).toEqual([]);
+  });
+
+  it('takes on the annotations a file carried, without that becoming the undo', () => {
+    const clip = clipOf(4);
+    clip.addAnnotation(arrow('a', 0.1, 0.2));
+
+    const taken = clip.carry(AnnotationSet.of([arrow('b', 0.5, 0.6)]));
+
+    expect(taken).toBe(1);
+    expect(clip.annotations.all.map(annotation => annotation.id)).toEqual(['a', 'b']);
+    expect(clip.canUndo()).toBe(false);            // a load, not an edit
+  });
+
+  it('takes on nothing for an id it already has', () => {
+    const clip = clipOf(4);
+    clip.addAnnotation(arrow('a', 0.1, 0.2));
+
+    expect(clip.carry(AnnotationSet.of([arrow('a', 0.5, 0.6)]))).toBe(0);
+    expect(clip.annotations.byId('a')?.span.s).toBeCloseTo(0.1);
   });
 });

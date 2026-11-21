@@ -16,7 +16,10 @@ not a new clip — and the app's own export already covers the common case.
 
 **Steps.** `export_clip`, then ffmpeg on the result: `loudnorm` for loudness,
 `-vf scale` to resize, `-c copy` to re-container without re-encoding. Nothing comes
-back into DemoClip — there is no file source, and adding one is a product decision.
+back: the file is the record, and the clip in the window is left as it was. When the
+result is meant to be worked on *in DemoClip* instead, that is a different recipe —
+[round-trip-through-ffmpeg](round-trip-through-ffmpeg.md) — which exports the picture
+alone with the annotations beside it, and brings them back.
 
 **Caveats.** Not run yet; the commands are standard, but the numbers (`loudnorm`'s
 targets, the scale) are a judgement per clip. Because nothing returns to the app, the

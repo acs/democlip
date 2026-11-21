@@ -20,7 +20,7 @@ export interface SavedDownload {
 }
 
 export interface DownloadWatcher {
-  readonly saved: Promise<SavedDownload>;
+  readonly saved: Promise<readonly SavedDownload[]>;
   /** Nothing is coming: stop waiting. */
   stop(): void;
 }
@@ -30,24 +30,46 @@ export function downloadsDirectory(): string {
   return process.env.DEMOCLIP_DOWNLOAD_DIR || join(homedir(), 'Downloads');
 }
 
-export function watchDownload(page: Page, into: string, timeoutMs = 180_000): DownloadWatcher {
+/**
+ * Take the next `count` downloads the browser makes, and say where they were saved.
+ *
+ * One for a file to watch; two for a clip that leaves with its annotations written beside
+ * it — the video first, its sidecar second. The watcher goes up *before* the export is
+ * asked for: a browser download is an event, and one that has already fired is not one you
+ * can wait for.
+ */
+export function watchDownloads(page: Page, into: string, count = 1, timeoutMs = 180_000): DownloadWatcher {
+  const files: SavedDownload[] = [];
   let timer: ReturnType<typeof setTimeout> | undefined;
   let listener: ((download: Download) => void) | undefined;
   let detach = (): void => {};
 
-  const saved = new Promise<SavedDownload>((resolve, reject) => {
+  const saved = new Promise<readonly SavedDownload[]>((resolve, reject) => {
     detach = () => {
       if (timer) clearTimeout(timer);
       if (listener) page.off('download', listener);
     };
     listener = (download: Download) => {
-      detach();
-      void save(download, into).then(resolve, reject);
+      void save(download, into).then(
+        file => {
+          files.push(file);
+          if (files.length >= count) {
+            detach();
+            resolve(files);
+          }
+        },
+        error => {
+          detach();
+          reject(error);
+        },
+      );
     };
     page.on('download', listener);
     timer = setTimeout(() => {
       detach();
-      reject(new Error('the export produced no file'));
+      reject(new Error(count === 1
+        ? 'the export produced no file'
+        : `the export produced ${files.length} of the ${count} files it writes`));
     }, timeoutMs);
   });
 

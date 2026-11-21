@@ -215,7 +215,7 @@
         <div class="help-num">1</div>
         <div class="help-step-body">
           <div class="help-step-title">Choose what to record</div>
-          <div class="help-step-desc">Nothing is captured until you turn a source on. Press <strong>Screen</strong> to pick a screen, window or tab (full screen is preselected) and tick <strong>Share tab audio</strong> / <strong>Share system audio</strong> for sound — the browser decides whether that box is there and whether it starts ticked, so it is worth a look every time. The source buttons on the left are toggles: turning the screen off lets the share go, and nothing reaches for the screen again until you turn it back on, while <strong>Webcam</strong> gives a camera bubble over the screen — or the whole picture on its own when the screen is off. If the device has more than one camera, a picker beside <strong>Webcam</strong> chooses which one. <strong>Mic</strong> adds your voice: its level shows in the little meter and is mixed with the tab audio. Webcam and Mic are greyed out if there is no device, and all three are out while a take is being set up or records. Press <strong>Import</strong> to bring a <strong>WebM or MP4</strong> file already on your machine in as a take — it joins the clip to cut, annotate and export like a recording, and nothing is re-recorded. <strong>New</strong> begins a new clip.</div>
+          <div class="help-step-desc">Nothing is captured until you turn a source on. Press <strong>Screen</strong> to pick a screen, window or tab (full screen is preselected) and tick <strong>Share tab audio</strong> / <strong>Share system audio</strong> for sound — the browser decides whether that box is there and whether it starts ticked, so it is worth a look every time. The source buttons on the left are toggles: turning the screen off lets the share go, and nothing reaches for the screen again until you turn it back on, while <strong>Webcam</strong> gives a camera bubble over the screen — or the whole picture on its own when the screen is off. If the device has more than one camera, a picker beside <strong>Webcam</strong> chooses which one. <strong>Mic</strong> adds your voice: its level shows in the little meter and is mixed with the tab audio. Webcam and Mic are greyed out if there is no device, and all three are out while a take is being set up or records. Press <strong>Import</strong> to bring a <strong>WebM or MP4</strong> file already on your machine in as a take — it joins the clip to cut, annotate and export like a recording, and nothing is re-recorded. A clip that left through <strong>Export ▾ → WebM for editing</strong> left a <strong>.json</strong> beside the video: choose both at once and the annotations come back with the clip. <strong>New</strong> begins a new clip.</div>
         </div>
       </div>
       <div class="help-step">
@@ -276,6 +276,7 @@
 <div class="export-menu" id="exp-menu" role="menu" aria-label="Export">
   <button class="export-item" id="exp-webm" role="menuitem"><span class="export-item-name">WebM file</span><span class="export-item-note">Small and sharp — PRs, chat</span></button>
   <button class="export-item" id="exp-mp4" role="menuitem"><span class="export-item-name">MP4 file</span><span class="export-item-note">Plays anywhere — QuickTime</span></button>
+  <button class="export-item" id="exp-editing" role="menuitem"><span class="export-item-name">WebM for editing</span><span class="export-item-note">Picture alone — annotations travel beside it</span></button>
   <button class="export-item" id="exp-bluesky" role="menuitem"><span class="export-item-name">Bluesky</span><span class="export-item-note">Publish as a video post</span></button>
 </div>
 
@@ -318,7 +319,7 @@
 <video id="sv" style="display:none" autoplay muted playsinline></video>
 <video id="rv" style="display:none" playsinline preload="auto"></video>
 <video id="wcv" style="display:none" autoplay muted playsinline></video>
-<input id="file-input" type="file" accept="video/webm,video/mp4" hidden>
+<input id="file-input" type="file" accept="video/webm,video/mp4,application/json" multiple hidden>
 
 <script type="module" src="/main.ts"></script>
 </body>

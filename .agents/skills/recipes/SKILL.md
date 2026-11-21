@@ -37,6 +37,7 @@ have to read the rest.
 |---|---|---|---|
 | [take-the-silence-out](take-the-silence-out.md) | Drops the quiet stretches, non-destructively | `export_clip`, `describe_clip`, `cut` | ffmpeg |
 | [polish-the-exported-file](polish-the-exported-file.md) | Loudness, size and container, one way | `export_clip` | ffmpeg |
+| [round-trip-through-ffmpeg](round-trip-through-ffmpeg.md) | Improves the picture outside and carries on editing, annotations whole | `export_clip`, `import_take` | ffmpeg |
 | [point-at-what-matters](point-at-what-matters.md) | A tutorial's arrows and labels, by time | `describe_clip`, `annotate`, `set_property`, `remove_annotation` | — |
 | [turn-a-recording-into-a-post](turn-a-recording-into-a-post.md) | Cuts a recording down and publishes it | `describe_clip`, `cut`, `seek`, `publish_clip` | — |
 
