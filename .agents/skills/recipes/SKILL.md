@@ -1,21 +1,32 @@
 ---
 name: Recipes
-description: Workflows DemoClip deliberately does not implement, and how an agent composes them from the app's own operations plus tools outside it — the rules for a recipe, and an index of the ones written down. Read this first, then only the recipe you need.
+description: Workflows worth writing down — how an agent reaches a goal DemoClip does not cover end to end, the bar a recipe must clear, and an index of the ones written down. Read this first, then only the recipe you need.
 ---
 
 # Recipes
 
 DemoClip's job is to record, cut, annotate, export and publish — and to stay small
-enough to keep doing it. Everything else is a **recipe**: a workflow the app cannot
-finish on its own, composed from the app's own operations, driven through the MCP
-server, with tools outside the app (ffmpeg, a shell, whatever the machine has) filling
-in the capability the app deliberately lacks.
+enough to keep doing it. Everything else is a **recipe**: a workflow someone asks for,
+composed from the app's own operations, driven through the MCP server, and — when the
+app cannot finish it — tools outside it (ffmpeg, a shell, whatever the machine has).
 
-**A recipe needs something outside — that is the whole definition.** It is what the
-frontmatter's `outside` records. A workflow the app covers end to end is not a recipe
-but usage: the tool descriptions are its documentation, and this skill does not repeat
-them. A recipe exists because the app chose not to do the thing, so each one is the
-record of a feature that was not built.
+A recipe is the alternative to a feature. Adding a scenario to the app would mean
+another surface to build, test and carry; composing it costs a file and leaves the app
+as it was. So the first question about a scenario is not "how should the app do this?"
+but "which operations already compose it?".
+
+## The bar
+
+Write a recipe down when it is a **goal someone asks for** and the sequence is **not
+obvious from the tool list**. The tools name operations, not outcomes: nothing in `cut`
+and `publish_clip` says which stretches to drop before posting, or that a mark placed
+before a re-record may miss. That is the knowledge a recipe carries, and the reason to
+write one down.
+
+Two things follow. A recipe that only restates a single tool earns nothing and is left
+out. And `outside` is an **attribute, not a test**: it says what the recipe drags in —
+ffmpeg, nothing, a shell — so a reader knows the cost before opening it. A recipe with
+`outside: none` is as much a recipe as one that needs ffmpeg.
 
 ## The recipes
 
@@ -26,6 +37,8 @@ have to read the rest.
 |---|---|---|---|
 | [take-the-silence-out](take-the-silence-out.md) | Drops the quiet stretches, non-destructively | `export_clip`, `describe_clip`, `cut` | ffmpeg |
 | [polish-the-exported-file](polish-the-exported-file.md) | Loudness, size and container, one way | `export_clip` | ffmpeg |
+| [point-at-what-matters](point-at-what-matters.md) | A tutorial's arrows and labels, by time | `describe_clip`, `annotate`, `set_property`, `remove_annotation` | — |
+| [turn-a-recording-into-a-post](turn-a-recording-into-a-post.md) | Cuts a recording down and publishes it | `describe_clip`, `cut`, `seek`, `publish_clip` | — |
 
 ## The seam: analyse outside, edit inside
 
@@ -60,15 +73,16 @@ name: take-the-silence-out                  # the file's name, without .md
 description: Drop the quiet stretches from a clip, keeping the edit
   non-destructive — ffmpeg finds them, the app's cut takes them out.
 tools: [export_clip, describe_clip, cut]    # the app's operations, as the tools name them
-outside: ffmpeg                             # what it needs outside the app; never none
+outside: ffmpeg                             # what it drags in; none when it is all app
 proved: run                                 # run once it has been run end to end, else reasoned
 ---
 ```
 
-Then, in the body: **Goal**, **Why not a feature** (a recipe always has one), **Steps**
-and **Caveats**. Name each operation as the tools name it. Say the level of proof in
-the verification skill's terms, and record the number that mattered — the duration, the
-ratio, the byte size. A recipe that was reasoned about but never run says so.
+Then, in the body: **Goal**, **Steps**, **Caveats**, and **Why not a feature** when the
+recipe exists because the app lacks the capability. Name each operation as the tools
+name it. Say the level of proof in the verification skill's terms, and record the
+number that mattered — the duration, the ratio, the byte size. A recipe that was
+reasoned about but never run says so.
 
 Add the file to the index above in the same change, or it will not be found.
 
