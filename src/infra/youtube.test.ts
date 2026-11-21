@@ -115,6 +115,14 @@ describe('HttpYouTubeService.uploadVideo', () => {
       .rejects.toThrow(/allowance for this app is used up/);
   });
 
+  it('says when the YouTube Data API is not enabled for the project', async () => {
+    // Google's own words for a project that has not enabled the API name the project and a
+    // console URL; the app says what to do instead.
+    const { fetchFn } = scripted([problem(403, 'accessNotConfigured')]);
+    await expect(service(fetchFn).uploadVideo(video, details, () => {}))
+      .rejects.toThrow(/YouTube Data API is not enabled/);
+  });
+
   it('says when the account has no YouTube channel to upload to', async () => {
     // The destination's own answer to "may this account upload at all"; the app must not
     // guess it from a channel read it is not authorized to make.

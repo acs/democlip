@@ -127,6 +127,7 @@ at the moment it is true.
 | the consent closed, or `access_denied` | the account was not allowed; the person is told why |
 | `401` | the sign-in has expired; sign in again |
 | `youtubeSignupRequired` (401) | the Google account has no YouTube channel yet; create one, then try the upload again |
+| `accessNotConfigured` (403) | the YouTube Data API is not enabled for the app's Google project; enable it, then try again |
 | `quotaExceeded` / `uploadLimitExceeded` | the allowance for uploads is used up; try again later |
 | `invalidTitle` / `invalidDescription` | the title or the description is not one YouTube takes |
 | `forbiddenPrivacySetting` | the visibility is not one YouTube takes |

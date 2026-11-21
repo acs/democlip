@@ -428,6 +428,8 @@ async function reasonFor(response: Response, fallback: string): Promise<string> 
     case 'quotaExceeded':
     case 'uploadLimitExceeded':
       return 'the upload allowance for this app is used up — try again later';
+    case 'accessNotConfigured':
+      return 'the YouTube Data API is not enabled for this app\u2019s Google project — enable it, then try again';
     case 'youtubeSignupRequired':
       return 'this Google account has no YouTube channel yet — create one on YouTube, then try again';
     case 'invalidTitle':
