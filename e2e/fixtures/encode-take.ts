@@ -8,7 +8,7 @@
 // Nothing here is application code. It is test support, and it lives outside src/.
 
 import {
-  AudioBufferSource, BufferTarget, CanvasSource, Output, Quality, WebMOutputFormat,
+  AudioBufferSource, BufferTarget, CanvasSource, Mp4OutputFormat, Output, Quality, WebMOutputFormat,
 } from 'mediabunny';
 
 export interface FixtureSpec {
@@ -18,6 +18,8 @@ export interface FixtureSpec {
   fps?: number;
   hasAudio?: boolean;
   pattern?: string;
+  /** Which container to write: WebM (the app's own recording) or MP4 (an import). */
+  container?: 'webm' | 'mp4';
 }
 
 export interface EncodedTake {
@@ -55,6 +57,7 @@ async function tone(seconds: number, sampleRate = 48_000): Promise<AudioBuffer> 
 export async function encodeTake(spec: FixtureSpec): Promise<EncodedTake> {
   const fps = spec.fps ?? 30;
   const frames = Math.max(1, Math.round(spec.seconds * fps));
+  const mp4 = spec.container === 'mp4';
 
   const canvas = document.createElement('canvas');
   canvas.width = spec.width;
@@ -62,11 +65,14 @@ export async function encodeTake(spec: FixtureSpec): Promise<EncodedTake> {
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('fixture: no 2D context');
 
-  const output = new Output({ format: new WebMOutputFormat(), target: new BufferTarget() });
-  const video = new CanvasSource(canvas, { codec: 'vp8', quality: new Quality({ bitrate: BITRATE }) });
+  const output = new Output({
+    format: mp4 ? new Mp4OutputFormat() : new WebMOutputFormat(),
+    target: new BufferTarget(),
+  });
+  const video = new CanvasSource(canvas, { codec: mp4 ? 'avc' : 'vp8', quality: new Quality({ bitrate: BITRATE }) });
   output.addVideoTrack(video);
   const sound = spec.hasAudio
-    ? new AudioBufferSource({ codec: 'opus', quality: new Quality({ bitrate: 128_000 }) })
+    ? new AudioBufferSource({ codec: mp4 ? 'aac' : 'opus', quality: new Quality({ bitrate: 128_000 }) })
     : null;
   if (sound) output.addAudioTrack(sound);
 
@@ -81,7 +87,7 @@ export async function encodeTake(spec: FixtureSpec): Promise<EncodedTake> {
   const buffer = output.target.buffer;
   if (!buffer) throw new Error('fixture: the encoder wrote no file');
   return {
-    blob: new Blob([buffer], { type: 'video/webm' }),
+    blob: new Blob([buffer], { type: mp4 ? 'video/mp4' : 'video/webm' }),
     seconds: spec.seconds,
     shape: `${spec.width}×${spec.height}`,
     hasAudio: !!spec.hasAudio,

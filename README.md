@@ -37,6 +37,7 @@ The headline capabilities; the **[full list is in FEATURES.md](FEATURES.md)**.
 - **Timeline cutting** — click twice to select a section, cut it out with the scissors, and undo it
 - **Annotations** — point at a detail with an arrow, put a picture over a chosen stretch, or write a line of text on it, shown in playback and in the exported file, and kept with the clip
 - **Add more takes** — Record again appends to the end of the clip, with a fade and a dissolve across the join
+- **Import a video file** — bring a WebM or MP4 in as a take to cut, annotate and export alongside your recordings; nothing is re-recorded
 - **Export to a file, encoded offline** — WebM for size or MP4 for compatibility, written in the browser by WebCodecs about 10× faster than the clip, with a duration and cue points any player can scrub
 - **Nothing leaves your machine** — recording, playback and export are entirely local; publishing to Bluesky is optional, and only happens when you ask
 - **Light / dark and installable** — CSS-variable theming, and a PWA that installs as a desktop app
@@ -48,7 +49,7 @@ The headline capabilities; the **[full list is in FEATURES.md](FEATURES.md)**.
 1. Open [DemoClip](https://acs.github.io/democlip/) — nothing is captured yet. Press **Screen** to pick a screen, window or tab (full screen is preselected; tick **Share tab audio** / **Share system audio** for sound), or **Webcam** to record the camera on its own — **Mic** adds the microphone to either. Pressing a source again lets it go, and **New** goes back to the picker if you forget the audio
 2. The red box over the preview shows what will be recorded — the whole screen by default; drag to record only a region, and click to go back to the full screen
 3. Press the red button to record — it starts at once; press it again to stop
-4. Press Record again to add another take to the end of the clip — the timeline then holds every take, and the cuts you already made are kept
+4. Press Record again to add another take to the end of the clip — the timeline then holds every take, and the cuts you already made are kept — or press **Import** to bring a **WebM or MP4** file already on your machine in as a take beside them
 5. The timeline holds a playback control and an audio track
 6. Play it back (**P** or ▶), or click anywhere on the timeline to bring the playhead there — it holds the frame rather than playing, so you can find the exact moment. To cut a section out, click where it starts and where it ends, then press the **scissors** (or click inside the shaded section): it leaves the timeline and the rest closes up. To point at a detail instead, press the **arrow** on the section and drag across the preview — the arrow is shown over that stretch in playback and in the export — or press the **image** beside it to put a picture over the stretch (choose a file, paste one, or drop one on the preview) and drag its corners to resize it (hold **Shift** to stretch it freely), or press the **text** button to type a line, which grows and shrinks as you drag a corner. Click an annotation on the picture to move, aim or resize it, click its mark on the timeline lane to jump to it, copy it and paste a new one at the playhead (**⌘/Ctrl+C**, **⌘/Ctrl+V**), or delete it by pressing **Delete** with it picked, or by tapping the **×** that appears on it (and the **copy** beside it puts another like it on the picture). The **undo** on the section drops the selection, and the **undo** in the header brings back whatever you last did, a cut or an annotation. Marks and the selected section can be dragged to reposition them, with the frame under them following, or nudged a frame at a time with **←** / **→** (hold **Shift** for a second)
 7. Press **Export ▾** and pick where the clip goes — a **WebM** file (small and sharp), an **MP4** file (plays anywhere), or **Bluesky** to publish it as a video post. The encode runs offline, over the clip with its cuts taken out, roughly ten times faster than the clip, and the timeline counts down how much is left to write
@@ -121,6 +122,7 @@ democlip/
 │   │   ├── Clip.ts         # The aggregate: the takes, the cuts, the annotations
 │   │   ├── Take.ts         # One press of Record: id, blob, url, duration
 │   │   ├── TakeRepository.ts # The port the clip takes its takes from
+│   │   ├── TakeFile.ts     # Which files may be imported: WebM or MP4, what the export reads back
 │   │   ├── Span.ts         # A half-open range: [s, e)
 │   │   ├── SpanSet.ts      # Ranges that cannot overlap — what was cut
 │   │   ├── TimelineMap.ts  # Recording time ↔ kept time, in one place
@@ -146,6 +148,7 @@ democlip/
 │   │   └── BlueskyPost.ts  # the app.bsky.feed.post record carrying the video embed
 │   ├── application/      # Use cases: the thinking, without a browser
 │   │   ├── record-take.ts  # RecordTake: sources → mix → record → stop → take added
+│   │   ├── import-take.ts  # ImportTake: a video file read, then appended as a take
 │   │   ├── export-video.ts # ExportVideo: the plan encoded, or a refusal
 │   │   ├── keep-clip.ts    # KeepClip: the clip written down as it changes
 │   │   ├── restore-clip.ts # RestoreClip: a kept clip loaded without announcing a change
@@ -159,6 +162,7 @@ democlip/
 │   │   ├── compositor.ts   # The crop canvas and the audio mixer, behind CompositorPort
 │   │   ├── take-recorder.ts # MediaRecorder, behind TakeRecorderPort
 │   │   ├── take-probe.ts   # Measuring a take's duration, behind TakeProbePort
+│   │   ├── take-file.ts    # Reading a chosen file's length and sound, behind TakeFilePort
 │   │   ├── offline-encoder.ts # Decode, draw, encode, mux — behind EncoderPort
 │   │   ├── takes.ts        # InMemoryTakeRepository — owns the takes' object URLs
 │   │   ├── clip-store.ts   # IndexedDB — where a clip outlives the page, behind KeptClipPort
@@ -179,6 +183,7 @@ democlip/
 │       │   ├── mic.ts        # Microphone capture + level meter (Meter)
 │       │   ├── source-buttons.ts # The source buttons' enabled state
 │       │   ├── record-flow.ts # The source buttons, Record and the preview — a sequence over RecordTake
+│       │   ├── import-flow.ts # The Import button — a sequence over ImportTake
 │       │   └── live-timeline.ts # The strip and the levels while a take records (LiveTimeline)
 │       ├── clip/           # The clip and its review
 │       │   ├── clip.ts       # The joined clip, played as one timeline (Player)

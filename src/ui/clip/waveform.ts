@@ -61,9 +61,11 @@ export class Waveform {
       // the clip, so the strip lines up with the whole of it.
       const out: number[] = [];
       for (const take of takes) {
-        const audio = await ctx.decodeAudioData(await take.blob.arrayBuffer());
         const bars = Math.max(1, Math.round(BUCKETS * (take.duration / total)));
-        out.push(...computePeaks(audio, bars));
+        // A take with no sound of its own — an imported video — is bars of
+        // silence, not a reason to drop the whole waveform.
+        const audio = await decodeOrNull(ctx, take.blob);
+        out.push(...(audio ? computePeaks(audio, bars) : new Float32Array(bars)));
       }
       if (!out.length) { this.clear(); return; }
       this.peaks = Float32Array.from(out);
@@ -114,6 +116,15 @@ export class Waveform {
 }
 
 export const waveform = new Waveform();
+
+/** A take's sound, or null when it has none (an imported video, a silent file). */
+async function decodeOrNull(ctx: BaseAudioContext, blob: Blob): Promise<AudioBuffer | null> {
+  try {
+    return await ctx.decodeAudioData(await blob.arrayBuffer());
+  } catch {
+    return null;
+  }
+}
 
 function computePeaks(audio: AudioBuffer, buckets: number): Float32Array {
   const out = new Float32Array(buckets);

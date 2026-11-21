@@ -19,13 +19,22 @@ beside it.
 | word | what it is | in the code |
 |---|---|---|
 | **session** | one sitting of the app: the clip and the audio flag. Over at **New**, when the clip is exported, or when the share ends | `Session` (`src/domain/session/Session.ts`, `session.end()`) |
-| **take** | **one press of Record**: one MediaRecorder WebM with its own length, played in order with the others | `Take` — id, blob, url, duration |
+| **take** | one arrival of a recording: a press of Record (one MediaRecorder WebM), or an **import**ed file. It has its own length, and the takes are played in order | `Take` — id, blob, url, duration |
 | **clip** | all the takes, in order, plus what was cut out. What everything else asks what to show and what to export | `Clip`, the aggregate |
 | **take repository** | where a clip's takes come from, and the only owner of their object URLs | `TakeRepository` (the port), `InMemoryTakeRepository` |
 | **record source** | what a take is made of: the shared **screen**, the **webcam** and the **microphone**. Three independent toggles, **all off at start** — nothing is captured until one is pressed. A take needs a picture: the screen, or the webcam when the screen is off. With the screen off nothing reaches for a share | the source buttons (`#screen-btn`, `#webcam-btn`, `#mic-btn`) |
 | **join** | the seam where one take ends and the next begins — where the sound fades and the picture dissolves | `FADE_S`, `DISSOLVE_S` |
+| **import** | bringing a **take file** in as a take: its own bytes become a take, appended to the clip, and nothing is re-recorded | `ImportTake` (the use case), `ui/recording/import-flow.ts` (the flow) |
+| **take file** | a video file chosen to import — WebM or MP4, the two containers the export reads back, which is why they are the only two taken | `TakeFile` (`src/domain/clip/TakeFile.ts`) |
 
 A clip's length is **the sum of its takes** — derived, never a field beside them.
+
+A take arrives one of two ways: a press of Record (**record source**) makes one, or a
+file is **imported**. An import is not a fourth source — a source is a live device, and
+all the sources are off at start, while a file is already a finished recording — so
+**Import** is an action beside the clip's other actions rather than a toggle in the
+source row. Where it has arrived from, a take is a take: an imported one is cut,
+annotated, exported, published and kept exactly as a recorded one is.
 
 ## Keeping the recording
 
@@ -264,6 +273,9 @@ browser pane, so it stays a **real session** the user runs.
 - **harness** — the throwaway `verify-*.html` page, written for one change and
   deleted before the commit. A **check** in the suite replaces it, and the word
   goes with the file.
+- **file source**, **video source** — an imported file is not a **record source**:
+  a source is a live device, and a file is already a finished recording. A file is
+  **imported** and becomes a **take**.
 
 ## Keeping it alive
 

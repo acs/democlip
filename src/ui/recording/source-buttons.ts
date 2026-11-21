@@ -2,12 +2,13 @@
 //
 // A button is out when its device is not there, and all three are out while a
 // take is being set up or runs — switching a source mid-take would change what
-// is being recorded. The device facts arrive from webcam.ts and mic.ts, which
-// watch for devices coming and going; the lock comes from the phase, and the
-// Screen button is lit while the screen is a source. Keeping it here is what
-// stops the two fighting over the same attribute — and what makes the opening
-// state come from the model rather than from the markup, so the Screen button
-// is out on first access.
+// is being recorded. The Import button, which is an action rather than a source
+// but which also writes a take into the clip, is held out over the same span.
+// The device facts arrive from webcam.ts and mic.ts, which watch for devices
+// coming and going; the lock comes from the phase, and the Screen button is lit
+// while the screen is a source. Keeping it here is what stops the two fighting
+// over the same attribute — and what makes the opening state come from the model
+// rather than from the markup, so the Screen button is out on first access.
 
 import { currentPhase, onPhaseChange, type Phase } from '../../state.js';
 import { capture } from '../../infra/capture.js';
@@ -46,6 +47,9 @@ export function refreshSourceButtons(): void {
   el.webcamBtn.disabled = off || !sources.camera;
   el.camPickBtn.disabled = off;
   el.micBtn.disabled = off || !sources.mic;
+  // Import is not a source toggle but it writes a take into the clip, so it is
+  // held out of the way exactly while one is being set up or records.
+  el.fileBtn.disabled = off;
 }
 
 /** A camera was found (or went away). */

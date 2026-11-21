@@ -98,7 +98,7 @@
           <path d="M8 21h8M12 17v4"/>
         </svg>
       </div>
-      <span class="idle-hint">Turn on Screen or Webcam to record</span>
+      <span class="idle-hint">Turn on Screen or Webcam, or import a video file</span>
     </div>
 
     <div class="corner tl"></div><div class="corner tr"></div>
@@ -154,6 +154,10 @@
     </div>
 
     <div class="ctrl-actions">
+      <button class="act-btn import" id="file-btn" type="button" aria-label="Import" title="Import a video file (WebM or MP4)">
+        <svg class="act-ico" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M10 9.5l5 2.5-5 2.5z"/></svg>
+        <span class="act-lbl">Import</span>
+      </button>
       <button class="act-btn" id="btn-new" style="display:none">New</button>
       <button class="act-btn export" id="btn-exp" style="display:none" aria-haspopup="menu" aria-expanded="false" aria-label="Export">
         <svg class="act-ico" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
@@ -208,7 +212,7 @@
         <div class="help-num">1</div>
         <div class="help-step-body">
           <div class="help-step-title">Choose what to record</div>
-          <div class="help-step-desc">Nothing is captured until you turn a source on. Press <strong>Screen</strong> to pick a screen, window or tab (full screen is preselected) and tick <strong>Share tab audio</strong> / <strong>Share system audio</strong> for sound — the browser decides whether that box is there and whether it starts ticked, so it is worth a look every time. The source buttons on the left are toggles: turning the screen off lets the share go, and nothing reaches for the screen again until you turn it back on, while <strong>Webcam</strong> gives a camera bubble over the screen — or the whole picture on its own when the screen is off. If the device has more than one camera, a picker beside <strong>Webcam</strong> chooses which one. <strong>Mic</strong> adds your voice: its level shows in the little meter and is mixed with the tab audio. Webcam and Mic are greyed out if there is no device, and all three are out while a take is being set up or records. <strong>New</strong> begins a new clip.</div>
+          <div class="help-step-desc">Nothing is captured until you turn a source on. Press <strong>Screen</strong> to pick a screen, window or tab (full screen is preselected) and tick <strong>Share tab audio</strong> / <strong>Share system audio</strong> for sound — the browser decides whether that box is there and whether it starts ticked, so it is worth a look every time. The source buttons on the left are toggles: turning the screen off lets the share go, and nothing reaches for the screen again until you turn it back on, while <strong>Webcam</strong> gives a camera bubble over the screen — or the whole picture on its own when the screen is off. If the device has more than one camera, a picker beside <strong>Webcam</strong> chooses which one. <strong>Mic</strong> adds your voice: its level shows in the little meter and is mixed with the tab audio. Webcam and Mic are greyed out if there is no device, and all three are out while a take is being set up or records. Press <strong>Import</strong> to bring a <strong>WebM or MP4</strong> file already on your machine in as a take — it joins the clip to cut, annotate and export like a recording, and nothing is re-recorded. <strong>New</strong> begins a new clip.</div>
         </div>
       </div>
       <div class="help-step">
@@ -311,6 +315,7 @@
 <video id="sv" style="display:none" autoplay muted playsinline></video>
 <video id="rv" style="display:none" playsinline preload="auto"></video>
 <video id="wcv" style="display:none" autoplay muted playsinline></video>
+<input id="file-input" type="file" accept="video/webm,video/mp4" hidden>
 
 <script type="module" src="/main.ts"></script>
 </body>

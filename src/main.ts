@@ -33,6 +33,7 @@ import { initWebcam, toggleWebcam, switchWebcam } from './ui/recording/webcam.js
 import { cameraMenu } from './ui/recording/camera-menu.js';
 import { initMic, toggleMic } from './ui/recording/mic.js';
 import { initSourceButtons, setScreenAvailable } from './ui/recording/source-buttons.js';
+import { chooseFile, onFileChosen } from './ui/recording/import-flow.js';
 import { exportMenu } from './ui/exporting/export-menu.js';
 import { publishDialog } from './ui/publishing/publish-dialog.js';
 import { blueskyAccount, publishClip } from './ui/publishing/publish-flow.js';
@@ -136,6 +137,11 @@ function init(): void {
   cameraMenu.init(async deviceId => { await switchWebcam(deviceId); syncSources(); });
   initWebcam();
   capture.onEnded(onScreenEnded);
+
+  // A video file already on the machine, brought in as a take beside the
+  // recordings: the picker is the browser's, and the choice comes back as change.
+  el.fileBtn.addEventListener('click', chooseFile);
+  el.fileInput.addEventListener('change', () => void onFileChosen());
 
   // Microphone toggle + level meter.
   el.micBtn.addEventListener('click', async () => { await toggleMic(); syncSources(); });
