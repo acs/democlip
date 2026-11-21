@@ -13,8 +13,8 @@
 import { el } from '../dom.js';
 import type { ExportTarget } from '../../infra/export-target.js';
 
-/** Where the Export menu sends a clip: a file in one of two containers, or Bluesky. */
-export type ExportChoice = ExportTarget | 'bluesky';
+/** Where the Export menu sends a clip: a file in one of the two containers, a file to work on, or Bluesky. */
+export type ExportChoice = ExportTarget | 'editing' | 'bluesky';
 
 type Choose = (choice: ExportChoice) => void;
 
@@ -41,6 +41,7 @@ class ExportMenu {
     this.choose = choose;
     el.expWebm.addEventListener('click', () => this.pick('webm'));
     el.expMp4.addEventListener('click', () => this.pick('mp4'));
+    el.expEditing.addEventListener('click', () => this.pick('editing'));
     el.expBluesky.addEventListener('click', () => this.pick('bluesky'));
   }
 

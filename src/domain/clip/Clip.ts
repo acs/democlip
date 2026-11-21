@@ -199,6 +199,45 @@ export class Clip {
     return this.notes.shownAt(source, this.timeline());
   }
 
+  /**
+   * The annotations as a file of the kept stretches holds them: every stretch moved
+   * into the file's own time, since the cuts are applied there, and any annotation the
+   * cuts took entirely dropped. This is what an export writes beside a file rather than
+   * into it, so that what comes back is what the file holds.
+   */
+  annotationsAsExported(): StoredAnnotation[] {
+    const total = this.total();
+    const kept = this.keptLength();
+    if (!(total > 0) || !(kept > 0)) return [];
+    const map = this.timeline();
+    const out: StoredAnnotation[] = [];
+    for (const annotation of this.notes.all) {
+      const stored = annotation.stored();
+      const s = map.keptOf(stored.s * total) / kept;
+      const e = map.keptOf(stored.e * total) / kept;
+      if (!(e - s > 0.0005)) continue;               // the cuts took the whole of it
+      out.push({ ...stored, s, e });
+    }
+    return out;
+  }
+
+  /**
+   * The annotations a file carried, taken on as the clip's own — what an import does with
+   * a **sidecar**. A load rather than an edit, like `restore`: the flow that brings a file
+   * in opens the review itself, and there is nothing of the clip's to take back, because
+   * they arrived with the take. Answers how many were taken on.
+   */
+  carry(annotations: AnnotationSet): number {
+    let taken = 0;
+    for (const annotation of annotations.all) {
+      const was = this.notes.count;
+      this.notes = this.notes.add(annotation);
+      if (this.notes.count > was) taken++;
+    }
+    this.lastChange = null;
+    return taken;
+  }
+
   // ── Undo ───────────────────────────────────────────────────────────────────
 
   /** Is there a change to take back? */

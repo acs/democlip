@@ -33,10 +33,15 @@ export interface ExportStep {
   joinAt: number | null;                 // where the join to dissolve from begins, or null
 }
 
+/** Where an export puts a clip's annotations: drawn into the picture, or carried beside it. */
+export type AnnotationExport = 'drawn' | 'carried';
+
 /** What an export needs that is not the clip: whether there is sound, how a join fades. */
 export interface ExportSettings {
   audio: boolean;
   fadeSeconds: number;
+  /** Drawn in for a file to watch, carried in a **sidecar** for a file to work on. */
+  annotations: AnnotationExport;
 }
 
 export class ExportPlan {

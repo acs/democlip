@@ -61,7 +61,7 @@ export async function publishClip(
     const api = await bluesky();
     const service = await api.blueskyService();
     const { uri } = await publishToBluesky(session.clip, {
-      export: { audio: session.audio, fadeSeconds: FADE_S },
+      export: { audio: session.audio, fadeSeconds: FADE_S, annotations: 'drawn' },
       text,
       alt,
       aspectRatio: AspectRatio.of(el.cv.width || 1280, el.cv.height || 720).reduced(),

@@ -35,6 +35,8 @@ export interface SessionOptions {
   readonly downloadsDir?: string;
   /** The browser to launch, when the person keeps it somewhere unusual. */
   readonly executablePath?: string;
+  /** Extra browser flags, for a check that needs hardware the machine has not got. */
+  readonly args?: readonly string[];
 }
 
 export async function openSession(options: SessionOptions = {}): Promise<Session> {
@@ -51,6 +53,7 @@ export async function openSession(options: SessionOptions = {}): Promise<Session
     opened = await openApp(app.origin, {
       headless: options.headless,
       executablePath: options.executablePath,
+      args: options.args,
     });
     const version = await readSurfaceVersion(opened.page);
     const mismatch = versionMismatchReason(version, serverVersion());

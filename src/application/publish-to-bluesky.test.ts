@@ -70,7 +70,7 @@ class FakeService implements BlueskyService {
 
 const at = new Date('2026-01-02T03:04:05.000Z');
 const ratio = AspectRatio.of(1280, 720);
-const settings = { export: { audio: true, fadeSeconds: 0.08 }, text: 'A demo', alt: 'a screen recording', langs: ['en'], aspectRatio: ratio };
+const settings = { export: { audio: true, fadeSeconds: 0.08, annotations: 'drawn' as const }, text: 'A demo', alt: 'a screen recording', langs: ['en'], aspectRatio: ratio };
 const deps = (service: BlueskyService, onProgress?: (p: PublicationProgress) => void, over: Partial<PublicationDeps> = {}): PublicationDeps => ({
   service,
   encode: async () => new Blob(['mp4'], { type: 'video/mp4' }),

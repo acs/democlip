@@ -9,6 +9,7 @@
 // (src/ui/clip/fade.ts) and is handed over, so the domain stays free of the view.
 
 import type { Clip } from '../domain/clip/Clip.js';
+import { AnnotationSet } from '../domain/annotation/AnnotationSet.js';
 import { ExportPlan, type ExportSettings } from '../domain/clip/ExportPlan.js';
 
 // A hair off the end: a WebM's last frame is not decodable right at the end, so
@@ -23,5 +24,8 @@ export function planExport(clip: Clip, settings: ExportSettings): ExportPlan | n
   const segments = clip.segmentsIn(0, to);
   if (!segments.length) return null;
 
-  return ExportPlan.of(segments, clip.takes.all(), to, clip.timeline(), settings, clip.annotations);
+  // A file that carries its annotations draws none of them: they travel beside it, and
+  // drawing them in as well would put each of them in the picture twice over.
+  const annotations = settings.annotations === 'carried' ? AnnotationSet.EMPTY : clip.annotations;
+  return ExportPlan.of(segments, clip.takes.all(), to, clip.timeline(), settings, annotations);
 }

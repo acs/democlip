@@ -94,7 +94,8 @@ export interface AgentSurface {
   };
   /** What leaves the browser: the file, and the post. */
   readonly out: {
-    export(target: string): Promise<Result<{ filename: string }>>;
+    /** `annotations` is `drawn` (in the picture) or `carried` (beside it, for a sidecar). */
+    export(target: string, annotations?: string): Promise<Result<{ filename: string }>>;
     publish(options: { text?: string; alt?: string }): Promise<Result<{ url: string }>>;
   };
 }

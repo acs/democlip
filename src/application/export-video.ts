@@ -5,6 +5,7 @@
 
 import type { Clip } from '../domain/clip/Clip.js';
 import type { ExportTarget } from '../domain/export/ExportTarget.js';
+import type { AnnotationExport } from '../domain/clip/ExportPlan.js';
 import type { EncoderPort, ExportStats, FrameRendererPort } from './ports/EncoderPort.js';
 import type { DownloadPort } from './ports/DownloadPort.js';
 import type { ClockPort } from './ports/ClockPort.js';
@@ -25,17 +26,27 @@ export interface ExportDeps {
   readonly fadeSeconds: number;
 }
 
+/** How one export is asked for: where its annotations go, and how it reports progress. */
+export interface ExportRunOptions {
+  readonly annotations?: AnnotationExport;
+  readonly onProgress?: (source: number) => void;
+}
+
 export class ExportVideo {
   constructor(private readonly deps: ExportDeps) {}
 
-  async run(target: ExportTarget, onProgress?: (source: number) => void): Promise<ExportOutcome> {
+  async run(target: ExportTarget, options: ExportRunOptions = {}): Promise<ExportOutcome> {
     if (!this.deps.encoder.available()) {
       return { kind: 'refused', reason: 'This browser cannot write video — it needs Chrome 94+ or Firefox 130+.' };
     }
-    const plan = planExport(this.deps.clip, { audio: this.deps.audio(), fadeSeconds: this.deps.fadeSeconds });
+    const plan = planExport(this.deps.clip, {
+      audio: this.deps.audio(),
+      fadeSeconds: this.deps.fadeSeconds,
+      annotations: options.annotations ?? 'drawn',
+    });
     if (!plan) return { kind: 'refused', reason: 'There is nothing to export.' };
     try {
-      const encoded = await this.deps.encoder.encode(plan, this.deps.renderer, { target, onProgress });
+      const encoded = await this.deps.encoder.encode(plan, this.deps.renderer, { target, onProgress: options.onProgress });
       // The name is chosen here, so it is answered here: a caller that wants to tell
       // someone where the file went should not have to guess what it was called.
       const filename = `democlip-${this.deps.clock.now()}.${target}`;

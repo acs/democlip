@@ -71,6 +71,9 @@ function init(): void {
   el.btnExp.addEventListener('click', () => exportMenu.toggle());
   exportMenu.init(choice => {
     if (choice === 'bluesky') void publishDialog.open();
+    // "For editing" is a WebM whose annotations are not drawn in but written beside it,
+    // so a clip that goes out to be worked on can come back with them.
+    else if (choice === 'editing') void doExport('webm', 'carried');
     else void doExport(choice);
   });
   publishDialog.init();
@@ -187,7 +190,7 @@ function init(): void {
       edit: createEditor(session.clip, makeAnnotation),
       view: createViewer(playback, currentPhase, () => session.clip.total()),
       out: createOut(
-        { export: target => doExport(target) },
+        { export: (target, annotations) => doExport(target, annotations) },
         {
           account: async () => {
             const account = await blueskyAccount();

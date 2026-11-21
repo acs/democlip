@@ -21,23 +21,35 @@ Named in the app's vocabulary, so a person reading the chat recognises what was 
 | `seek` | `seconds` | where the playhead now is |
 | `start_take` / `stop_take` | — | the take that started / the take that arrived, with its length |
 | `turn_source_on` / `turn_source_off` | `source`: `screen`, `webcam` or `microphone` | the sources that are on |
-| `export_clip` | `target`: `webm` or `mp4` | the path the file was written to, and its size |
+| `import_take` | `path`: a video file on this machine, as an absolute path | the take that arrived, with its index and its length — and the annotations beside it, when a **sidecar** was written there |
+| `export_clip` | `target`: `webm` or `mp4`; `annotations` (optional): `drawn` or `carried` | the path the file was written to, its size, and — when carried — the path of the sidecar written beside it |
 | `publish_clip` | `text`, `alt` | the post's address |
 
 **Guarantees**
 
-- **one tool per operation**, and no tool that evaluates code, scripts the page, reads or
-  writes a file, or reaches the network except through `publish_clip` (spec FR-015).
-  **`add_image` reads the person's clipboard**, which is not a file and takes no path:
-  it is the one picture source an agent has for now, read in the server because a
-  browser gives a picture only to a focused window a hand has just touched;
-- **`turn_source_on` for `screen` is the server's own press**, not a call into the page:
-  it is delivered as a real input event so the browser grants the activation the share
-  picker needs (D2). Every other tool goes through the surface;
+- **one tool per operation**, and no tool that evaluates code, scripts the page, or reaches
+  the network except through `publish_clip` (spec FR-015). Two tools reach outside the
+  clip, and both are named here so the next one has to be argued for rather than slipped
+  in. **`add_image` reads the person's clipboard**, which is not a file and takes no path:
+  it is the one picture source an agent has for now, read in the server because a browser
+  gives a picture only to a focused window a hand has just touched; and **`import_take`
+  names a path** — the only path any tool takes. The *browser* reads that file, not the
+  server, and what becomes of it is the app's own rule, so what an agent may bring in is
+  exactly what a person could have chosen in the app's own Import;
+- **the two the server delivers itself are the browser's own doors**: `turn_source_on` for
+  `screen` is a real press on the app's Screen button, so the browser grants the
+  activation the share picker needs (D2), and `import_take` fills the app's own file
+  input, because a page cannot read a disk. Every other tool goes through the surface;
 - **an app-level no is a result, not an error**: the tool answers with the reason, so the
   agent can read it and try something else (FR-008);
 - **`export_clip` answers with a path** the person can reach, taken from the browser's own
-  download (D5);
+  download (D5) — or, with `annotations: "carried"`, with **two**: the video, and the
+  **sidecar** written beside it holding the annotations as data. The app names it, the
+  video's own name with `.democlip.json` where the video's extension was
+  (`democlip-1755021992.webm` beside `democlip-1755021992.democlip.json`), and
+  `import_take` finds it by looking there. That name is the whole of the convention the two
+  halves of a release share, and the round trip in `mcp/src/integration.test.ts` is what
+  notices if they stop agreeing on it;
 - **`publish_clip` needs the person's sign-in** in that window; without it, it answers with
   the reason and nothing leaves the machine (FR-013, FR-014).
 

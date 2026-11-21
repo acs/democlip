@@ -27,6 +27,7 @@ export const el = {
   expMenu:   byId<HTMLElement>('exp-menu'),
   expWebm:   byId<HTMLButtonElement>('exp-webm'),
   expMp4:    byId<HTMLButtonElement>('exp-mp4'),
+  expEditing: byId<HTMLButtonElement>('exp-editing'),
   expBluesky: byId<HTMLButtonElement>('exp-bluesky'),
   pubBd:     byId<HTMLElement>('pub-bd'),
   pubClose:  byId<HTMLButtonElement>('pub-close'),

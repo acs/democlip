@@ -6,8 +6,10 @@
 import { currentPhase, setPhase } from '../../state.js';
 import { session } from '../../session.js';
 import { ExportVideo } from '../../application/export-video.js';
+import { AnnotationSidecar } from '../../domain/clip/AnnotationSidecar.js';
 import { encoder } from '../../infra/offline-encoder.js';
 import { downloadPort } from '../../infra/download.js';
+import { sidecarNameFor, writeSidecar } from '../../infra/annotation-sidecar.js';
 import { clock } from '../../infra/clock.js';
 import { images } from '../../infra/images.js';
 import { frameRenderer } from './frame-renderer.js';
@@ -17,6 +19,7 @@ import { playback } from '../clip/playback.js';
 import { keep } from '../keeping/keep.js';
 import { FADE_S } from '../clip/fade.js';
 import type { ExportTarget } from '../../domain/export/ExportTarget.js';
+import type { AnnotationExport } from '../../domain/clip/ExportPlan.js';
 
 const exportVideo = new ExportVideo({
   clip: session.clip,
@@ -37,7 +40,7 @@ export type ExportResult =
   | { kind: 'refused'; reason: string }
   | { kind: 'failed'; reason: string };
 
-export async function doExport(target: ExportTarget = 'webm'): Promise<ExportResult> {
+export async function doExport(target: ExportTarget = 'webm', annotations: AnnotationExport = 'drawn'): Promise<ExportResult> {
   if (currentPhase() !== 'review') {
     return { kind: 'refused', reason: 'the clip is not in the review, so there is nothing to export' };
   }
@@ -52,11 +55,20 @@ export async function doExport(target: ExportTarget = 'webm'): Promise<ExportRes
   // The export draws frames in a tight loop, so it waits once, here, for every picture
   // an image annotation needs to be decoded. A picture not decoded draws nothing.
   await images.ready();
-  const outcome = await exportVideo.run(target, source => encodingAt(source, session.clip.total()));
+  const outcome = await exportVideo.run(target, {
+    annotations,
+    onProgress: source => encodingAt(source, session.clip.total()),
+  });
   if (outcome.kind === 'exported') {
+    // A file that carries its annotations does not hold them: they are written beside it,
+    // under the file's own name, so a clip that goes out to be worked on comes back with
+    // them. Written before the clip is forgotten, since the pictures travel too.
+    if (annotations === 'carried') await saveSidecar(outcome.filename);
     keep.forget();
     setStatus('ready', 'Export complete');
-    toast(`Saved ${Math.round(outcome.stats.bytes / 1024)} KB`);
+    toast(annotations === 'carried'
+      ? `Saved ${Math.round(outcome.stats.bytes / 1024)} KB, and the annotations beside it`
+      : `Saved ${Math.round(outcome.stats.bytes / 1024)} KB`);
   } else if (outcome.kind === 'refused') {
     setStatus('ready', 'Cannot encode here');
     toast(outcome.reason);
@@ -76,4 +88,22 @@ export async function doExport(target: ExportTarget = 'webm'): Promise<ExportRes
     return { kind: 'exported', bytes: outcome.stats.bytes, filename: outcome.filename };
   }
   return { kind: outcome.kind, reason: outcome.reason };
+}
+
+/**
+ * Write the clip's annotations beside the file the export just wrote, under the file's own
+ * name and `.json`.
+ *
+ * It is a second download, because the browser is the only way the app has to put a file
+ * on the machine — and a browser may ask the person to allow more than one. Every picture
+ * the clip kept goes with it: a picture is bytes, not numbers, and the store they live in
+ * is let go with the clip.
+ */
+async function saveSidecar(forFile: string): Promise<void> {
+  const sidecar = AnnotationSidecar.of(
+    session.clip.keptLength(),
+    session.clip.annotationsAsExported(),
+    await images.all(),
+  );
+  downloadPort.save(new Blob([await writeSidecar(sidecar)], { type: 'application/json' }), sidecarNameFor(forFile));
 }

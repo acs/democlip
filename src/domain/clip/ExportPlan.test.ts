@@ -24,7 +24,7 @@ const parts = () => ({
   ],
 });
 
-const planOf = (settings = { audio: false, fadeSeconds: 0.08 }): ExportPlan =>
+const planOf = (settings = { audio: false, fadeSeconds: 0.08, annotations: 'drawn' as const }): ExportPlan =>
   ExportPlan.of(parts().segments, takes, 10, parts().map, settings);
 
 const arrow = (id: string, s: number, e: number): Arrow => {
@@ -68,7 +68,7 @@ describe('ExportPlan', () => {
     const { map } = parts();
     const plan = ExportPlan.of(
       [{ takeIndex: 1, from: 5, to: 8 }], takes, 8, map,
-      { audio: false, fadeSeconds: 0.08 });
+      { audio: false, fadeSeconds: 0.08, annotations: 'drawn' });
     expect(plan.pieces.map(p => p.at)).toEqual([0]);
     expect(plan.total).toBeCloseTo(3);
     expect(plan.steps[0].joinAt).toBeNull();          // one take only: nothing to join to
@@ -77,7 +77,7 @@ describe('ExportPlan', () => {
   });
 
   it('carries what an export needs that is not the clip', () => {
-    const plan = planOf({ audio: true, fadeSeconds: 0.5 });
+    const plan = planOf({ audio: true, fadeSeconds: 0.5, annotations: 'drawn' });
     expect(plan.audio).toBe(true);
     expect(plan.fadeSeconds).toBe(0.5);
   });
@@ -87,7 +87,7 @@ describe('ExportPlan', () => {
     // Added in the reverse of their draw order, so the order asserted below is the
     // set's (by where each stretch starts) and not the order they were added in.
     const annotations = AnnotationSet.EMPTY.add(arrow('b', 0.5, 0.9)).add(arrow('a', 0.1, 0.6));
-    const plan = ExportPlan.of(segments, takes, 10, map, { audio: false, fadeSeconds: 0.08 }, annotations);
+    const plan = ExportPlan.of(segments, takes, 10, map, { audio: false, fadeSeconds: 0.08, annotations: 'drawn' }, annotations);
 
     expect(plan.annotationsAt(5.5).map(a => a.id)).toEqual(['a', 'b']);   // 5s-6s: both
     expect(plan.annotationsAt(3.5)).toEqual([]);                          // inside the cut
