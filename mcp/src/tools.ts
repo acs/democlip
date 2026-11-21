@@ -276,16 +276,25 @@ const exportClip: Tool = {
   },
 };
 
-/** Post the clip, from the person's own account. */
+/** Publish the clip: a post on Bluesky, or a video on the person's own YouTube channel. */
 const publishClip: Tool = {
   name: 'publish_clip',
   description:
-    'Post the clip to Bluesky, from the account the person signed in with in this window. Needs a sign-in: with nobody signed in it is refused with a reason and nothing leaves the machine. `text` is the post\u2019s words and `alt` describes the video.',
+    'Publish the clip, from the account the person signed in with in this window. `destination` is "bluesky" (the default) for a video post, or "youtube" for a video on their own channel. For Bluesky, `text` is the post\u2019s words and `alt` describes the video. For YouTube, `title` names the video (the app names it when left out) and `visibility` is "private" (the default), "unlisted" or "public". Needs a sign-in: with nobody signed in it is refused with a reason and nothing leaves the machine.',
   inputSchema: objectSchema({
-    text: { type: 'string', description: 'The post\u2019s words' },
-    alt: { type: 'string', description: 'A description of the video, for readers who cannot see it' },
+    destination: { type: 'string', enum: ['bluesky', 'youtube'], description: 'Where the clip goes; bluesky when not said' },
+    text: { type: 'string', description: 'The post\u2019s words (Bluesky)' },
+    alt: { type: 'string', description: 'A description of the video, for readers who cannot see it (Bluesky)' },
+    title: { type: 'string', description: 'The video\u2019s title (YouTube)' },
+    visibility: { type: 'string', enum: ['private', 'unlisted', 'public'], description: 'Who may see the video (YouTube); private when not said' },
   }),
-  run: (session, args) => callSurface(session, 'out.publish', { text: args.text, alt: args.alt }),
+  run: (session, args) => callSurface(session, 'out.publish', {
+    destination: args.destination,
+    text: args.text,
+    alt: args.alt,
+    title: args.title,
+    visibility: args.visibility,
+  }),
 };
 
 /** Every tool the server offers, in the order a reader should meet them. */

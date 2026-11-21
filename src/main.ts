@@ -36,6 +36,8 @@ import { initSourceButtons, setScreenAvailable } from './ui/recording/source-but
 import { chooseFile, onFileChosen } from './ui/recording/import-flow.js';
 import { exportMenu } from './ui/exporting/export-menu.js';
 import { publishDialog } from './ui/publishing/publish-dialog.js';
+import { youtubeDialog } from './ui/publishing/youtube-dialog.js';
+import { youTubeAccount, uploadClip } from './ui/publishing/youtube-flow.js';
 import { blueskyAccount, publishClip } from './ui/publishing/publish-flow.js';
 import { keep } from './ui/keeping/keep.js';
 import { resumeClip } from './ui/keeping/resume-flow.js';
@@ -71,12 +73,14 @@ function init(): void {
   el.btnExp.addEventListener('click', () => exportMenu.toggle());
   exportMenu.init(choice => {
     if (choice === 'bluesky') void publishDialog.open();
+    else if (choice === 'youtube') void youtubeDialog.open();
     // "For editing" is a WebM whose annotations are not drawn in but written beside it,
     // so a clip that goes out to be worked on can come back with them.
     else if (choice === 'editing') void doExport('webm', 'carried');
     else void doExport(choice);
   });
   publishDialog.init();
+  youtubeDialog.init();
   el.playBtn.addEventListener('click', () => playback.toggle());
   initPlaybackKeys();   // P plays and pauses, as the button does
 
@@ -197,6 +201,13 @@ function init(): void {
             return account ? { handle: account.handle } : null;
           },
           publish: (text, alt, handlers) => publishClip(text, alt, handlers),
+        },
+        {
+          account: async () => {
+            const account = await youTubeAccount();
+            return account ? { channel: account.channel ?? 'the signed-in Google account' } : null;
+          },
+          upload: (settings, handlers) => uploadClip(settings, handlers),
         },
       ),
     });
