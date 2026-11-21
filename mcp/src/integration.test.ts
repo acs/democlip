@@ -110,6 +110,10 @@ describe('the server, end to end', () => {
       await handleToolCall(options(), 'export_clip', { target: 'webm', annotations: 'carried' }),
     );
     expect(exported.ok).toBe(true);
+    // Each path is the file it says it is: two downloads arrive in whatever order the
+    // browser delivers them, so the tool tells them apart by their names.
+    expect(exported.path).toMatch(/\.webm$/);
+    expect(exported.annotations).toMatch(/\.democlip\.json$/);
     expect(existsSync(exported.path)).toBe(true);
     expect(existsSync(exported.annotations ?? '')).toBe(true);
 

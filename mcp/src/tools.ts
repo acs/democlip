@@ -250,7 +250,7 @@ const exportClip: Tool = {
       };
     }
     // A file that carries its annotations is written with a sidecar beside it: two
-    // downloads, the video first — and the watcher goes up before the export is asked for.
+    // downloads, and the watcher goes up before the export is asked for.
     const watcher = watchDownloads(session.page, session.downloadsDir, annotations === 'carried' ? 2 : 1);
     const outcome = await callSurface<{ ok: boolean; filename?: string; reason?: string }>(
       session, 'out.export', target, annotations,
@@ -259,7 +259,13 @@ const exportClip: Tool = {
       watcher.stop();
       return outcome;
     }
-    const [video, sidecar] = await watcher.saved;
+    // Which of the two is which is read from their names, not from the order they arrived
+    // in: a browser delivers the two download events as they go, and the sidecar has come
+    // back before the video it belongs to. It is named for the video it was written with —
+    // `.democlip.json` in place of the video's extension — so its name is what says so.
+    const saved = await watcher.saved;
+    const sidecar = saved.find(file => file.path.endsWith('.democlip.json'));
+    const video = saved.find(file => file !== sidecar) ?? saved[0];
     return {
       ok: true,
       path: video.path,
