@@ -34,9 +34,11 @@ export function downloadsDirectory(): string {
  * Take the next `count` downloads the browser makes, and say where they were saved.
  *
  * One for a file to watch; two for a clip that leaves with its annotations written beside
- * it — the video first, its sidecar second. The watcher goes up *before* the export is
- * asked for: a browser download is an event, and one that has already fired is not one you
- * can wait for.
+ * it. **The order is the browser's business** — two downloads are two events, and they do
+ * not necessarily arrive in the order the page wrote them — so a caller with two must tell
+ * them apart by their names rather than by where they sit in this list. The watcher goes up
+ * *before* the export is asked for: a browser download is an event, and one that has already
+ * fired is not one you can wait for.
  */
 export function watchDownloads(page: Page, into: string, count = 1, timeoutMs = 180_000): DownloadWatcher {
   const files: SavedDownload[] = [];

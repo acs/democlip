@@ -23,8 +23,8 @@ async function drawAnArrow(page: Page): Promise<void> {
   });
 }
 
-/** Export for editing, and keep the two files the browser writes. */
-async function exportForEditing(page: Page, into: string): Promise<string[]> {
+/** Export for editing, and keep the two files the browser writes — told apart by name. */
+async function exportForEditing(page: Page, into: string): Promise<{ video: string; sidecar: string }> {
   const taken: Download[] = [];
   page.on('download', download => taken.push(download));
 
@@ -32,13 +32,19 @@ async function exportForEditing(page: Page, into: string): Promise<string[]> {
   await page.locator('#exp-editing').click();
 
   await expect.poll(() => taken.length, { timeout: 30_000 }).toBe(2);
-  const paths: string[] = [];
-  for (const [at, download] of taken.entries()) {
-    const path = join(into, `${at}-${download.suggestedFilename()}`);
+  // The two arrive in whatever order the browser delivers them, so their names decide:
+  // the sidecar is named for the video, with `.democlip.json` where its extension was.
+  let video = '';
+  let sidecar = '';
+  for (const download of taken) {
+    const name = download.suggestedFilename();
+    const path = join(into, name);
     await download.saveAs(path);
-    paths.push(path);
+    if (name.endsWith('.democlip.json')) sidecar = path;
+    else video = path;
   }
-  return paths;
+  if (!video || !sidecar) throw new Error(`the export wrote ${taken.map(d => d.suggestedFilename()).join(', ')}`);
+  return { video, sidecar };
 }
 
 test('a clip exported for editing comes back with its annotations', async ({ page }) => {
@@ -53,14 +59,12 @@ test('a clip exported for editing comes back with its annotations', async ({ pag
     await expect(page.locator('#tl-annots > *')).toHaveCount(1);
 
     // Out: the picture alone, and the annotations written beside it.
-    const files = await exportForEditing(page, work);
-    expect(files[0]).toMatch(/\.webm$/);
-    expect(files[1]).toMatch(/\.democlip\.json$/);
+    const { video, sidecar } = await exportForEditing(page, work);
 
     // In: the video and the sidecar, chosen together as a person would.
     const chooser = page.waitForEvent('filechooser');
     await page.locator('#file-btn').click();
-    await (await chooser).setFiles(files);
+    await (await chooser).setFiles([video, sidecar]);
 
     // The take is in the clip — it is the clip's own four seconds plus the file — and the
     // annotations are back: the one that left, over the take it was drawn on, and the
