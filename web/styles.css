@@ -320,29 +320,25 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 .act-btn.export{background:rgba(59,127,255,.12);color:var(--blue);border-color:rgba(59,127,255,.28);}
 .act-btn.export:not(:disabled):hover{background:rgba(59,127,255,.22);border-color:rgba(59,127,255,.45);}
 
-/* Import always carries its icon: the mark and the word together on a wide window,
-   so which way a file comes in is legible before it is read. The word is dropped for
-   the mark alone on a phone or a tablet — a wider span than the bar's own breakpoint
-   (700px) below, because a tablet in landscape is 1024px and the word is the first
-   thing to go there. */
-.act-btn.import{display:inline-flex;align-items:center;gap:8px;}
-.import .act-ico{display:block;}
+/* Import and Export are a pair — a file coming in as a take, the clip going out to a
+   file — so each carries its mark at every width: the mark beside the word on a wide
+   window, the mark alone on a phone or a tablet, where the word is the first thing to
+   go. The icon-only span runs to 1024px rather than the bar's own 700px breakpoint
+   below, because a tablet in landscape is 1024 wide. */
+.act-btn.import, .act-btn.export{display:inline-flex;align-items:center;gap:8px;}
+.import .act-ico, .export .act-ico{display:block;}
 
 @media (max-width:1024px){
-  .act-btn.import{gap:0;padding:6px 8px;}
-  .import .act-lbl{display:none;}
+  .act-btn.import, .act-btn.export{gap:0;padding:6px 8px;}
+  .import .act-lbl, .export .act-lbl{display:none;}
 }
-
-/* The icon Export carries when its word will not fit — a narrow window, below. On a
-   wide one the word is the button. */
-.act-ico{display:none;}
 
 /* A narrow window has no room for three columns, and the record button is the one
    thing that must not move: one row, the source words dropped for their icons, and
-   the pulsing rings capped so the bar is not mostly decoration. Export's word goes
-   too, for a download. New keeps its word, because no icon says "start over" without
-   also saying "add", and a plus there would be a lie. A source this browser cannot
-   have at all is out of the row rather than disabled in it. */
+   the pulsing rings capped so the bar is not mostly decoration. Import's and Export's
+   words have already gone, above, for their marks. New keeps its word, because no icon
+   says "start over" without also saying "add", and a plus there would be a lie. A
+   source this browser cannot have at all is out of the row rather than disabled in it. */
 @media (max-width:700px){
   /* The badge is not carried to a narrow window. The header already overflows one
      without it — see the note beside .agent-chip — and the flag it answers to only
@@ -363,9 +359,6 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
   .ring-3{display:none;}
   .ctrl-actions{gap:5px;}
   .act-btn{padding:6px 8px;font-size:10px;}
-  .act-btn.export{display:inline-flex;align-items:center;padding:6px 8px;}
-  .export .act-lbl{display:none;}
-  .export .act-ico{display:block;}
 }
 
 /* The Export menu — a small popover under the Export button. It lives at the
