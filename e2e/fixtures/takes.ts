@@ -50,3 +50,34 @@ export async function makeTakes(page: Page, ...specs: FixtureSpec[]): Promise<Fi
     return metas;
   }, { specs, url });
 }
+
+/** A real video file, as bytes, to hand to a file input — as a person would. */
+export interface FixtureFile {
+  name: string;
+  mimeType: string;
+  buffer: Buffer;
+}
+
+/**
+ * Build a decodable video file in the page and bring its bytes back, so a check can
+ * hand it to an `<input type="file">`. The page encodes it (WebCodecs and a canvas are
+ * browser APIs) and returns it as base64; the file itself is the check's.
+ */
+export async function makeFile(
+  page: Page,
+  options: FixtureSpec & { name: string; mimeType: string },
+): Promise<FixtureFile> {
+  const { name, mimeType, ...spec } = options;
+  const url = pageModule('e2e/fixtures/encode-take.ts');
+  const base64 = await page.evaluate(async ({ spec, url }) => {
+    const mod = await import(/* @vite-ignore */ url);
+    const take = await mod.encodeTake(spec);
+    return await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result).split(',')[1] ?? '');
+      reader.onerror = () => reject(reader.error);
+      reader.readAsDataURL(take.blob);
+    });
+  }, { spec, url });
+  return { name, mimeType, buffer: Buffer.from(base64, 'base64') };
+}

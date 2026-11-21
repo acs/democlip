@@ -70,6 +70,8 @@ export const el = {
   screenBtn: byId<HTMLButtonElement>('screen-btn'),
   webcamBtn: byId<HTMLButtonElement>('webcam-btn'),
   camPickBtn: byId<HTMLButtonElement>('cam-pick-btn'),
+  fileBtn:   byId<HTMLButtonElement>('file-btn'),
+  fileInput: byId<HTMLInputElement>('file-input'),
   camMenu:   byId<HTMLElement>('cam-menu'),
   propMenu:  byId<HTMLElement>('prop-menu'),
   textEntry: byId<HTMLElement>('text-entry'),

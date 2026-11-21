@@ -5,7 +5,7 @@
 // module imports no view.
 
 import {
-  AudioBufferSource, BufferSource, BufferTarget, CanvasSource, Input, Mp4OutputFormat, Output,
+  AudioBufferSource, BufferSource, BufferTarget, CanvasSource, Input, MP4, Mp4OutputFormat, Output,
   Quality, VideoSampleSink, WEBM, WebMOutputFormat,
 } from 'mediabunny';
 import type { ExportPlan } from '../domain/clip/ExportPlan.js';
@@ -68,7 +68,9 @@ export class EncoderAdapter implements EncoderPort {
 
       const input = new Input({
         source: new BufferSource(await takes[step.takeIndex].blob.arrayBuffer()),
-        formats: [WEBM],
+        // A recorded take is a WebM; an imported one may be an MP4. Both are read
+        // by the same decoder, so both are offered and the container decides.
+        formats: [WEBM, MP4],
       });
       try {
         const track = await input.getPrimaryVideoTrack();
@@ -141,14 +143,17 @@ async function pickVideoCodec(
 async function renderAudio(plan: ExportPlan): Promise<AudioBuffer | null> {
   if (!plan.audio) return null;
   const context = new OfflineAudioContext(2, Math.max(1, Math.ceil(plan.total * SAMPLE_RATE)), SAMPLE_RATE);
-  const decoded = new Map<number, AudioBuffer>();
+  const decoded = new Map<number, AudioBuffer | null>();
   for (let i = 0; i < plan.pieces.length; i++) {
     const piece = plan.pieces[i];
     let buffer = decoded.get(piece.takeIndex);
-    if (!buffer) {
-      buffer = await context.decodeAudioData(await plan.takes[piece.takeIndex].blob.arrayBuffer());
+    if (buffer === undefined) {
+      buffer = await decodeOrNull(context, plan.takes[piece.takeIndex].blob);
       decoded.set(piece.takeIndex, buffer);
     }
+    // A take with no sound of its own — an imported video — is silence over its
+    // stretch, not a reason to fail the whole export.
+    if (!buffer) continue;
     const source = context.createBufferSource();
     source.buffer = buffer;
     const gain = context.createGain();
@@ -166,6 +171,15 @@ async function renderAudio(plan: ExportPlan): Promise<AudioBuffer | null> {
     source.start(piece.at, piece.from - plan.startOf(piece.takeIndex), length);
   }
   return context.startRendering();
+}
+
+/** A take's sound, or null when it has none (an imported video, a silent file). */
+async function decodeOrNull(context: BaseAudioContext, blob: Blob): Promise<AudioBuffer | null> {
+  try {
+    return await context.decodeAudioData(await blob.arrayBuffer());
+  } catch {
+    return null;
+  }
 }
 
 export const encoder = new EncoderAdapter();
