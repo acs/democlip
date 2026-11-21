@@ -60,16 +60,21 @@ export async function publishClip(
   try {
     const api = await bluesky();
     const service = await api.blueskyService();
+    // The picture the review shows: the post's aspect ratio and the encoded video's own
+    // size are the same two numbers, read once, so the two cannot disagree.
+    const picture = { width: el.cv.width || 1280, height: el.cv.height || 720 };
     const { uri } = await publishToBluesky(session.clip, {
       export: { audio: session.audio, fadeSeconds: FADE_S, annotations: 'drawn' },
       text,
       alt,
-      aspectRatio: AspectRatio.of(el.cv.width || 1280, el.cv.height || 720).reduced(),
+      aspectRatio: AspectRatio.of(picture.width, picture.height).reduced(),
     }, {
       service,
       encode: async plan => {
         const encoded = await encoder.encode(plan, frameRenderer, {
           target: 'mp4',
+          width: picture.width,
+          height: picture.height,
           maxBytes: VIDEO_MAX_BYTES,
           onProgress: source => handlers.onProgress?.({
             stage: 'encoding',
