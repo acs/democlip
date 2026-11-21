@@ -105,16 +105,30 @@ Three things no check can do, and all three are a person's:
   - YouTube does **not** require the "made for kids" declaration on insert: the upload
     succeeded without one, so nothing had to be declared on the person's behalf. It stays
     unsent, because declaring it is a claim about their content.
-- **what the same run found out the hard way** — a read the scope does not authorize, turned
-  into a refusal: the channel first, then the video's status, which made a successful upload
-  look failed. Both are gone; `research.md` D4 has it.
+- **a real Google consent and a real upload to a real channel — run, and it worked.** The
+  session was run by the user: Google's consent, a clip uploaded to a real channel, and the
+  video plays there. It settled both open questions in the app's favour (the two bullets above)
+  and found the two defects the same run exposed.
+
+  What the same run found, the hard way: a read the scope does not authorize, turned into a
+  refusal — the channel first, then the video's status, which made a **successful** upload look
+  failed. Both reads are gone; `research.md` D4 has it.
+
+  What it has not yet said: whether the uploaded video holds exactly the cuts and annotations
+  the review showed (SC-002). That is the eye's, and it is worth one look at the video.
 
 ## 5. What cannot be checked here
 
-- **Google's consent and a real upload** — a check cannot hold someone's account or consent to
-  a scope; the suite proves everything *up to* the request and *from* the response.
-- **the video's pixels on YouTube** — the checks assert the renderers ran and the file was
-  written; what YouTube shows after transcoding is the real session's.
+- **Google's consent and a real upload** — **run, and it worked.** The user's session took a
+  real consent and uploaded a clip to a real channel, and the video plays there; a check cannot
+  hold someone's account, so the suite proves everything *up to* the request and *from* the
+  response, and this is what the rest looked like.
+- **that the uploaded video holds exactly the cuts and annotations the review showed** (SC-002)
+  — the checks assert the renderers ran and that the file was written; whether the picture on
+  YouTube is the picture that was watched is the eye's to say, and the real session's to
+  confirm.
+- **the video's pixels on YouTube** — what YouTube shows after transcoding is the real
+  session's, not a check's.
 - **the destination's allowance and processing** — real quota and real transcoding are the
   destination's to give and to take; the checks use a stood-in service, and the app cannot see
   the processing at all — it asks for the upload scope alone (`research.md` D4).
