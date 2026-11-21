@@ -29,6 +29,10 @@ const exportVideo = new ExportVideo({
   clock,
   audio: () => session.audio,
   fadeSeconds: FADE_S,
+  // The picture the review shows, which is the take's own size: the export canvas is
+  // this, and each frame is drawn to fill it. Without it the encoder falls back to
+  // 1280×720 and upscales a smaller take.
+  picture: () => ({ width: el.cv.width, height: el.cv.height }),
 });
 
 /**

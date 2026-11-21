@@ -9,10 +9,11 @@ import {
   Quality, VideoSampleSink, WEBM, WebMOutputFormat,
 } from 'mediabunny';
 import type { ExportPlan } from '../domain/clip/ExportPlan.js';
+import type { ExportTarget } from '../domain/export/ExportTarget.js';
 import type {
   EncodedVideo, EncoderPort, ExportStats, FrameRendererPort, EncodeOptions,
 } from '../application/ports/EncoderPort.js';
-import { specFor, videoBitrate } from './export-target.js';
+import { fitsBudget as budgetFits, specFor, videoBitrate } from './export-target.js';
 import type { VideoCodecChoice } from './export-target.js';
 
 const AUDIO_BITRATE = 128_000;
@@ -23,6 +24,18 @@ const REPORT_EVERY = 8;
 export class EncoderAdapter implements EncoderPort {
   available(): boolean {
     return typeof VideoEncoder === 'function' && typeof AudioEncoder === 'function';
+  }
+
+  fitsBudget(
+    target: ExportTarget,
+    seconds: number,
+    picture: { readonly width: number; readonly height: number },
+    maxBytes: number,
+  ): boolean {
+    // The same picture and the same bitrate the encode below will take, so the answer
+    // cannot disagree with what the file would come to.
+    const size = specFor(target).picture(picture.width, picture.height);
+    return budgetFits(size.width, size.height, { seconds, bytes: maxBytes });
   }
 
   async encode(plan: ExportPlan, renderer: FrameRendererPort, options: EncodeOptions): Promise<EncodedVideo> {
