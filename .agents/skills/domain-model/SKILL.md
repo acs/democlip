@@ -15,14 +15,18 @@ src/
                 TextAnnotation), AnnotationSet, AnnotationColour, the register
     capture/   CropRegion and SourceSet — the crop and the three source toggles
     export/    ExportTarget — the container an export writes
+    youtube/   the YouTube destination's rules: Visibility, VideoDetails,
+               UploadableVideo
     session/   Session — the sitting: the clip and the audio flag
   application/ the use cases that run in node, and the ports they own
     ports/     CapturePort, WebcamPort, MicrophonePort, TakeRecorderPort,
                CompositorPort, TakeProbePort, ClockPort, EncoderPort,
                DownloadPort, FrameRendererPort, KeptClipPort, ImageStorePort
+               (and, beside their use cases, bluesky-service.ts and
+               youtube-service.ts for the two destinations)
   infra/       the browser boundary: capture, compositor, recorder, probe, clock,
                encoder, codecs, download, takes (the object URLs), the clip store,
-               images (the picture store and its decoded cache), Bluesky
+               images (the picture store and its decoded cache), Bluesky, YouTube
   ui/          the DOM and the interaction: renders the model, owns no rules
     annotating/ the annotation plugin seam: the plugin registry, the plugin and the
                 canvas every kind is edited through, the properties inspector and the

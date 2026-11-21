@@ -8,7 +8,7 @@ Capture. Create. Share.
 
 DemoClip is a lightweight video studio that runs entirely in your browser. Record your screen, webcam or microphone — independently or in any combination — to create software demos, tutorials or personal video updates.
 
-Review your recordings, make quick cuts, point at what matters with an arrow or a picture, and publish directly to Bluesky. Or simply export your video to a file.
+Review your recordings, make quick cuts, point at what matters with an arrow or a picture, and publish directly to Bluesky or YouTube. Or simply export your video to a file.
 
 No installation. No recording server. Just open DemoClip and start creating.
 
@@ -40,7 +40,7 @@ The headline capabilities; the **[full list is in FEATURES.md](FEATURES.md)**.
 - **Import a video file** — bring a WebM or MP4 in as a take to cut, annotate and export alongside your recordings; nothing is re-recorded
 - **Export to a file, encoded offline** — WebM for size or MP4 for compatibility, written in the browser by WebCodecs about 10× faster than the clip, with a duration and cue points any player can scrub
 - **A clip that leaves and comes back** — **WebM for editing** writes the picture alone with its **annotations** beside it, so the video can be improved with anything you have and imported back with the annotations still yours to move
-- **Nothing leaves your machine** — recording, playback and export are entirely local; publishing to Bluesky is optional, and only happens when you ask
+- **Nothing leaves your machine** — recording, playback and export are entirely local; publishing to Bluesky or YouTube is optional, and only happens when you ask
 - **Light / dark and installable** — CSS-variable theming, and a PWA that installs as a desktop app
 
 ---
@@ -53,7 +53,7 @@ The headline capabilities; the **[full list is in FEATURES.md](FEATURES.md)**.
 4. Press Record again to add another take to the end of the clip — the timeline then holds every take, and the cuts you already made are kept — or press **Import** to bring a **WebM or MP4** file already on your machine in as a take beside them
 5. The timeline holds a playback control and an audio track
 6. Play it back (**P** or ▶), or click anywhere on the timeline to bring the playhead there — it holds the frame rather than playing, so you can find the exact moment. To cut a section out, click where it starts and where it ends, then press the **scissors** (or click inside the shaded section): it leaves the timeline and the rest closes up. To point at a detail instead, press the **arrow** on the section and drag across the preview — the arrow is shown over that stretch in playback and in the export — or press the **image** beside it to put a picture over the stretch (choose a file, paste one, or drop one on the preview) and drag its corners to resize it (hold **Shift** to stretch it freely), or press the **text** button to type a line, which grows and shrinks as you drag a corner. Click an annotation on the picture to move, aim or resize it, click its mark on the timeline lane to jump to it, copy it and paste a new one at the playhead (**⌘/Ctrl+C**, **⌘/Ctrl+V**), or delete it by pressing **Delete** with it picked, or by tapping the **×** that appears on it (and the **copy** beside it puts another like it on the picture). The **undo** on the section drops the selection, and the **undo** in the header brings back whatever you last did, a cut or an annotation. Marks and the selected section can be dragged to reposition them, with the frame under them following, or nudged a frame at a time with **←** / **→** (hold **Shift** for a second)
-7. Press **Export ▾** and pick where the clip goes — a **WebM** file (small and sharp), an **MP4** file (plays anywhere), or **Bluesky** to publish it as a video post. The encode runs offline, over the clip with its cuts taken out, roughly ten times faster than the clip, and the timeline counts down how much is left to write. **WebM for editing** is the one for a clip that is coming back: it writes the picture **alone**, with a `.json` **sidecar** beside it holding the annotations, and **Import** takes the video and the sidecar together, so the clip returns from whatever worked on it with its annotations whole
+7. Press **Export ▾** and pick where the clip goes — a **WebM** file (small and sharp), an **MP4** file (plays anywhere), **Bluesky** to publish it as a video post, or **YouTube** to upload it to your own channel. The encode runs offline, over the clip with its cuts taken out, roughly ten times faster than the clip, and the timeline counts down how much is left to write. **WebM for editing** is the one for a clip that is coming back: it writes the picture **alone**, with a `.json` **sidecar** beside it holding the annotations, and **Import** takes the video and the sidecar together, so the clip returns from whatever worked on it with its annotations whole
 
 ---
 
@@ -92,7 +92,7 @@ in the page, and the recording is never re-encoded. An export writes the same fi
 person would get, to your Downloads folder — and that file can come back in as a
 take, so a clip can leave, be worked on by whatever you have, and be picked up again,
 its annotations coming back with it when they were written beside the video.
-A publish goes from **your** Bluesky account, signed in in that window —
+A publish goes from **your** own Bluesky or YouTube account, signed in in that window —
 and a harness can deny that one tool while keeping the rest.
 
 The transport can't be bounded — a DevTools Protocol port can do anything to a page —
@@ -151,6 +151,10 @@ democlip/
 │   │   ├── AspectRatio.ts  # width:height, whole numbers, reducible to smallest terms
 │   │   ├── PublishableVideo.ts # the MP4 Bluesky takes, up to 300 MB
 │   │   └── BlueskyPost.ts  # the app.bsky.feed.post record carrying the video embed
+│   ├── domain/youtube/   # Pure logic for the YouTube destination
+│   │   ├── Visibility.ts   # private, unlisted or public — and private where a video starts
+│   │   ├── VideoDetails.ts # the title (defaulted when blank), the description, the visibility
+│   │   └── UploadableVideo.ts # the MP4 YouTube takes, and the ceilings it enforces
 │   ├── application/      # Use cases: the thinking, without a browser
 │   │   ├── record-take.ts  # RecordTake: sources → mix → record → stop → take added
 │   │   ├── import-take.ts  # ImportTake: a video file read, then appended as a take
@@ -160,6 +164,8 @@ democlip/
 │   │   ├── export-clip.ts  # planExport(clip, settings) → an ExportPlan
 │   │   ├── publish-to-bluesky.ts # publishToBluesky(clip, settings, deps) → a post
 │   │   ├── bluesky-service.ts # the port the publish use case reaches Bluesky through
+│   │   ├── publish-to-youtube.ts # publishToYouTube(clip, settings, deps) → a video
+│   │   ├── youtube-service.ts # the port it reaches the YouTube destination through
 │   │   └── ports/          # The capabilities a use case may ask for, named without a browser
 │   ├── infra/            # Browser boundary adapters
 │   │   ├── capture.ts      # Screen, webcam and microphone over getDisplayMedia/getUserMedia
@@ -174,6 +180,7 @@ democlip/
 │   │   ├── codecs.ts       # WebM mime / codec selection
 │   │   ├── export-target.ts # which container an export writes (WebM, MP4) and its codecs
 │   │   ├── bluesky.ts      # the OAuth session + XRPC calls; loaded only when publishing
+│   │   ├── youtube.ts      # the Google token, the resumable upload and the status poll; loaded on demand
 │   │   └── download.ts     # Blob download trigger, behind DownloadPort
 │   └── ui/               # View layer (DOM) — one module per widget, grouped by domain concept
 │       ├── dom.ts          # Central element registry + status/toast helpers
@@ -218,11 +225,13 @@ democlip/
 │       │   └── annotation-clipboard.ts # The annotation a copy put aside, for a paste (Clipboard)
 │       ├── exporting/      # Writing the file
 │       │   ├── export-flow.ts  # The Export button — a sequence over ExportVideo
-│       │   ├── export-menu.ts  # The File/Bluesky menu under the Export button (ExportMenu)
+│       │   ├── export-menu.ts  # The File/Bluesky/YouTube menu under the Export button (ExportMenu)
 │       │   └── frame-renderer.ts # The FrameRendererPort the encoder draws through
-│       ├── publishing/     # Posting to Bluesky
+│       ├── publishing/     # Publishing to a video service
 │       │   ├── publish-flow.ts # The Publish button — a sequence over publishToBluesky
-│       │   └── publish-dialog.ts # The post's settings and preview
+│       │   ├── publish-dialog.ts # The post's settings and preview
+│       │   ├── youtube-flow.ts # The Upload button — a sequence over publishToYouTube
+│       │   └── youtube-dialog.ts # The video's title, description and visibility
 │       ├── keeping/        # Keeping a clip and coming back to it
 │       │   ├── keep.ts       # The KeepClip composition the app uses
 │       │   └── resume-flow.ts # The startup restore — a sequence over RestoreClip
@@ -255,6 +264,7 @@ democlip/
 │   ├── manifest.json       # PWA manifest
 │   ├── sw.js               # Service worker — cache-first offline support
 │   ├── oauth-client-metadata.json # the Bluesky OAuth client_id document
+│   ├── youtube-client.json # the app's own Google client ID, so a fork sets its own
 │   └── branding/           # Logo (with background, transparent, dark), icon-only mark, app icons
 ├── vite.config.ts        # Dev server + build config
 ├── tsconfig.json         # TypeScript config (type-check / editor)

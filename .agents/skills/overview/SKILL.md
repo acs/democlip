@@ -8,7 +8,7 @@ description: What DemoClip is and how it fits together — the app, the end-to-e
 **A pure-browser screen recorder.** TypeScript + Vite, no server, no account, and
 nothing leaves the machine unless a clip is published. Record a screen, window or
 tab (or the webcam, or both) with the microphone, cut the result on a timeline,
-export WebM or MP4 — or publish it to Bluesky.
+export WebM or MP4 — or publish it to Bluesky or YouTube.
 
 ## The flow everything is built around
 
@@ -21,7 +21,7 @@ export WebM or MP4 — or publish it to Bluesky.
    glued into one file. **Marks** bound a **section**; the scissors approve it into
    a **cut**, which leaves the timeline and what is left closes up (temporal).
 4. **Export.** Encoded **offline** (Mediabunny + WebCodecs), faster than real
-   time: WebM for the download, MP4 for Bluesky. Publishing is optional.
+   time: WebM for the download, MP4 for Bluesky or YouTube. Publishing is optional.
 
 ## The runtime objects, and what ends them
 
@@ -49,15 +49,18 @@ src/
   domain/       pure rules — no DOM, no browser. Span, SpanSet, TimelineMap, Take,
                 Clip (the aggregate), ExportPlan, the annotation family (the base,
                 its kinds, and the register),
-                CropRegion and SourceSet, Session (the clip and the audio flag)
-  application/  the use cases that run in node, and the ports they own:
-                record a take, export a clip, publish, keep and restore a clip
+                CropRegion and SourceSet, Session (the clip and the audio flag),
+                and the YouTube family (Visibility, VideoDetails, UploadableVideo)
+  application/ the use cases that run in node, and the ports they own:
+                record a take, export a clip, publish (to Bluesky or YouTube), keep
+                and restore a clip
   infra/        the browser boundary: capture, compositor, recorder, probe, clock,
                 encoder, codecs, download, the takes' object URLs, the clip store,
                 the image store, Bluesky
   ui/           the DOM and the interaction — renders the model, owns no rules;
                 the annotation plugins and the shared canvas under annotating/;
-                the view flows (record, review, export, publish, resume) sequence;
+                the view flows (record, review, export, publish to a service,
+                resume) sequence;
                 agent/ the surface an agent drives, published only when asked
   state.ts      the phase only
   session.ts    the composition: the single Session
