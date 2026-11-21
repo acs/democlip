@@ -320,6 +320,19 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 .act-btn.export{background:rgba(59,127,255,.12);color:var(--blue);border-color:rgba(59,127,255,.28);}
 .act-btn.export:not(:disabled):hover{background:rgba(59,127,255,.22);border-color:rgba(59,127,255,.45);}
 
+/* Import always carries its icon: the mark and the word together on a wide window,
+   so which way a file comes in is legible before it is read. The word is dropped for
+   the mark alone on a phone or a tablet — a wider span than the bar's own breakpoint
+   (700px) below, because a tablet in landscape is 1024px and the word is the first
+   thing to go there. */
+.act-btn.import{display:inline-flex;align-items:center;gap:8px;}
+.import .act-ico{display:block;}
+
+@media (max-width:1024px){
+  .act-btn.import{gap:0;padding:6px 8px;}
+  .import .act-lbl{display:none;}
+}
+
 /* The icon Export carries when its word will not fit — a narrow window, below. On a
    wide one the word is the button. */
 .act-ico{display:none;}
@@ -353,9 +366,6 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
   .act-btn.export{display:inline-flex;align-items:center;padding:6px 8px;}
   .export .act-lbl{display:none;}
   .export .act-ico{display:block;}
-  .act-btn.import{display:inline-flex;align-items:center;padding:6px 8px;}
-  .import .act-lbl{display:none;}
-  .import .act-ico{display:block;}
 }
 
 /* The Export menu — a small popover under the Export button. It lives at the
