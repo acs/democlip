@@ -1,6 +1,6 @@
 {
   "name": "democlip",
-  "version": "1.0.98",
+  "version": "1.0.99",
   "private": true,
   "description": "Pure browser screen recorder — WebM & GIF with timeline trimming.",
   "license": "MIT",
