@@ -2,15 +2,17 @@
 //
 // The file is built in the page (a real, decodable WebM or MP4) and handed to the
 // app's own file input through a real file chooser, exactly as a person choosing a
-// file would.
+// file would. Which containers are taken in, and the refusal of the ones that are
+// not, is a rule with a unit test beside it and is not repeated here — a check is a
+// browser boot, so only what needs a browser gets one.
 
 import { expect, test, type Page } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
 import { boot } from '../helpers/app.js';
-import { makeFile } from '../fixtures/takes.js';
+import { makeFile, type FixtureFile } from '../fixtures/takes.js';
 
 /** Choose a file through the Import button, the way a person does. */
-async function importFile(page: Page, file: Awaited<ReturnType<typeof makeFile>>): Promise<void> {
+async function importFile(page: Page, file: FixtureFile): Promise<void> {
   const chooser = page.waitForEvent('filechooser');
   await page.locator('#file-btn').click();
   await (await chooser).setFiles(file);
@@ -27,24 +29,7 @@ async function exportFile(page: Page, item: string): Promise<Buffer> {
   return readFile(path);
 }
 
-test('a WebM file is imported as a take and opens in the review', async ({ page }) => {
-  const app = boot(page);
-  await app.goto();
-
-  const file = await makeFile(page, {
-    name: 'clip.webm', mimeType: 'video/webm', width: 640, height: 360, seconds: 1,
-  });
-  await importFile(page, file);
-
-  // The file joined the clip as one take...
-  await expect.poll(() => app.clipLength(), { timeout: 15_000 }).toBeCloseTo(1, 1);
-  // ...and the review opened on it: the timeline is up and the export is offered.
-  await expect(page.locator('#thumbs canvas').first()).toBeVisible();
-  await expect(page.locator('#btn-exp')).toBeVisible();
-  await expect(page.locator('#s-text')).toHaveText('Ready');
-});
-
-test('an imported file with sound shows the waveform', async ({ page }) => {
+test('a video file becomes a take, with its own sound', async ({ page }) => {
   const app = boot(page);
   await app.goto();
 
@@ -53,9 +38,14 @@ test('an imported file with sound shows the waveform', async ({ page }) => {
   });
   await importFile(page, file);
 
-  // The file's own sound reached the clip, so the audio track is drawn.
+  // The file joined the clip as one take, holding its own length...
   await expect.poll(() => app.clipLength(), { timeout: 15_000 }).toBeCloseTo(1, 1);
+  // ...and the review opened on it: the timeline is up and the export is offered.
+  await expect(page.locator('#thumbs canvas').first()).toBeVisible();
+  await expect(page.locator('#btn-exp')).toBeVisible();
+  // ...and its own sound came with it, so the audio track is drawn.
   await expect(page.locator('#waveform')).toBeVisible();
+  await expect(page.locator('#s-text')).toHaveText('Ready');
 });
 
 test('an imported MP4 is read back by the export', async ({ page }) => {
@@ -68,7 +58,7 @@ test('an imported MP4 is read back by the export', async ({ page }) => {
   await importFile(page, file);
   await expect.poll(() => app.clipLength(), { timeout: 15_000 }).toBeCloseTo(1, 1);
 
-  // The export decodes the take it writes; an MP4 take has to come back as a file
+  // The export decodes the takes it writes; an MP4 take has to come back as a file
   // with a real duration, not a broken one.
   const bytes = await exportFile(page, '#exp-webm');
   const duration = await page.evaluate(async (base64) => {
@@ -89,14 +79,4 @@ test('an imported MP4 is read back by the export', async ({ page }) => {
   }, bytes.toString('base64'));
   expect(duration).toBeGreaterThan(0.5);
   expect(duration).toBeLessThan(2);
-});
-
-test('a file the export cannot read back is refused', async ({ page }) => {
-  const app = boot(page);
-  await app.goto();
-
-  await importFile(page, { name: 'notes.txt', mimeType: 'text/plain', buffer: Buffer.from('not a video') });
-
-  await expect(page.locator('#toast')).toHaveText(/WebM and MP4/);
-  expect(await app.clipLength()).toBe(0);
 });
