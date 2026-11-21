@@ -97,16 +97,17 @@ Three things no check can do, and all three are a person's:
 - **a real upload to a real channel.** Upload a short clip and open the link. The suite stands
   the service in; only a real channel proves the real thing — and only a real upload shows the
   video at the cuts and annotations the review held.
-- **the things that only the real thing can settle** (`research.md` D3, D7):
-  - whether YouTube's own session start exposes its **`Location`** header to a browser. The
-    suite's stand-in has to expose it, and `Range` with it, or the page cannot read either —
-    which is the CORS rule rather than a choice of the app's. Google's endpoint is documented
-    to support CORS and its own JavaScript client starts resumable sessions from a browser, so
-    the app reads the header it needs and the plan keeps the `uploadType=multipart` fallback
-    in reserve; a real upload is what confirms Google's own answer.
-  - whether YouTube requires the video's **"made for kids"** declaration on insert. It is not
-    sent: declaring it for a person is a claim about their content, and the refusal, if it
-    comes, is reported plainly. Only a real insert answers this either way.
+- **the things that only the real thing can settle** (`research.md` D3, D7) — **both settled by
+  the real session, and both in the app's favour**:
+  - Google's session start **does** expose its `Location` to the browser, and the chunks were
+    accepted: the upload completed and the video exists on the channel, so the
+    `uploadType=multipart` fallback is not needed;
+  - YouTube does **not** require the "made for kids" declaration on insert: the upload
+    succeeded without one, so nothing had to be declared on the person's behalf. It stays
+    unsent, because declaring it is a claim about their content.
+- **what the same run found out the hard way** — a read the scope does not authorize, turned
+  into a refusal: the channel first, then the video's status, which made a successful upload
+  look failed. Both are gone; `research.md` D4 has it.
 
 ## 5. What cannot be checked here
 

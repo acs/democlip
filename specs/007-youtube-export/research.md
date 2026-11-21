@@ -89,12 +89,10 @@ It also makes FR-016 honest: an interrupted upload can be *retried from where it
 reported as failed, rather than leaving the person guessing. The chunk size is the required
 multiple of 256 KB.
 
-**What only the real session can settle**: reading the session URI from the `Location`
-response header is a **CORS** question — a browser may not be allowed to read it. Google's
-upload endpoint is documented to support CORS and its own JavaScript client starts resumable
-sessions from a browser, so the choice stands; but if the header turns out not to be readable,
-the fallback is the single-request `uploadType=multipart` form, which needs no second URL.
-That is named here so step 7 tests it deliberately rather than discovering it as a bug.
+**Settled by the real session**: the session started and the upload completed against Google's
+own endpoint — the video exists on the channel — so the browser **can** read `Location`, and
+the chunks were accepted. The single-request `uploadType=multipart` form is not needed and the
+fallback stays unwritten. What the same run settled about the *wait* is D4.
 
 **Alternatives considered**: one `multipart` request for the whole file — rejected as the
 primary, it reports no progress and cannot resume; but kept as the fallback above. Sending
@@ -211,16 +209,16 @@ exists to prevent.
 - the domain rules — the title, the description, the visibility, the length and size bounds,
   the video's address — by **unit tests in node** beside each class;
 - the use case's sequencing — the ceiling refused before any encoding, each stage, a failed
-  upload, a poll that gives up — by a **unit test in node** with a fake service;
+  upload, both stages — by a **unit test in node** with a fake service;
 - the adapter's mapping — the session start, a chunk, a resume, the errors — by a
   **unit test with an injected `fetch`** and a fake token, as `infra/bluesky.test.ts` does;
 - the menu entry, the dialog's states, the progress lines and the refusals — by a
   **committed check in `e2e/`**, with the Google script and the upload stood in by `page.route`
   (nothing touches the network, as the publishing check already does);
 - a **real Google consent** and a **real upload to a real channel** — by a **real session, by
-  the user**, because no check can hold someone's Google account or consent to a scope — and it
-  is that session, too, that settles D3's CORS question and whether the destination requires a
-  "made for kids" declaration.
+  the user**, because no check can hold someone's Google account or consent to a scope. That
+  session ran, and it settled D3's CORS question, that no "made for kids" declaration is
+  required, and — the hard way — D4.
 
 **Rationale**: the Verification skill's three levels. The menu and the dialog are drawn, so
 they need a browser; the rules and the sequencing are not, so they need node. The real session
