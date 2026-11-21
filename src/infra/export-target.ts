@@ -116,6 +116,17 @@ export interface FitBudget {
 }
 
 /**
+ * What a byte budget affords for a clip of this length, in bits per second, before the
+ * app's own floor and ceiling are applied. The margin keeps a budget-sized file under
+ * the limit rather than on it.
+ */
+export function affordableBitrate(fit: FitBudget): number {
+  return fit.seconds > 0
+    ? Math.round((fit.bytes * 8 * FIT_MARGIN) / fit.seconds)
+    : Number.POSITIVE_INFINITY;
+}
+
+/**
  * The bitrate to encode at: from the picture first — screen content needs far more
  * bits than camera video of the same size — and then, when the file has to fit
  * somewhere, held under that destination's byte budget for the clip's length: a long
@@ -125,8 +136,18 @@ export interface FitBudget {
  */
 export function videoBitrate(width: number, height: number, fit?: FitBudget): number {
   const wanted = Math.round(width * height * 30 * BITS_PER_PIXEL);
-  const affordable = fit && fit.seconds > 0
-    ? Math.round((fit.bytes * 8 * FIT_MARGIN) / fit.seconds)
-    : Number.POSITIVE_INFINITY;
+  const affordable = fit ? affordableBitrate(fit) : Number.POSITIVE_INFINITY;
   return Math.min(Math.max(Math.min(wanted, affordable), BITRATE_FLOOR), BITRATE_CEILING);
+}
+
+/**
+ * Whether the app can write a file of this length inside this budget at all.
+ *
+ * `videoBitrate` will not go below its floor, so a budget that affords less than the
+ * floor over the clip is one the file will miss however it is encoded. The caller is
+ * better off refusing that export than writing the file anyway; this is the question
+ * it asks before starting.
+ */
+export function fitsBudget(width: number, height: number, fit: FitBudget): boolean {
+  return videoBitrate(width, height, fit) <= affordableBitrate(fit);
 }

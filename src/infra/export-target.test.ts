@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { avcProbes, specFor, videoBitrate } from './export-target.js';
+import { avcProbes, fitsBudget, specFor, videoBitrate } from './export-target.js';
 
 describe('specFor', () => {
   it('names WebM with the codecs the download has always used', () => {
@@ -98,5 +98,30 @@ describe('videoBitrate', () => {
     expect(videoBitrate(3440, 1440, { ...budget, seconds: 60 })).toBe(17_832_960);    // fits anyway
     expect(videoBitrate(3440, 1440, { ...budget, seconds: 180 })).toBe(12_000_000);   // 300 MB in 3 min
     expect(videoBitrate(3440, 1440, { ...budget, seconds: 600 })).toBe(4_000_000);    // the floor, at the ceiling
+  });
+});
+
+describe('fitsBudget', () => {
+  it('says no where the floor cannot reach the budget — the honest refusal', () => {
+    // 900 KB over a minute affords 108 kb/s, far under the 4 Mb/s floor.
+    expect(fitsBudget(854, 480, { seconds: 60, bytes: 900_000 })).toBe(false);
+  });
+
+  it('says yes where the budget affords the floor, even though the floor is what lands', () => {
+    // 40 MB over a minute affords 4.8 Mb/s, above the floor, so the file fits.
+    expect(fitsBudget(854, 480, { seconds: 60, bytes: 40_000_000 })).toBe(true);
+  });
+
+  it('does not confuse a picture-sized bitrate above the budget with not fitting', () => {
+    // 3440×1440 wants 17.8 Mb/s, and 300 MB over 3 min affords 12 Mb/s: the file still
+    // fits, because the encoder lowers to what the budget affords.
+    const fit = { seconds: 180, bytes: 300_000_000 };
+    expect(videoBitrate(3440, 1440, fit)).toBe(12_000_000);
+    expect(fitsBudget(3440, 1440, fit)).toBe(true);
+  });
+
+  it('says no for a big picture too, where the budget is under the floor over a long clip', () => {
+    // The floor is 4 Mb/s; 10 MB over 3 min affords well under it.
+    expect(fitsBudget(3440, 1440, { seconds: 180, bytes: 10_000_000 })).toBe(false);
   });
 });

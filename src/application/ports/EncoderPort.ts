@@ -52,6 +52,17 @@ export interface FrameRendererPort {
 export interface EncoderPort {
   /** Whether this browser can encode at all. */
   available(): boolean;
+  /**
+   * Whether a file this long can be written within this many bytes at this picture.
+   * False means the encoder's own bitrate floor cannot reach the budget, so the caller
+   * should refuse rather than write a file that misses it.
+   */
+  fitsBudget(
+    target: ExportTarget,
+    seconds: number,
+    picture: { readonly width: number; readonly height: number },
+    maxBytes: number,
+  ): boolean;
   /** Encode the plan. The renderer draws the annotations and the preview. */
   encode(plan: ExportPlan, renderer: FrameRendererPort, options: EncodeOptions): Promise<EncodedVideo>;
 }
