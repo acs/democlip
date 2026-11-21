@@ -69,9 +69,13 @@ class YouTubeDialog {
     el.ytComposeView.style.display = view === 'compose' ? '' : 'none';
     el.ytSignin.style.display = view === 'signin' ? '' : 'none';
     el.ytNote.textContent = view === 'not-configured' ? NOT_SET_UP : SIGNIN_NOTE;
-    // The channel is what a person recognises, and it is what says the clip will go to
-    // their own account before it goes.
-    if (account) el.ytAs.textContent = 'Signed in as ' + (account.title || account.id);
+    // The channel is what a person recognises; when YouTube will not name it, the account
+    // they just consented with is what the app can honestly say.
+    if (account) {
+      el.ytAs.textContent = account.channel
+        ? 'Signed in as ' + account.channel
+        : 'Signed in with Google — the clip goes to that account\'s channel';
+    }
   }
 
   private async signIn(): Promise<void> {
@@ -84,14 +88,12 @@ class YouTubeDialog {
       this.fail((error as Error).message);
       return;
     }
-    const account = await youTubeAccount();
-    if (!account) {
-      this.status('');
-      this.fail('that Google account has no YouTube channel to upload to');
-      return;
-    }
+    // Signing in is the whole of what this press is for. Whether the account may upload is
+    // YouTube's to say, and it says so when the upload starts — so the compose view opens
+    // whatever the channel read came back with, and the app does not refuse on its behalf.
+    const account = await youTubeAccount().catch(() => null);
     this.status('');
-    this.show('compose', account);
+    this.show('compose', account ?? { channel: null });
   }
 
   private async signOut(): Promise<void> {

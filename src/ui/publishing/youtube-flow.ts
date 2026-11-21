@@ -27,8 +27,8 @@ export interface YouTubeVideoLink {
 
 /** The channel a clip will go to, which the dialog shows before anything is sent. */
 export interface YouTubeAccount {
-  id: string;
-  title: string;
+  /** The channel's own name, when YouTube will say it; null when it will not. */
+  channel: string | null;
 }
 
 /** What the person said about the video, as the fields hold it. */
@@ -51,8 +51,18 @@ export async function youtubeConfigured(): Promise<boolean> {
   return (await youtube()).configured();
 }
 
+/**
+ * The account a clip will go to, or `null` when nobody is signed in.
+ *
+ * The channel inside it is best effort: the app asks YouTube to name it and does without
+ * when it will not. That is not the app's to decide — the upload scope does not authorize
+ * the read — and it must not be read as "you have no channel".
+ */
 export async function youTubeAccount(): Promise<YouTubeAccount | null> {
-  return (await youtube()).youTubeChannel();
+  const api = await youtube();
+  if (!api.signedIn()) return null;
+  const channel = await api.youTubeChannel();
+  return { channel: channel?.title ?? null };
 }
 
 export async function signInToYouTube(): Promise<void> {

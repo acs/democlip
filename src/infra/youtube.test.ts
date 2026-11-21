@@ -115,6 +115,14 @@ describe('HttpYouTubeService.uploadVideo', () => {
       .rejects.toThrow(/allowance for this app is used up/);
   });
 
+  it('says when the account has no YouTube channel to upload to', async () => {
+    // The destination's own answer to "may this account upload at all"; the app must not
+    // guess it from a channel read it is not authorized to make.
+    const { fetchFn } = scripted([problem(401, 'youtubeSignupRequired')]);
+    await expect(service(fetchFn).uploadVideo(video, details, () => {}))
+      .rejects.toThrow(/no YouTube channel yet/);
+  });
+
   it('says when a browser may not read where to send the video', async () => {
     const { fetchFn } = scripted([new Response(null, { status: 200 })]);
     await expect(service(fetchFn).uploadVideo(video, details, () => {}))

@@ -116,6 +116,12 @@ Three things no check can do, and all three are a person's:
   written; what YouTube shows after transcoding is the real session's.
 - **the destination's allowance and processing** — real quota and real transcoding are the
   destination's to give and to take; the checks use a stood-in service.
+- **a channel YouTube will not name** — `channels.list` is not authorized by the upload
+  scope, so the app may not be able to say which channel a clip will go to. It says whose
+  *account* instead, and lets the upload be tried; whether the account may upload at all is
+  the destination's own answer, and the app passes it on. The two are told apart in the
+  console: *YouTube would not name the channel* is a refused read, *YouTube named no channel
+  for this account* is a read that worked and found none.
 - **a verified account's longer limit** — out of scope in this version (`research.md` D5), and
   not exercised.
 

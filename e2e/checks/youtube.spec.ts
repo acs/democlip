@@ -23,13 +23,24 @@ interface Refusal {
   reason: string;
 }
 
+interface StandIn {
+  /** Answer every call after the sign-in with this refusal. */
+  refusal?: Refusal;
+  /**
+   * Refuse the channel read alone. That is what an account the upload scope cannot read
+   * looks like, and it must not be mistaken for "this account has no channel".
+   */
+  channelsRefused?: boolean;
+}
+
 /**
  * Stand in for Google: the consent script, the channel, the resumable session, the
  * chunks and the status. Answers with what was asked, so a check can read the request
  * the app made — which is the only way to assert what would have been uploaded.
  */
-async function standInGoogle(page: Page, refusal: Refusal | null = null): Promise<Asked[]> {
+async function standInGoogle(page: Page, standIn: StandIn = {}): Promise<Asked[]> {
   const asked: Asked[] = [];
+  const { refusal, channelsRefused } = standIn;
 
   await page.route('https://accounts.google.com/gsi/client', route => route.fulfill({
     contentType: 'application/javascript',
@@ -56,6 +67,13 @@ async function standInGoogle(page: Page, refusal: Refusal | null = null): Promis
     asked.push({ method: request.method(), url: request.url(), body: request.postData() ?? undefined });
 
     if (request.url().includes('/channels')) {
+      if (channelsRefused) {
+        return route.fulfill({
+          status: 403,
+          headers: cors,
+          json: { error: { errors: [{ reason: 'insufficientPermissions' }] } },
+        });
+      }
       return route.fulfill({ headers: cors, json: { items: [{ id: 'UC123', snippet: { title: 'A test channel' } }] } });
     }
     if (refusal) {
@@ -191,7 +209,7 @@ test('a clip past the account\u2019s ceiling is refused before anything is uploa
 });
 
 test('an upload the destination refuses says why, and leaves the dialog usable', async ({ page }) => {
-  await standInGoogle(page, { status: 403, reason: 'quotaExceeded' });
+  await standInGoogle(page, { refusal: { status: 403, reason: 'quotaExceeded' } });
   await clientId(page, 'stub.apps.googleusercontent.com');
 
   await review(page);
@@ -237,6 +255,44 @@ test('a YouTube publish through the surface is refused with nobody signed in', a
   expect(unknown.reason).toMatch(/bluesky or youtube/);
 
   expect(asked).toHaveLength(0);
+});
+
+test('a channel YouTube will not name does not stop the upload', async ({ page }) => {
+  // Reading the account's channel is not what the upload scope authorizes, so it can be
+  // refused — and an account with no channel answers with nothing at all. Neither is the
+  // app's to translate into "you have no channel": the person is signed in, so the compose
+  // view opens and the upload is theirs to try, with the destination as the authority on
+  // whether the account may upload at all.
+  await standInGoogle(page, { channelsRefused: true });
+  await clientId(page, 'stub.apps.googleusercontent.com');
+
+  await review(page);
+  await openYouTube(page);
+  await page.locator('#yt-signin').click();
+
+  await expect(page.locator('#yt-compose-view')).toBeVisible();
+  await expect(page.locator('#yt-go')).toBeEnabled();
+  await expect(page.locator('#yt-as')).toContainText('Signed in with Google');
+});
+
+test('an account with no YouTube channel is told so by the destination', async ({ page }) => {
+  await standInGoogle(page, {
+    channelsRefused: true,
+    refusal: { status: 401, reason: 'youtubeSignupRequired' },
+  });
+  await clientId(page, 'stub.apps.googleusercontent.com');
+
+  await review(page);
+  await openYouTube(page);
+  await page.locator('#yt-signin').click();
+  await expect(page.locator('#yt-compose-view')).toBeVisible();
+
+  const supported = await canEncodeMp4(page);
+  test.skip(!supported, 'this browser cannot encode MP4 (AVC) offline');
+
+  await page.locator('#yt-go').click();
+  await expect(page.locator('#yt-error')).toContainText('no YouTube channel yet');
+  await expect(page.locator('#yt-go')).toBeEnabled();
 });
 
 test('uploading writes the video, sends the details, and answers with the link', async ({ page }) => {

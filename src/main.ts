@@ -205,7 +205,7 @@ function init(): void {
         {
           account: async () => {
             const account = await youTubeAccount();
-            return account ? { channel: account.title } : null;
+            return account ? { channel: account.channel ?? 'the signed-in Google account' } : null;
           },
           upload: (settings, handlers) => uploadClip(settings, handlers),
         },

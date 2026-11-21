@@ -219,6 +219,12 @@ declare const google: GoogleAccounts;
 let clientIdPromise: Promise<string | null> | null = null;
 let token: string | null = null;
 let channel: YouTubeChannel | null = null;
+let channelKnown = false;
+
+/** Whether a token is held for this page. */
+export function signedIn(): boolean {
+  return token !== null;
+}
 
 /** Whether this build can upload at all: it needs the app's own client ID. */
 export async function configured(): Promise<boolean> {
@@ -235,23 +241,38 @@ export async function signIn(): Promise<void> {
   if (!id) throw new Error('this build is not set up to upload to YouTube');
   await loadGoogle();
   token = await requestToken(id);
-  channel = null;
+  forgetChannel();
 }
 
 export async function signOut(): Promise<void> {
   token = null;
-  channel = null;
+  forgetChannel();
 }
 
 /**
- * The channel a clip will go to, read once per sign-in. `null` when nobody is signed
- * in, and also when the account has no channel — which the dialog says rather than
- * letting an upload fail.
+ * The channel a clip will go to — **when YouTube will name it**.
+ *
+ * Reading it is best effort, and the reason is the destination's own: the scope the app
+ * asks for authorizes `videos.insert`, not the account, so the read may be refused
+ * outright — and an account with no channel answers with nothing at all. Neither is
+ * something the app may turn into "you have no channel": the person is signed in, the
+ * upload is still theirs to make, and the destination is the authority on whether the
+ * account may upload (it says `youtubeSignupRequired` when it may not).
+ *
+ * `null` when nobody is signed in, and also when the channel cannot be read.
  */
 export async function youTubeChannel(): Promise<YouTubeChannel | null> {
   if (!token) return null;
-  channel ??= await readChannel(token);
+  if (!channelKnown) {
+    channel = await readChannel(token);
+    channelKnown = true;
+  }
   return channel;
+}
+
+function forgetChannel(): void {
+  channel = null;
+  channelKnown = false;
 }
 
 /** The service the publish use case wants, once there is a token. */
@@ -317,9 +338,21 @@ async function readChannel(bearer: string): Promise<YouTubeChannel | null> {
   url.searchParams.set('part', 'snippet');
   url.searchParams.set('mine', 'true');
   const response = await fetch(url, { headers: { authorization: `Bearer ${bearer}` } });
-  if (!response.ok) return null;
+  if (!response.ok) {
+    // Not a failure of the app's, and not something to report to the person: the scope
+    // the upload needs is not the scope this read needs. It is said here so a developer
+    // can see why the channel is not named.
+    const body = await readJson<ResourceError>(response);
+    console.warn('DemoClip: YouTube would not name the channel —', response.status, body?.error?.errors?.[0]?.reason ?? body?.error?.message ?? '');
+    return null;
+  }
   const item = (await readJson<{ items?: Array<{ id?: string; snippet?: { title?: string } }> }>(response))?.items?.[0];
-  if (!item?.id) return null;
+  if (!item?.id) {
+    // The read worked and there is no channel: real evidence, unlike a refused read — and
+    // it is said here so the two are told apart without guessing.
+    console.warn('DemoClip: YouTube named no channel for this account');
+    return null;
+  }
   return { id: item.id, title: item.snippet?.title ?? item.id };
 }
 
@@ -395,6 +428,8 @@ async function reasonFor(response: Response, fallback: string): Promise<string> 
     case 'quotaExceeded':
     case 'uploadLimitExceeded':
       return 'the upload allowance for this app is used up — try again later';
+    case 'youtubeSignupRequired':
+      return 'this Google account has no YouTube channel yet — create one on YouTube, then try again';
     case 'invalidTitle':
       return 'YouTube did not take the video’s title';
     case 'invalidDescription':

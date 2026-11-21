@@ -13,7 +13,7 @@ issued to the page, never a code to be exchanged.
 | Piece | Value |
 |---|---|
 | the client | `google.accounts.oauth2.initTokenClient({ client_id, scope, callback })`, from the hosted script `https://accounts.google.com/gsi/client` |
-| the scope | `https://www.googleapis.com/auth/youtube.upload` — upload only; no read of anything else |
+| the scope | `https://www.googleapis.com/auth/youtube.upload` — upload only; no read of anything else, which is why the channel read in §4 is best effort rather than relied upon |
 | the gesture | `requestAccessToken()` is called from a press (**Sign in with Google**, or **Upload**), which the token model requires |
 | the token | an access token in the page; **short-lived, with no refresh token** |
 | the client ID | public, not a secret, and read at runtime from the app's own `youtube-client.json` |
@@ -99,14 +99,25 @@ GET https://www.googleapis.com/youtube/v3/videos?part=status,processingDetails&i
 - the poll is bounded, with a budget that follows the clip's length, and giving up is said in
   a sentence rather than a hang.
 
-## 4. Whose channel it is
+## 4. Whose channel it is — when YouTube will say
 
 ```http
 GET https://www.googleapis.com/youtube/v3/channels?part=snippet&mine=true
 ```
 
-The first item's `id` and `snippet.title` are the channel the clip will go to, which the app
-shows **before** anything is sent (FR-007).
+The first item's `id` and `snippet.title` are the channel a clip will go to, which the app
+shows before anything is sent (FR-007).
+
+**This read is best effort, and nothing may be decided from it.** `channels.list` is
+authorized by the account-reading scopes (`youtube.readonly`, `youtube`) and **not** by the
+`youtube.upload` scope this app asks for, so it can be refused — and an account with no
+channel answers with nothing at all. Neither is evidence that the account cannot upload, so
+neither may become a refusal: the app says the clip goes to the signed-in account's channel
+and leaves the upload to be tried.
+
+**The authority on whether the account may upload is `videos.insert` itself**, which answers
+`youtubeSignupRequired` when there is no channel — so that is where the sentence comes from,
+at the moment it is true.
 
 ## 5. The refusals the app names
 
@@ -115,6 +126,7 @@ shows **before** anything is sent (FR-007).
 | no `youtube-client.json` served | the app is not set up to upload here; nothing is offered (FR-008) |
 | the consent closed, or `access_denied` | the account was not allowed; the person is told why |
 | `401` | the sign-in has expired; sign in again |
+| `youtubeSignupRequired` (401) | the Google account has no YouTube channel yet; create one, then try the upload again |
 | `quotaExceeded` / `uploadLimitExceeded` | the allowance for uploads is used up; try again later |
 | `invalidTitle` / `invalidDescription` | the title or the description is not one YouTube takes |
 | `forbiddenPrivacySetting` | the visibility is not one YouTube takes |
