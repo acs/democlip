@@ -16,14 +16,10 @@ export interface EncodedVideo {
   readonly stats: ExportStats;
 }
 
-/** The title card shown at the head of the file, on the frame of it a moment falls in. */
+/** The title card shown at the head of the file. */
 export interface IntroFrame {
   readonly title: string;
   readonly description: string;
-  /** How long the whole card is, in seconds. */
-  readonly seconds: number;
-  /** How far into the card this frame is, in seconds. */
-  readonly at: number;
 }
 
 export interface Frame {

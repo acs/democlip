@@ -31,12 +31,11 @@ export class FrameRenderer implements FrameRendererPort {
   draw(context: CanvasRenderingContext2D, frame: Frame): void {
     const w = context.canvas.width;
     const h = context.canvas.height;
-    // The card at the head: its words, as text annotations, dissolving in and out over
-    // the card exactly as an annotation does over its stretch.
+    // The card at the head: its words, as text annotations. They are drawn at full
+    // strength from the card's first frame — a card is read the moment it appears, and
+    // its first frame is the poster a player and a file listing show.
     if (frame.intro) {
-      drawAnnotations(context, w, h, this.cardText(frame.intro, w, h), null, {
-        at: frame.intro.at, total: frame.intro.seconds, seconds: DISSOLVE_S,
-      });
+      drawAnnotations(context, w, h, this.cardText(frame.intro, w, h), null);
       return;
     }
     // An annotation dissolves in and out at the edges of its stretch, exactly as the
