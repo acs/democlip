@@ -13,10 +13,9 @@
 
 import type { ClipProperties } from '../../domain/clip/ClipProperties.js';
 import type { Clip } from '../../domain/clip/Clip.js';
-import { ClipSize } from '../../domain/clip/ClipSize.js';
 
 /** Which shared control edits a clip property. */
-export type ClipPropertyControl = 'text' | 'long-text' | 'toggle' | 'size';
+export type ClipPropertyControl = 'text' | 'long-text' | 'toggle';
 
 /**
  * Something about the clip the user can change after it is made. The app declares it;
@@ -30,6 +29,12 @@ export interface ClipProperty {
   readonly label: string;
   /** Which shared control renders it: one line, or a paragraph. */
   readonly control: ClipPropertyControl;
+  /**
+   * True for a property the app shows but the person does not set — the **clip size**,
+   * which is derived from the takes. The panel draws its value and offers no control,
+   * and the automation surface refuses to set it.
+   */
+  readonly readOnly?: boolean;
   /**
    * The value the control shows for these properties. The clip is handed in for a
    * property whose value it derives rather than stores — the clip size — so the panel
@@ -86,17 +91,16 @@ registerClipProperty({
   with: (properties, value) => properties.with('addToExport', value === 'true' ? 'true' : ''),
 });
 
-// And the clip's own size: the picture the review shows and every export writes. It is
-// the person's once they set it, and otherwise the largest take — the same answer
-// `Clip.size()` gives, so the panel shows what the file will hold. A size the app cannot
-// write — nothing, or an edge past its own limit — is refused and the previous one stays.
+// And the clip's own size: the picture the review shows and every export writes — the
+// largest width and height among the takes, both even. It is **shown, not set**: the size
+// follows the takes, so a person cannot hold a clip to a shape its own takes do not have.
+// The panel draws the value and offers no control, and the automation surface refuses to
+// change it (`ClipProperty.readOnly`).
 registerClipProperty({
   id: 'size',
   label: 'Clip size',
-  control: 'size',
-  value: (properties, clip) => clip?.size()?.toString() ?? properties.get('size'),
-  with: (properties, value) => {
-    const size = ClipSize.parse(value);
-    return size ? properties.with('size', size.toString()) : null;
-  },
+  control: 'text',
+  readOnly: true,
+  value: (_properties, clip) => clip?.size()?.toString() ?? '',
+  with: () => null,
 });

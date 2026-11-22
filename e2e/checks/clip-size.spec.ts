@@ -1,9 +1,9 @@
 // Clip size: a clip of takes whose own pictures differ plays and exports in one frame.
 //
-// The clip's size is the largest take picture (both even) until the person sets one in
-// the clip properties panel; every take is fitted whole into it, in the review and in
-// the file. The takes are edited from the app's own model here — never recorded — so
-// the check drives exactly what a person would see.
+// The clip's size is the largest take picture (both even), derived — never the person's
+// to set — and every take is fitted whole into it, in the review and in the file. The
+// takes are edited from the app's own model here, never recorded, so the check drives
+// exactly what a person would see.
 
 import { expect, test, type Page } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
@@ -27,22 +27,6 @@ const clipSize = (page: Page): Promise<string | null> =>
     return session.clip.size()?.toString() ?? null;
   }, HOOKS);
 
-/** What the clip store has written down for the size — the debounced write, awaited. */
-const storedSize = (page: Page): Promise<string | undefined> =>
-  page.evaluate(async () => {
-    const db = await new Promise<IDBDatabase>((resolve, reject) => {
-      const opened = indexedDB.open('democlip');
-      opened.onsuccess = () => resolve(opened.result);
-      opened.onerror = () => reject(opened.error);
-    });
-    const meta = await new Promise<{ properties?: Record<string, string> } | undefined>((resolve, reject) => {
-      const request = db.transaction('meta', 'readonly').objectStore('meta').get('current');
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = () => reject(request.error);
-    });
-    return meta?.properties?.size;
-  });
-
 /** Append a take built by the fixture, with the picture size it was encoded at. */
 async function addStoredTake(page: Page, index: number, picture: { width: number; height: number }): Promise<void> {
   await page.evaluate(async ({ url, index, picture }) => {
@@ -51,18 +35,6 @@ async function addStoredTake(page: Page, index: number, picture: { width: number
     const take = (window_.__e2eTakes ?? [])[index];
     if (take) session.clip.addTake(take.blob, take.seconds, picture);
   }, { url: HOOKS, index, picture });
-}
-
-/** Type a `W×H` into the panel's size row and close it, as a person would. */
-async function setSize(page: Page, value: string): Promise<void> {
-  const [width, height] = value.split('x');
-  if (!(await page.locator('#clip-prop-menu').evaluate(node => node.classList.contains('on')))) {
-    await page.locator('#props-btn').click();
-  }
-  const fields = page.locator('#clip-prop-menu .prop-size input');
-  await fields.first().fill(width);
-  await fields.nth(1).fill(height);
-  await page.locator('#props-btn').click();
 }
 
 /** Pick a target in the Export menu and read the downloaded bytes. */
@@ -116,51 +88,48 @@ test('a clip of takes of different sizes plays in one frame and exports it', asy
   expect(await trackSizeOf(page, bytes, 'video/webm')).toEqual({ width: 960, height: 540 });
 });
 
-test('the clip size is shown and set in the panel, and taken back by the one undo', async ({ page }) => {
+test('the clip size is shown in the panel, and there is nothing to edit it with', async ({ page }) => {
   const app = boot(page);
-  await app.goto();
+  await app.gotoAgent();
   const takes = await makeTakes(page, { width: 1280, height: 720, seconds: 2 });
   await app.seed(takes);
   await app.review();
 
   await expect.poll(() => clipSize(page)).toBe('1280x720');
 
-  // The panel shows the size the clip will be written at, as two numbers.
+  // The panel shows the size the clip will be written at — as a value, not a control.
   await page.locator('#props-btn').click();
-  await expect(page.locator('#clip-prop-menu .prop-size input').first()).toHaveValue('1280');
-  await expect(page.locator('#clip-prop-menu .prop-size input').nth(1)).toHaveValue('720');
-
-  await page.locator('#clip-prop-menu .prop-size input').first().fill('800');
-  await page.locator('#clip-prop-menu .prop-size input').nth(1).fill('600');
+  await expect(page.locator('#clip-prop-menu .prop-value')).toHaveText('1280x720');
+  const sizeRow = page.locator('#clip-prop-menu .prop-row').filter({ hasText: 'Clip size' });
+  await expect(sizeRow.locator('input')).toHaveCount(0);
+  await expect(sizeRow.locator('textarea')).toHaveCount(0);
   await page.locator('#props-btn').click();
 
-  await expect.poll(() => clipSize(page)).toBe('800x600');
-  await expect.poll(() => canvasSize(page)).toEqual({ width: 800, height: 600 });
-
-  // The header's one undo takes it back.
-  await page.locator('#cut-undo').click();
+  // And an agent is refused the same way: the size is not the person's to set.
+  const refused = await page.evaluate(async () => {
+    const surface = (globalThis as { democlip?: { edit: { setClipProperty(p: string, v: string): unknown } } }).democlip;
+    return surface?.edit.setClipProperty('size', '800x600');
+  });
+  expect(refused).toMatchObject({ ok: false });
   await expect.poll(() => clipSize(page)).toBe('1280x720');
 });
 
-test('the clip size is kept with the clip, and a reload comes back to it', async ({ page }) => {
+test('the clip size follows the takes, and a reload comes back to it', async ({ page }) => {
   const app = boot(page);
   await app.goto();
   const takes = await makeTakes(page, { width: 1280, height: 720, seconds: 2 });
   await app.seed(takes);
   await app.review();
 
-  await setSize(page, '800x600');
-  await expect.poll(() => clipSize(page)).toBe('800x600');
-  await expect.poll(() => canvasSize(page)).toEqual({ width: 800, height: 600 });
+  await expect.poll(() => clipSize(page)).toBe('1280x720');
 
-  // The write is debounced, so wait for the store before a reload.
-  await expect.poll(() => storedSize(page)).toBe('800x600');
+  // The takes carry their own picture sizes, so the derived size comes back with them.
   await page.reload();
-  await expect.poll(() => clipSize(page)).toBe('800x600');
-  await expect.poll(() => canvasSize(page)).toEqual({ width: 800, height: 600 });
+  await expect.poll(() => clipSize(page)).toBe('1280x720');
+  await expect.poll(() => canvasSize(page)).toEqual({ width: 1280, height: 720 });
 });
 
-test('a larger take grows the clip size, and a size the person set is not moved by it', async ({ page }) => {
+test('a larger take grows the clip size, and a smaller one does not shrink it', async ({ page }) => {
   const app = boot(page);
   await app.goto();
   const takes = await makeTakes(page, { width: 640, height: 360, seconds: 1 });
@@ -168,17 +137,14 @@ test('a larger take grows the clip size, and a size the person set is not moved 
   await app.review();
   await expect.poll(() => clipSize(page)).toBe('640x360');
 
-  // a larger take arrives: the clip grows to it and the frame follows
+  // A larger take arrives: the clip grows to it and the frame follows.
   const larger = await makeTake(page, { width: 1280, height: 720, seconds: 1 });
   await addStoredTake(page, larger.index, { width: 1280, height: 720 });
   await expect.poll(() => clipSize(page)).toBe('1280x720');
   await expect.poll(() => canvasSize(page)).toEqual({ width: 1280, height: 720 });
 
-  // once the person sets one, a later larger take does not move it
-  await setSize(page, '800x600');
-  await expect.poll(() => clipSize(page)).toBe('800x600');
-
-  const biggest = await makeTake(page, { width: 1920, height: 1080, seconds: 1 });
-  await addStoredTake(page, biggest.index, { width: 1920, height: 1080 });
-  await expect.poll(() => clipSize(page)).toBe('800x600');
+  // A smaller one does not shrink it.
+  const smaller = await makeTake(page, { width: 320, height: 180, seconds: 1 });
+  await addStoredTake(page, smaller.index, { width: 320, height: 180 });
+  await expect.poll(() => clipSize(page)).toBe('1280x720');
 });

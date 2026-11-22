@@ -31,5 +31,5 @@
 
 ## Notes
 
-- All checklist items pass. The two clarifications were answered on 2026-11-22: a take whose picture has another shape is fitted whole and centred (letterbox), and the clip size grows to the largest width and height among the takes until the person sets it, after which the person's size is kept.
+- All checklist items pass. The clarifications were answered on 2026-11-22: a take whose picture has another shape is fitted whole and centred (letterbox); the clip size grows to the largest width and height among the takes, both even; and it is **derived only** — shown in the clip properties panel, but not the person's to set.
 - Ready for `/speckit.clarify` or `/speckit.plan`.

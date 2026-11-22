@@ -19,17 +19,6 @@ describe('ClipSize', () => {
     expect(ClipSize.of(ClipSize.MAX_EDGE + 1, 100)).toBeNull();
   });
 
-  it('parses the written form, either multiplication sign, and refuses the rest', () => {
-    expect(ClipSize.parse('1920x1080')?.toString()).toBe('1920x1080');
-    expect(ClipSize.parse('1920×1080')?.toString()).toBe('1920x1080');
-    expect(ClipSize.parse(' 800 x 600 ')?.toString()).toBe('800x600');
-    expect(ClipSize.parse('985x611')?.toString()).toBe('986x612');
-    expect(ClipSize.parse('')).toBeNull();
-    expect(ClipSize.parse('wide')).toBeNull();
-    expect(ClipSize.parse('1920')).toBeNull();
-    expect(ClipSize.parse('0x1080')).toBeNull();
-  });
-
   it('is the largest width and the largest height among the pictures, rounded up', () => {
     expect(ClipSize.largest([{ width: 1280, height: 720 }, { width: 1920, height: 1080 }])?.toString())
       .toBe('1920x1080');

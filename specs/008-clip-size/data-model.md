@@ -15,8 +15,6 @@ edges are.
 - `ClipSize.of(width, height)` — returns a `ClipSize`, or `null` when an edge is not a
   finite positive number or is beyond `MAX_EDGE`. An odd edge is rounded **up** to the
   next even size (so `985` → `986`).
-- `ClipSize.parse(text)` — `"WxH"` (either `x` or `×`) to a `ClipSize`, or `null`. The
-  one parse the `size` clip property uses.
 - `ClipSize.largest(pictures)` — the largest width and the largest height among a list
   of pictures, rolled up to even, or `null` for an empty list.
 
@@ -28,9 +26,9 @@ edges are.
   size (the smaller of the two scale factors), centred. The rule both the review and
   the export draw through.
 
-**`MAX_EDGE`** is 8192 — the largest picture the app's AVC level table carries. A size
-beyond it is refused by the property, with the reason said plainly; the browser's own
-refusal at encode time is unchanged.
+**`MAX_EDGE`** is 8192 — the largest picture the app's AVC level table carries. A take
+whose picture is beyond it does not set the size (`largest` passes over it); the
+browser's own refusal at encode time is unchanged.
 
 ## `Picture` — the size of a take's own picture
 
@@ -63,18 +61,17 @@ carry the picture through.
 
 ## `Clip` — gains a size
 
-- `size(): ClipSize | null` — the person's size when `properties.get('size')` parses,
-  else the largest take picture rounded up to even, else `null` when there are no
-  takes. **Derived, not stored** (except the person's size).
-- No new stored field and no new event. The clip already announces `take-added` and
-  `property-changed`; the size follows from the takes and the `size` property, so the
-  view re-fits when either changes.
+- `size(): ClipSize | null` — the largest take picture rounded up to even, or `null`
+  when no take has a measured picture. **Derived, not stored, and not the person's to
+  set.**
+- No new stored field and no new event. The clip already announces `take-added`; the
+  size follows from the takes, so the view re-fits when one arrives.
 
-## `ClipProperties` — holds the person's size
+## `ClipProperties` — unchanged
 
-No code change. The person's size is one more string in the existing map, under the id
-`size`, in canonical `"WxH"` form. It is therefore written with the clip, read back
-after a reload, and taken back by the one undo, with no new machinery.
+No code change: the size is not kept among the clip's properties. It is derived from the
+takes, and the panel shows it with a **read-only** descriptor (see
+`contracts/clip-size.md`).
 
 ## `ClipSnapshot` — the takes gain a picture
 
@@ -92,8 +89,8 @@ beside the blob; a stored take without one is measured from its blob on load.
 |---|---|
 | the even rule, the largest rule, the fit rectangle | `ClipSize` |
 | the size of one take's picture | `Take` |
-| the clip's size (derived, or the person's) | `Clip.size()` |
-| the person's size as written down | `ClipProperties` (`size`) |
+| the clip's size (derived from the takes) | `Clip.size()` |
+| showing the size without a way to set it | the `size` clip property's `readOnly` |
 | measuring a recorded take's picture | `TakeProbeAdapter` |
 | measuring an imported file's picture | `TakeFileInspector` |
 | drawing a take inside the size | the review's `drawFrame`/`dissolve` and the encoder |

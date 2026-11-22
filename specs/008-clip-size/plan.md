@@ -8,15 +8,16 @@
 
 A clip gets one **clip size** — a width and height, both even — that the review shows
 and every export and publish writes. Each take carries the size of its own picture;
-the clip's size is the largest width and largest height among those pictures
-(rounded up to even) until the person sets it in the clip's properties, from which
-point their size is kept. Every take is drawn into that size whole and centred,
-letterboxed against the clip's background, in the review and in the export alike.
+the clip's size is the largest width and largest height among those pictures, rounded
+up to even, and it follows them: a larger take grows it and a smaller one does not
+shrink it. Every take is drawn into that size whole and centred, letterboxed against
+the clip's background, in the review and in the export alike.
 
-The size is a **clip property** in the existing sense: declared by the app, edited by
-the one shared panel, kept with the clip, and taken back by the one undo. The takes
-themselves are untouched — the size changes what is drawn, never the recorded bytes,
-so the app's "never re-encoded" rule holds.
+The size is **shown as a clip property** and is not the person's to set: the shared
+panel draws its value and offers no control, and the automation surface refuses to
+change it. It is derived, never stored, so nothing can hold a clip to a shape its own
+takes do not have. The takes themselves are untouched — the size changes what is
+drawn, never the recorded bytes, so the app's "never re-encoded" rule holds.
 
 ## Technical Context
 
@@ -86,12 +87,11 @@ src/
 ├── domain/clip/
 │   ├── ClipSize.ts          # new: the size value object, even rule, fit rect
 │   ├── ClipSize.test.ts     # new
-│   ├── Clip.ts              # size(): person's size or the takes' largest
-│   ├── Clip.test.ts         # the largest and the person's size
+│   ├── Clip.ts              # size(): the takes' largest, derived
+│   ├── Clip.test.ts         # the largest, the growth, and that a property cannot move it
 │   ├── Take.ts              # carries its own picture size
 │   ├── Take.test.ts         # refuses a picture with no size
-│   ├── TakeRepository.ts    # add(blob, duration, picture)
-│   └── ClipProperties.ts     # holds the person's size string (no code change)
+│   └── TakeRepository.ts    # add(blob, duration, picture)
 ├── application/
 │   ├── record-take.ts       # passes the measured picture to addTake
 │   ├── import-take.ts       # passes the inspected picture to addTake
@@ -105,8 +105,8 @@ src/
 │   └── clip-store.ts        # a stored take keeps its picture size
 └── ui/
     ├── clip/
-    │   ├── clip-properties.ts    # the size clip property; control 'size'
-    │   ├── properties-panel.ts   # draws a two-field size control
+    │   ├── clip-properties.ts    # the size row, read-only
+    │   ├── properties-panel.ts   # draws the size as a value, not a control
     │   ├── clip.ts               # seekAndDraw fits; resizeReview()
     │   ├── review-flow.ts        # openReview sets the canvas to the clip size
     │   ├── playback.ts           # drawClipFrame fits

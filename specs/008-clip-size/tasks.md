@@ -10,6 +10,11 @@ rule in `src/domain/` and a browser check for anything drawn, played or encoded.
 **Organization**: Tasks are grouped by user story so each can be implemented and tested
 on its own.
 
+**Note**: the clip size became **read-only** after the first cut of this work — the
+person cannot set it (see the spec's clarifications). Tasks T026–T030 below still read
+as the first design; the shipped behaviour is a panel value with no control and a
+refused surface operation.
+
 ## Format: `[ID] [P?] [Story] Description`
 
 - **[P]**: can run in parallel (different files, no dependency on an incomplete task)

@@ -6,9 +6,8 @@ Phase 0 decisions. Each one is the rule the spec asked for, placed where it belo
 
 **Decision**: a **`ClipSize`** class in `src/domain/clip/`, holding a width and a
 height, both even, at least 2×2. `of(width, height)` rounds an odd edge **up** to the
-next even size; `parse(text)` reads `"1920x1080"` (one parse, used by the property).
-`largest(pictures)` gives the largest width and largest height among a list and rolls
-both up to even.
+next even size. `largest(pictures)` gives the largest width and largest height among a
+list and rolls both up to even.
 
 **Why**: an odd edge is refused by H.264 (`avc1.*`), so making the clip size even once,
 at the top, is what lets **every** target write exactly the clip size — and it lets the
@@ -19,26 +18,27 @@ picture, which is the point of growing to the largest (SC-008).
 **Alternatives considered**: keep the clip size odd and let the encoder's
 `evenPicture` take it down (what the code does today) — rejected: then the WebM file
 keeps the odd size and the MP4 file loses a pixel, so "the final exporting size, the
-clip size" would be false for one of the two. Force the person to type even numbers —
-rejected: a person types `985` and gets an error for a rule about the *codec*; rounding
-up is one line and invisible. A minimum edge of 2 matches the compositor's own floor.
+clip size" would be false for one of the two. A minimum edge of 2 matches the
+compositor's own floor.
 
-## The size grows to the largest take, then the person owns it
+## The size grows to the largest take, and is not the person's to set
 
-**Decision**: `Clip.size()` returns **the person's size when they have set one** (the
-`size` clip property is non-empty), and otherwise **the largest take picture rounded up
-to even**. Setting the property is what "locks" it; there is no second flag.
+**Decision**: `Clip.size()` returns **the largest take picture rounded up to even**, or
+null when no take has a measured picture. Nothing else: the size is **derived**, never a
+field, and never the person's to set. The panel draws it and offers no control, and the
+automation surface refuses to change it.
 
-**Why**: the spec's two states fall out of one rule with no extra state to keep, save
-or undo: unset → derived and growing; set → kept (FR-002, FR-006, FR-016). The value
-already has a home that is written with the clip and taken back by the one undo — the
-`ClipProperties` map — so the size is saved, restored and undone with the title and the
-description and needs no new machinery.
+**Why**: the size is the shape every take must fit into, so a size smaller than a take
+would throw picture away and a size of another shape would letterbox every take — the
+person could hold the clip to a shape its own takes do not have. Deriving it from the
+takes alone is the only answer that cannot be wrong (FR-002, FR-006, FR-009, FR-016).
+And the clip still knows the size to show without keeping anything: it asks its takes.
 
-**Alternatives considered**: a separate `sizeLocked` boolean plus the size — rejected:
-two things to save instead of one, and the lock is nothing but "the property is
-present". A field on the `Clip` outside `ClipProperties` — rejected: it would duplicate
-the properties seam (announce, undo, snapshot) for one value.
+**Alternatives considered**: store the person's size as a `size` clip property and keep
+it once set (the first design) — rejected: it let the person break the clip, which is
+what this change removes. A separate `sizeLocked` flag — rejected: more state for a
+behaviour the app no longer wants. A field on the `Clip` — rejected: it would duplicate
+the properties seam for a value the takes already give.
 
 ## Each take carries the size of its own picture
 
@@ -61,25 +61,29 @@ the size could not grow to the largest. Probe the blob inside the domain — rej
 `domain/` may not touch the browser. A global "current recording size" on `state.ts` —
 rejected: it would be a second owner of a fact the take already owns.
 
-## The person's size is a clip property; a take of another shape is fitted
+## The size is shown as a read-only clip property; a take of another shape is fitted
 
 **Decision**: the size is registered in the app's clip-property register
-(`ui/clip/clip-properties.ts`) under id **`size`**, with a new **`size`** control that
-the panel draws as two number fields. `ClipSize.frameFor(picture)` gives the rectangle
-a take is drawn into: the picture scaled to **fit** inside the clip size (whichever
-edge runs out first), centred, with the clip's background around it. The review's
-`drawFrame`/`drawClipFrame`/`dissolve` and the export's encoder all draw through that
-rectangle.
+(`ui/clip/clip-properties.ts`) under id **`size`**, marked **read-only** — the panel
+draws its value and offers no control, and the surface refuses to set it.
+`ClipSize.frameFor(picture)` gives the rectangle a take is drawn into: the picture
+scaled to **fit** inside the clip size (whichever edge runs out first), centred, with
+the clip's background around it. The review's `drawFrame`/`drawClipFrame`/`dissolve`
+and the export's encoder all draw through that rectangle.
 
-**Why**: the fit rule is a rule about the size, so it lives in the `ClipSize` class and
-every place that draws asks it, rather than each re-implementing "scale and centre" —
-the drift the domain skill warns about. The size is a property like the title, so the
-panel, the reload, the undo and the agent surface all get it for free.
+**Why**: showing the size in the one panel that says what a clip is keeps a person
+informed without handing them a control they could break the clip with; the read-only
+flag is the whole of the rule, and the panel and the surface both read it. The fit rule
+is a rule about the size, so it lives in the `ClipSize` class and every place that
+draws asks it, rather than each re-implementing "scale and centre" — the drift the
+domain skill warns about.
 
-**Alternatives considered**: letterbox with the review's CSS rather than the canvas —
-rejected: the export would then need its own copy of the rule and could disagree. Draw
-the take stretched to fill — rejected: the spec asks for the whole picture without
-distortion. Crop to fill — rejected by the clarification (fit whole).
+**Alternatives considered**: leave the size out of the panel and the surface entirely —
+rejected by the clarification: the size is useful to see. Letterbox with the review's
+CSS rather than the canvas — rejected: the export would then need its own copy of the
+rule and could disagree. Draw the take stretched to fill — rejected: the spec asks for
+the whole picture without distortion. Crop to fill — rejected by the clarification (fit
+whole).
 
 ## The clip's background
 

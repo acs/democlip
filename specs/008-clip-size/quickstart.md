@@ -24,8 +24,8 @@ Expected:
   landscape pair gives the smallest rectangle that holds both.
 - `frameFor({1280,720})` on a `1920×1080` size is centred with bars top and bottom.
 - `Clip.size()` grows from `1280×720` to `1920×1080` when the larger take arrives, and
-  stops changing once `setProperty('size', …)` has been called.
-- The `size` property refuses `0`, `-1`, `""` and beyond `MAX_EDGE`, and rounds `985`.
+  is not moved by a size written into the properties.
+- The `size` clip property is read-only: `with` refuses every value.
 
 ## What a person sees, in a browser
 
@@ -41,12 +41,12 @@ person would see:
 2. **Fit, whole** — both takes are visible, none cut off (the fixture's coloured
    edges reach the frame's inner edges on the shorter axis).
 3. **The size is shown** — open the settings control in the preview; the panel's
-   `Clip size` row shows `W×H`.
-4. **Change it** — type a new `W×H`, close the panel, and the review's canvas is the
-   new size.
-5. **It is kept** — reload; the panel shows the changed size and the review opens at
-   it.
-6. **The one undo takes it back** — press undo; the previous size is back.
+   `Clip size` row shows `W×H` and has no field to change it.
+4. **An agent is refused** — `setClipProperty('size', …)` answers `ok: false`, and the
+   size is unchanged.
+5. **It comes back** — reload; the same size the takes derive is shown again.
+6. **A larger take grows it** — add a larger take; the frame and the row follow, while a
+   smaller one leaves it.
 7. **A file is written at it** — export the WebM and check the blob's video track is
    the clip size.
 
@@ -66,6 +66,5 @@ npm run dev
 2. Crop a region and record a second take.
 3. In the review, open the **settings** control (the three sliders in the corner of
    the preview): the **Clip size** row shows the larger of the two pictures, rounded up
-   to even.
-4. Type a different size and confirm the picture re-fits, whole and centred.
-5. Export; the file is the size you typed.
+   to even, and there is no field to change it.
+4. Export; the file is that size, and so is the review's frame.

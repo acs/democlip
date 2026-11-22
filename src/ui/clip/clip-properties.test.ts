@@ -12,7 +12,7 @@ describe('the clip property register', () => {
     expect(clipProperty('title')?.label).toBe('Title');
     expect(clipProperty('description')?.control).toBe('long-text');
     expect(clipProperty('addToExport')?.control).toBe('toggle');
-    expect(clipProperty('size')?.control).toBe('size');
+    expect(clipProperty('size')?.readOnly).toBe(true);
   });
 
   it('answers null for a property this build does not offer', () => {
@@ -51,20 +51,12 @@ describe('the clip property register', () => {
     expect(addToExport.value(addToExport.with(on, 'no')!)).toBe('');
   });
 
-  it('writes the clip size as a canonical even pair, and refuses what it cannot', () => {
+  it('offers the clip size as a value the person does not set', () => {
     const size = clipProperty('size')!;
-    expect(size.with(ClipProperties.EMPTY, '1920x1080')?.get('size')).toBe('1920x1080');
-    expect(size.with(ClipProperties.EMPTY, '985x611')?.get('size')).toBe('986x612');
-    expect(size.with(ClipProperties.EMPTY, ' 800 x 600 ')?.get('size')).toBe('800x600');
-    expect(size.with(ClipProperties.EMPTY, '')).toBeNull();
-    expect(size.with(ClipProperties.EMPTY, 'wide')).toBeNull();
-    expect(size.with(ClipProperties.EMPTY, '0x1080')).toBeNull();
-  });
-
-  it('shows the size the clip is written at — the set one, or none', () => {
-    const size = clipProperty('size')!;
+    expect(size.readOnly).toBe(true);
+    // Nothing to write: the size follows the takes, so the property refuses any value.
+    expect(size.with(ClipProperties.EMPTY, '1920x1080')).toBeNull();
+    // And with no clip handed in there is no derived size to show.
     expect(size.value(ClipProperties.EMPTY)).toBe('');
-    const set = size.with(ClipProperties.EMPTY, '1280x720')!;
-    expect(size.value(set)).toBe('1280x720');
   });
 });

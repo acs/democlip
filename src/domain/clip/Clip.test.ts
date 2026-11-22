@@ -439,20 +439,13 @@ describe('Clip size', () => {
     expect(clipOf(2).size()).toBeNull();
   });
 
-  it("is the person's own size once they set it, and a later take does not move it", () => {
+  it('is not moved by a size written into the properties — it follows the takes', () => {
     const clip = clipSized({ width: 1280, height: 720 });
     clip.setProperty('size', '800x600');
-    expect(clip.size()?.toString()).toBe('800x600');
+    expect(clip.size()?.toString()).toBe('1280x720');
 
     clip.addTake(new Blob(['x']), 2, { width: 1920, height: 1080 });
-    expect(clip.size()?.toString()).toBe('800x600');
-  });
-
-  it('takes a set size back with the one undo', () => {
-    const clip = clipSized({ width: 1280, height: 720 });
-    clip.setProperty('size', '800x600');
-    clip.undo();
-    expect(clip.size()?.toString()).toBe('1280x720');
+    expect(clip.size()?.toString()).toBe('1920x1080');
   });
 
   it("comes back from a snapshot with the takes' pictures", () => {

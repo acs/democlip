@@ -7,9 +7,9 @@
 //     it cannot drift from the takes it is made of);
 //   * the cuts — the stretches approved out of it — as a set that cannot overlap;
 //   * the annotations — what is drawn over the picture — as a set that can;
-//   * what the clip says about itself — its title, its description, and its own
-//     **size** — which nothing else is a fraction of and nothing is scaled when the
-//     clip grows. The size is derived from the takes until the person sets it.
+//   * what the clip says about itself — its title and its description — which nothing
+//     else is a fraction of and nothing is scaled when the clip grows. Its own **size**
+//     is derived from the takes, not kept among them.
 //
 // — and it owns the rules that relate them, which used to be spread between the
 // marks module, the exporter and a couple of fields on the app: a cut that is
@@ -142,14 +142,14 @@ export class Clip {
   }
 
   /**
-   * The clip's own size: the picture the review shows and every export writes. It is
-   * the person's, once they have set the `size` property, and otherwise the largest
-   * width and largest height among the takes — both even — or null when no take has a
-   * measured picture. Derived, never a field: it follows the takes and the property.
+   * The clip's own size: the picture the review shows and every export writes. It is the
+   * largest width and largest height among the takes — both even — or null when no take
+   * has a measured picture. Derived, never a field, and **not the person's to set**: it
+   * follows the takes alone, so nothing can hold a clip to a shape its own takes do not
+   * have.
    */
   size(): ClipSize | null {
-    const set = ClipSize.parse(this.props.get('size'));
-    return set ?? ClipSize.largest(this.repo.all().map(take => take.picture));
+    return ClipSize.largest(this.repo.all().map(take => take.picture));
   }
 
   /**

@@ -47,13 +47,6 @@ export class ClipSize {
     return new ClipSize(w, h);
   }
 
-  /** A size from `"1920x1080"` (either `x` or `×`), or null for anything else. */
-  static parse(text: string): ClipSize | null {
-    const match = /^\s*(\d+)\s*[x×]\s*(\d+)\s*$/i.exec(text ?? '');
-    if (!match) return null;
-    return ClipSize.of(Number(match[1]), Number(match[2]));
-  }
-
   /**
    * The largest width and the largest height among a list of pictures, rolled up to
    * even — the size a clip grows to. Null for an empty list, or when no picture has a
