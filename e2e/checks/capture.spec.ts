@@ -75,6 +75,42 @@ test('the webcam alone is the webcam’s size, not the screen it followed', asyn
   await expect(page.locator('#s-text')).not.toContainText('1920×1080');
 });
 
+test('the crop box is drawn, and a pause before the drag does not lose it', async ({ page }) => {
+  // The box is painted by the preview's own loop. A press before the pointer has moved
+  // makes the drag box a bare point; building a `CropRegion` from it threw, the throw
+  // ended the loop, and the box was never drawn again — the crosshair stayed and the
+  // crop still landed, which is how it looked: no box, but a region all the same. A
+  // pause between the press and the drag is what a hand does, so the check pauses.
+  await installStandInShare(page, { width: 1280, height: 720 });
+  const app = boot(page);
+  await app.goto();
+  await page.locator('#screen-btn').click();
+  await expect(page.locator('#s-text')).toContainText('Live');
+
+  const boxPixels = (): Promise<number> => page.evaluate(() => {
+    const cv = document.getElementById('preview') as HTMLCanvasElement;
+    const { data } = cv.getContext('2d')!.getImageData(0, 0, cv.width, cv.height);
+    let n = 0;
+    for (let i = 0; i < data.length; i += 4) if (data[i] > 140 && data[i + 1] < 110 && data[i + 2] < 110) n++;
+    return n;
+  });
+
+  // The box over the whole frame, once the share is live.
+  await expect.poll(boxPixels).toBeGreaterThan(0);
+
+  const rect = await page.locator('#preview').boundingBox();
+  if (!rect) throw new Error('the preview has no box to drag on');
+  await page.mouse.move(rect.x + rect.width * 0.3, rect.y + rect.height * 0.3);
+  await page.mouse.down();
+  await page.waitForTimeout(300);            // the hand pauses before it moves
+  await page.mouse.move(rect.x + rect.width * 0.7, rect.y + rect.height * 0.7, { steps: 8 });
+
+  // The dragged box is drawn — it does not vanish, and the preview keeps drawing.
+  await expect.poll(boxPixels).toBeGreaterThan(0);
+  await page.mouse.up();
+  await expect.poll(boxPixels).toBeGreaterThan(0);
+});
+
 test('a take recorded after a larger clip keeps the webcam’s own size on the preview', async ({ page }) => {
   // The review is not resized when the sources change, so a webcam-only take after a
   // larger clip used to be drawn into the clip's size while it recorded — deformed on

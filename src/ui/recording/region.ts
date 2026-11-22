@@ -13,8 +13,16 @@ import { el, ctx } from '../dom.js';
 
 export const FULL = CropRegion.FULL;
 
-export function isFullRegion(r: CropRegion): boolean {
-  return r.isFull;
+/** A rectangle of the picture, in fractions — the committed region, or one being dragged. */
+export interface FractionRect {
+  readonly x: number;
+  readonly y: number;
+  readonly w: number;
+  readonly h: number;
+}
+
+export function isFullRegion(r: FractionRect): boolean {
+  return r.x === 0 && r.y === 0 && r.w === 1 && r.h === 1;
 }
 
 const MIN_PX = 16;               // below this a pointer gesture counts as a click
@@ -137,10 +145,15 @@ export function drawRegion(): void {
   const W = el.cv.width, H = el.cv.height;
   const fs = fontPx();
 
-  let rect = capture.region;
+  // What to outline: the committed crop, or the box being dragged. The drag is a plain
+  // rectangle, not the validating value object — a press before the pointer has moved is
+  // a bare point, and `CropRegion` refuses an empty one. That throw used to escape the
+  // preview's loop and stop it drawing for the rest of the session: the box vanished,
+  // the crosshair stayed, and the crop still landed, because the gesture itself was fine.
+  let rect: FractionRect = capture.region;
   if (crop.active) {
     const box = crop.box();
-    rect = CropRegion.from(box.x / W, box.y / H, box.w / W, box.h / H);
+    if (box.w > 0 && box.h > 0) rect = { x: box.x / W, y: box.y / H, w: box.w / W, h: box.h / H };
   }
 
   const x = rect.x * W, y = rect.y * H, w = rect.w * W, h = rect.h * H;
