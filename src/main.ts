@@ -42,6 +42,7 @@ import { youTubeAccount, uploadClip } from './ui/publishing/youtube-flow.js';
 import { blueskyAccount, publishClip } from './ui/publishing/publish-flow.js';
 import { keep } from './ui/keeping/keep.js';
 import { resumeClip } from './ui/keeping/resume-flow.js';
+import { loadProfiles, seedClip, initProfileMenu } from './ui/profile/profile-flow.js';
 import { capture } from './infra/capture.js';
 
 function init(): void {
@@ -117,8 +118,17 @@ function init(): void {
   // only the one that forced it — and a stored clip is opened back into the
   // review on the way in. The session is over at New, or when the clip is
   // exported, and the kept copy goes with it.
+  //
+  // The profiles are read in first, and seed a fresh clip, so a clip that comes
+  // back is never rewritten by the active profile — a restored clip carries its
+  // own values.
   keep.watch();
-  void resumeClip();
+  void (async () => {
+    await loadProfiles();
+    initProfileMenu();
+    const restored = await resumeClip();
+    if (!restored) seedClip();
+  })();
 
   // PWA install prompt
   window.addEventListener('beforeinstallprompt', e => {

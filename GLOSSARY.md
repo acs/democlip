@@ -130,6 +130,33 @@ A clip property is **not a fraction of the clip and is not scaled when the clip 
 where a cut and an annotation are. It changes through the clip, is announced like every
 other change, is what the one **undo** takes back, and is kept with the clip.
 
+## Profiles
+
+A **profile** is a named set of the app's configuration a person works under — one for each
+way of working, such as **DemoClipTV** or **GraditoneTV**. It is kept **outside any clip**,
+so it outlives the clip, the page and the session, and a clip that comes back after a
+reload is still under it. Exactly one is **active**, and a new clip starts with the
+settings it carries.
+
+In its first iteration a profile carries one setting: the clip property **add to export**.
+Where a clip property says what **this** clip does, the profile says what a clip made under
+it **starts** doing — the clip keeps its own value, and changing it never changes the
+profile. The setting is edited through the **same shared control** the clip property
+declares, so a later iteration carries another clip property (a title, a default arrow
+colour) by declaring it, not by adding a second kind of setting.
+
+The choice belongs to the session. A **session** may be switched freely until it **begins
+to capture**, and from that moment the profile is **fixed** until the session ends: another
+cannot be chosen, the messages say so, and a profile created meanwhile joins the list
+without becoming active. The profile is held **beside**, not inside, the clip — the one
+**undo** is the clip's and does not reach it.
+
+| word | what it is | in the code |
+|---|---|---|
+| **profile** | a named set of the app's configuration a person works under, kept outside any clip. It carries the clip-property settings a clip started under it begins with, and outlives the clip, the page and the session | `Profile` (`src/domain/profile/Profile.ts`) |
+| **active profile** | the one profile the app is working under. Exactly one at a time; what a new clip starts with comes from it. It may be switched until the session **begins to capture**, and is fixed from then until the session ends | `Profiles.active()` (`src/domain/profile/Profiles.ts`) |
+| **built-in default profile** | the profile the app always has and falls back to, so an app with nothing set up behaves as it always did. It carries no settings and cannot be renamed or removed | `Profiles.DEFAULT_ID` (`src/domain/profile/Profiles.ts`) |
+
 ## Exporting
 
 | word | what it is | in the code |

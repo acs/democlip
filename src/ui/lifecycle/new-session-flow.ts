@@ -9,6 +9,7 @@ import { session } from '../../session.js';
 import { capture } from '../../infra/capture.js';
 import { el, setStatus } from '../dom.js';
 import { syncSources, stopRecording, toggleScreen } from '../recording/record-flow.js';
+import { seedClip } from '../profile/profile-flow.js';
 
 export function startNewSession(): void {
   if (currentPhase() === 'recording') { void stopRecording(); return; }
@@ -23,6 +24,9 @@ export function startNewSession(): void {
 
   setPhase('idle');
   session.end();               // the clip announces `cleared`; the views reset
+  // The fresh clip starts with the active profile's settings. The session has ended, so
+  // a profile may be chosen again — and this one is what a new clip begins under.
+  seedClip();
   setStatus('ready', 'Ready');
 
   // Same as the app start: go back for a share — but only while the screen is a

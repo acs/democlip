@@ -268,6 +268,34 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 .cam-item-name{flex:1;min-width:0;white-space:nowrap;text-overflow:ellipsis;overflow:hidden;}
 .cam-item-check{flex-shrink:0;color:var(--green);font-size:12px;}
 
+/* PROFILES — the toolbar popover. The chrome is the camera menu's; these are its rows.
+   Each profile is a row: its name (the choice), the settings it carries (one of the same
+   shared controls the clip properties use), and the person's own rename and remove. */
+.profile-menu{min-width:264px;padding:7px;}
+.profile-row{display:flex;flex-direction:column;gap:4px;padding:6px 6px 7px;border-radius:9px;border:1px solid transparent;}
+.profile-row.active{background:var(--glass);border-color:var(--glass-b);}
+.profile-head{display:flex;align-items:center;gap:8px;}
+.profile-pick{display:flex;align-items:center;gap:10px;flex:1;min-width:0;padding:6px 8px;border-radius:7px;border:none;background:transparent;color:var(--text);font-family:var(--font-ui);font-size:13px;letter-spacing:.02em;text-align:left;cursor:pointer;transition:background .15s;}
+.profile-pick:hover:not(:disabled){background:var(--glass);}
+.profile-pick:disabled{cursor:not-allowed;opacity:.5;}
+.profile-pick-name{flex:1;min-width:0;white-space:nowrap;text-overflow:ellipsis;overflow:hidden;}
+.profile-pick-check{flex-shrink:0;color:var(--green);font-size:12px;}
+.profile-acts{display:flex;align-items:center;gap:2px;flex-shrink:0;}
+.profile-act{padding:4px 7px;border-radius:6px;border:none;background:transparent;color:var(--text-mid);font-family:var(--font-mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;transition:background .15s,color .15s;}
+.profile-act:hover:not(:disabled){background:var(--glass-b);color:var(--text);}
+.profile-act:disabled{cursor:not-allowed;opacity:.35;}
+.profile-rename-input{flex:1;min-width:0;padding:6px 8px;border-radius:7px;border:1px solid var(--glass-b2);background:var(--surface);color:var(--text);font-family:var(--font-ui);font-size:13px;}
+.profile-settings{display:flex;flex-direction:column;gap:3px;padding:0 8px;}
+.profile-setting{display:flex;align-items:center;gap:8px;font-family:var(--font-mono);font-size:10px;letter-spacing:.08em;color:var(--text-mid);cursor:pointer;}
+.profile-setting input{accent-color:var(--green);cursor:pointer;}
+.profile-setting input:disabled{cursor:not-allowed;}
+.profile-new{display:flex;align-items:center;gap:6px;padding:7px 6px 2px;margin-top:3px;border-top:1px solid var(--glass-b);}
+.profile-new-input{flex:1;min-width:0;padding:6px 8px;border-radius:7px;border:1px solid var(--glass-b2);background:var(--surface);color:var(--text);font-family:var(--font-ui);font-size:13px;}
+.profile-new-add{padding:6px 10px;border-radius:7px;border:1px solid var(--glass-b2);background:var(--glass);color:var(--text);font-family:var(--font-ui);font-size:12px;cursor:pointer;transition:background .15s;}
+.profile-new-add:hover{background:var(--glass-b);}
+.profile-lock{padding:5px 8px 2px;margin:0;font-family:var(--font-ui);font-size:11px;line-height:1.4;color:var(--text-mid);}
+.profile-empty{padding:8px 10px;font-family:var(--font-ui);font-size:12px;color:var(--text-mid);}
+
 /* PROPERTIES INSPECTOR — at the body, beside the picked annotation, so the preview
    cannot clip it. The same panel look as the camera menu, with a row per property. */
 .prop-menu{position:fixed;z-index:120;min-width:180px;max-width:240px;padding:10px;border-radius:10px;border:1px solid var(--glass-b2);background:var(--surface);backdrop-filter:blur(20px) saturate(1.4);-webkit-backdrop-filter:blur(20px) saturate(1.4);display:flex;flex-direction:column;gap:10px;opacity:0;visibility:hidden;transform:translateY(4px);transition:opacity .16s,transform .16s,visibility 0s linear .16s;}

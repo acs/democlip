@@ -104,6 +104,8 @@ export const el = {
   metaTheme: byId<HTMLMetaElement>('meta-theme'),
   themeIco:  byId<SVGElement>('theme-ico'),
   themeBtn:  byId<HTMLButtonElement>('theme-btn'),
+  profileBtn:  byId<HTMLButtonElement>('profile-btn'),
+  profileMenu: byId<HTMLElement>('profile-menu'),
 };
 
 export const ctx: CanvasRenderingContext2D = (() => {

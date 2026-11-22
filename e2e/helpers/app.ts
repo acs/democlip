@@ -28,6 +28,8 @@ export interface Booted {
   clear(): Promise<void>;
   /** Clear the clip and add the given takes, through the app's own module. */
   seed(takes: FixtureTake[]): Promise<void>;
+  /** Add the given takes without clearing, as a recording appends to the clip it is making. */
+  add(takes: FixtureTake[]): Promise<void>;
   /** The clip's length in seconds, read from the app's own model. */
   clipLength(): Promise<number>;
   /** Put the app in the review phase and load the first take, so editing is live. */
@@ -66,6 +68,19 @@ export function boot(page: Page): Booted {
           if (!take) continue;
           // The take carries its own picture size, as a recorded take does, so the clip
           // sizes itself by it.
+          const [width, height] = take.shape.split(/[x×]/).map(Number);
+          session.clip.addTake(take.blob, take.seconds, width > 0 && height > 0 ? { width, height } : null);
+        }
+      }, { url: HOOKS, indices: takes.map(take => take.index) });
+    },
+
+    async add(takes) {
+      await page.evaluate(async ({ url, indices }) => {
+        const { session } = await import(/* @vite-ignore */ url);
+        const store = (window as unknown as PageWindow).__e2eTakes ?? [];
+        for (const index of indices) {
+          const take = store[index];
+          if (!take) continue;
           const [width, height] = take.shape.split(/[x×]/).map(Number);
           session.clip.addTake(take.blob, take.seconds, width > 0 && height > 0 ? { width, height } : null);
         }
