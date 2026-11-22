@@ -21,8 +21,10 @@
 // and a failure to write is reported to the caller rather than swallowed.
 
 import type { Clip, ClipSnapshot } from '../domain/clip/Clip.js';
+import type { Picture } from '../domain/clip/ClipSize.js';
 import type { StoredAnnotation } from '../domain/annotation/Annotation.js';
 import type { KeptClipPort } from '../application/ports/KeptClipPort.js';
+import { takeFile } from './take-file.js';
 
 const DB_NAME = 'democlip';
 const DB_VERSION = 3;          // 3 adds the pictures an image annotation draws
@@ -38,10 +40,11 @@ export interface StoredClip {
   audio: boolean;
 }
 
-/** One take as it is kept: the recording, and how long it is. */
+/** One take as it is kept: the recording, how long it is, and the size of its picture. */
 interface StoredTake {
   blob: Blob;
   duration: number;
+  picture?: Picture;
 }
 
 /** The small half: how many takes, the cuts, the annotations, what it says, and the sound. */
@@ -71,7 +74,7 @@ export function saveTake(clip: Clip, index: number, audio: boolean): Promise<voi
     if (!take) return;
     const db = await openDb();
     const tx = db.transaction([TAKES, META], 'readwrite');
-    const record: StoredTake = { blob: take.blob, duration: take.duration };
+    const record: StoredTake = { blob: take.blob, duration: take.duration, picture: take.picture ?? undefined };
     tx.objectStore(TAKES).put(record, index);
     tx.objectStore(META).put(metaOf(clip, audio), META_KEY);
     await txComplete(tx);
@@ -103,7 +106,7 @@ export function saveClip(clip: Clip, audio: boolean): Promise<void> {
     const tx = db.transaction([TAKES, META], 'readwrite');
     takes.forEach((take, i) => {
       if (have.has(i)) return;
-      const record: StoredTake = { blob: take.blob, duration: take.duration };
+      const record: StoredTake = { blob: take.blob, duration: take.duration, picture: take.picture ?? undefined };
       tx.objectStore(TAKES).put(record, i);
     });
     tx.objectStore(META).put(metaOf(clip, audio), META_KEY);
@@ -121,7 +124,13 @@ export function loadClip(): Promise<StoredClip | null> {
     // Every take the small half counts has to be there, or the clip is not one
     // to hand back: a missing take would make every position after it wrong.
     if (takes.length !== meta.count || takes.some(take => !take || !(take.duration > 0))) return null;
-    return { clip: { takes: takes as StoredTake[], cuts: meta.cuts, annotations: meta.annotations ?? [], properties: meta.properties ?? {} }, audio: !!meta.audio };
+    // A take written before the clip size existed carries no picture of its own;
+    // measure it now, so the clip still knows the size to be shown and exported at.
+    const kept = takes as StoredTake[];
+    for (const take of kept) {
+      if (!take.picture) take.picture = await measuredPicture(take.blob);
+    }
+    return { clip: { takes: kept, cuts: meta.cuts, annotations: meta.annotations ?? [], properties: meta.properties ?? {} }, audio: !!meta.audio };
   }).catch(() => null);
 }
 
@@ -145,6 +154,11 @@ export const keptClip: KeptClipPort = {
   load: loadClip,
   clear: clearClip,
 };
+
+/** A stored take's picture size, measured from its blob, or undefined when it will not say. */
+async function measuredPicture(blob: Blob): Promise<Picture | undefined> {
+  try { return (await takeFile.inspect(blob)).picture ?? undefined; } catch { return undefined; }
+}
 
 function metaOf(clip: Clip, audio: boolean): Meta {
   return {

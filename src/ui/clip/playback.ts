@@ -20,7 +20,7 @@ import { ctx, el } from '../dom.js';
 import { drawClipFrame } from '../recording/preview.js';
 import { drawAnnotations } from '../annotating/annotation-layer.js';
 import { clampToClip, typingIn } from '../../util.js';
-import { keptLengthNow, keptOf, player } from './clip.js';
+import { keptLengthNow, keptOf, player, reviewFrame } from './clip.js';
 import { FADE_S, fadeIn, fadeOut, fadeReset } from './fade.js';
 import { DISSOLVE_S, dissolve } from './dissolve.js';
 
@@ -226,7 +226,7 @@ export class Playback {
       return;
     }
 
-    try { drawClipFrame(el.rv); } catch { /* a frame still decoding — keep the loop alive */ }
+    try { drawClipFrame(el.rv, reviewFrame(el.rv)); } catch { /* a frame still decoding — keep the loop alive */ }
     // What is drawn over the picture, at the moment the playhead holds. An annotation
     // comes in and goes out over DISSOLVE_S of its stretch, as a take does at a join.
     const at = player.time();

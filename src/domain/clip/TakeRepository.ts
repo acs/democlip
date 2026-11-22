@@ -7,10 +7,11 @@
 // browser, which is most of the reason for having the seam.
 
 import type { Take } from './Take.js';
+import type { Picture } from './ClipSize.js';
 
 export interface TakeRepository {
-  /** A new take at the end of the clip, ready to play. */
-  add(blob: Blob, duration: number): Take;
+  /** A new take at the end of the clip, ready to play, with the size of its own picture when it is known. */
+  add(blob: Blob, duration: number, picture?: Picture | null): Take;
 
   /** The takes in the order they were recorded. */
   all(): readonly Take[];

@@ -6,6 +6,11 @@ import { capture } from '../../infra/capture.js';
 import { drawRegion } from './region.js';
 import { drawWebcamOverlay } from './webcam.js';
 import { dissolve } from '../clip/dissolve.js';
+import type { Frame } from '../../domain/clip/ClipSize.js';
+
+// What sits around a take whose picture is another shape than the clip's: the app's
+// picture background, so the review and the file show the same bars.
+const BACKGROUND = '#000';
 
 export function drawGrid(): void {
   const light = document.documentElement.dataset.theme === 'light';
@@ -25,14 +30,20 @@ export function drawGrid(): void {
   ctx.beginPath(); ctx.moveTo(mx, my - 62); ctx.lineTo(mx, my + 62); ctx.stroke();
 }
 
-export function drawFrame(vid: HTMLVideoElement): void {
-  ctx.drawImage(vid, 0, 0, el.cv.width, el.cv.height);
+// Draw a frame on the preview. With a `frame` the take is drawn **fitted** into it —
+// whole and centred, the clip's background around it; without one it fills the canvas,
+// which is what the live mirror wants.
+export function drawFrame(vid: HTMLVideoElement, frame?: Frame): void {
+  if (!frame) { ctx.drawImage(vid, 0, 0, el.cv.width, el.cv.height); return; }
+  ctx.fillStyle = BACKGROUND;
+  ctx.fillRect(0, 0, el.cv.width, el.cv.height);
+  ctx.drawImage(vid, frame.x, frame.y, frame.width, frame.height);
 }
 
 // Draw the review clip's frame, dissolving from the frame held at the last join
 // for the first moments of a new take — the picture's side of the faded seam.
-export function drawClipFrame(vid: HTMLVideoElement): void {
-  if (!dissolve.draw(ctx, vid, el.cv.width, el.cv.height, vid.currentTime)) drawFrame(vid);
+export function drawClipFrame(vid: HTMLVideoElement, frame?: Frame): void {
+  if (!dissolve.draw(ctx, vid, el.cv.width, el.cv.height, vid.currentTime, frame)) drawFrame(vid, frame);
 }
 
 export function seekTo(vid: HTMLVideoElement, t: number): Promise<void> {

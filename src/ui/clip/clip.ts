@@ -19,9 +19,11 @@
 // playhead over it. The mappings above it hold nothing and stay functions.
 
 import { session } from '../../session.js';
+import { currentPhase } from '../../state.js';
 import { ctx, el } from '../dom.js';
 import { drawFrame, seekTo } from '../recording/preview.js';
 import { drawAnnotations } from '../annotating/annotation-layer.js';
+import type { Frame } from '../../domain/clip/ClipSize.js';
 
 // ── the timeline the user sees ───────────────────────────────────────────────
 //
@@ -83,7 +85,7 @@ export class Player {
   // is drawn over it.
   seekAndDraw(time: number): Promise<void> {
     return this.seek(time).then(() => {
-      drawFrame(el.rv);
+      drawFrame(el.rv, reviewFrame(el.rv));
       drawAnnotations(ctx, el.cv.width, el.cv.height, session.clip.annotationsAt(time));
     });
   }
@@ -141,3 +143,33 @@ export class Player {
 }
 
 export const player = new Player();
+
+// ── the clip's size, shown ───────────────────────────────────────────────────
+//
+// The preview canvas is the clip size, and every take is drawn fitted into it, so a
+// clip of different-sized takes plays in one frame from beginning to end. The view
+// listens: a take arriving and the size being set both land here through `resizeReview`.
+
+/**
+ * The rectangle the take in the element is drawn into for the clip's size, or
+ * undefined when the clip has no size yet — then the frame fills the canvas, which is
+ * what the review did before there was a size.
+ */
+export function reviewFrame(vid: HTMLVideoElement): Frame | undefined {
+  const size = session.clip.size();
+  if (!size || !(vid.videoWidth > 0)) return undefined;
+  return size.frameFor({ width: vid.videoWidth, height: vid.videoHeight });
+}
+
+/** Put the preview canvas at the clip's size and redraw the frame it holds. */
+export function resizeReview(): void {
+  if (currentPhase() !== 'review') return;
+  const size = session.clip.size();
+  const width = size?.width ?? el.rv.videoWidth;
+  const height = size?.height ?? el.rv.videoHeight;
+  if (!(width > 0) || !(height > 0)) return;
+  if (el.cv.width === width && el.cv.height === height) return;
+  el.cv.width = width;
+  el.cv.height = height;
+  void player.seekAndDraw(player.time()).catch(() => {});
+}

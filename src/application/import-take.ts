@@ -70,7 +70,7 @@ export class ImportTake {
     const carried = sidecar?.forLength(info.duration) ?? null;
 
     this.deps.setAudio?.(info.hasAudio);
-    const take = this.deps.clip.addTake(file.blob, info.duration);
+    const take = this.deps.clip.addTake(file.blob, info.duration, info.picture);
 
     const annotations = !sidecar ? undefined
       : carried ? await this.carryThem(sidecar, carried, info.duration)

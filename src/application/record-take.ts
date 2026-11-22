@@ -70,8 +70,10 @@ export class RecordTake {
     this.deps.compositor.close();
     const wall = Math.max(0.1, (this.deps.clock.now() - this.startedAt) / 1000);
     const measured = await this.deps.probe.measure(blob).catch(() => null);
-    const duration = measured ?? wall;
-    const take = this.deps.clip.addTake(blob, duration);
+    // A blob the browser would not measure comes back as a length of 0, not as a
+    // failure — and a take cannot be built without a length, so the wall clock stands in.
+    const duration = measured && measured.duration > 0 ? measured.duration : wall;
+    const take = this.deps.clip.addTake(blob, duration, measured?.picture ?? null);
     return { kind: 'stopped', take };
   }
 }

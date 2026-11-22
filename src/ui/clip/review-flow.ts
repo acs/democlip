@@ -5,7 +5,7 @@
 
 import { el } from '../dom.js';
 import { session } from '../../session.js';
-import { player } from './clip.js';
+import { player, resizeReview } from './clip.js';
 import { playback } from './playback.js';
 import { waveform } from './waveform.js';
 import { strip } from './timeline-ui.js';
@@ -22,10 +22,7 @@ export async function openReview(loadIndex: number, park: number): Promise<void>
   stopMirror();
   playback.reset();
   await player.load(loadIndex);
-  if (el.rv.videoWidth && el.rv.videoHeight) {
-    el.cv.width = el.rv.videoWidth;
-    el.cv.height = el.rv.videoHeight;
-  }
+  resizeReview();       // the canvas is the clip size, not the take's own
   updateTimeUI();
   updateSizeUI();
   renderMarks();

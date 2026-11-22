@@ -18,6 +18,19 @@ describe('Take', () => {
     expect(() => Take.of(1, blob, 'blob:one', -1)).toThrow(/length/);
   });
 
+  it('keeps the size of its own picture when it is handed one', () => {
+    const take = Take.of(1, blob, 'blob:one', 1, { width: 1920, height: 1080 });
+    expect(take.picture).toEqual({ width: 1920, height: 1080 });
+  });
+
+  it('is a take whose picture is not measured yet when none is given', () => {
+    expect(Take.of(1, blob, 'blob:one', 1).picture).toBeNull();
+  });
+
+  it('refuses a picture with no size', () => {
+    expect(() => Take.of(1, blob, 'blob:one', 1, { width: 0, height: 720 })).toThrow(/picture/);
+  });
+
   it('is the same take only when it is the same recording', () => {
     expect(Take.of(2, blob, 'a', 1).equals(Take.of(2, new Blob(['y']), 'b', 9))).toBe(true);
     expect(Take.of(2, blob, 'a', 1).equals(Take.of(3, blob, 'a', 1))).toBe(false);

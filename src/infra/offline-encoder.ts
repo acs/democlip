@@ -10,6 +10,8 @@ import {
 } from 'mediabunny';
 import type { ExportPlan } from '../domain/clip/ExportPlan.js';
 import type { Take } from '../domain/clip/Take.js';
+import { ClipSize } from '../domain/clip/ClipSize.js';
+import type { Frame } from '../domain/clip/ClipSize.js';
 import type { ExportTarget } from '../domain/export/ExportTarget.js';
 import type {
   EncodedVideo, EncoderPort, ExportStats, FrameRendererPort, EncodeOptions,
@@ -127,8 +129,16 @@ export class EncoderAdapter implements EncoderPort {
             if (at < -0.001 || at > plan.total + 0.001) continue;
 
             const alpha = step.joinAt === null ? null : renderer.dissolve(context, at - step.joinAt);
+            if (alpha === null) {
+              // No dissolve in play: the letterbox around a take of another shape is
+              // the clip's background, not the frame the last take left behind.
+              context.globalAlpha = 1;
+              context.fillStyle = '#000';
+              context.fillRect(0, 0, canvas.width, canvas.height);
+            }
+            const fit = fitIn(canvas.width, canvas.height, { width: frame.displayWidth, height: frame.displayHeight });
             context.globalAlpha = alpha ?? 1;
-            frame.draw(context, 0, 0, canvas.width, canvas.height);
+            frame.draw(context, fit.x, fit.y, fit.width, fit.height);
             context.globalAlpha = 1;
             renderer.draw(context, {
               sourceTime: source, outputTime: at, annotations: plan.annotationsAt(source),
@@ -166,6 +176,16 @@ export class EncoderAdapter implements EncoderPort {
 }
 
 /**
+ * The rectangle a sample is drawn into for the export's picture: the whole of it,
+ * scaled and centred, with the clip's background around it. The picture edge is the
+ * one that runs out first, so nothing is cropped and nothing is stretched.
+ */
+function fitIn(width: number, height: number, picture: { width: number; height: number }): Frame {
+  const size = ClipSize.of(width, height);
+  return size ? size.frameFor(picture) : { x: 0, y: 0, width, height };
+}
+
+/**
  * The first kept frame of the export, held on a canvas of the export's own size — what
  * the title card draws as its background. Null when the first take has no picture to take
  * one from. A detached canvas rather than the decoder's own sample, so it stays valid
@@ -194,7 +214,10 @@ async function firstStill(
     still.height = height;
     const stillContext = still.getContext('2d');
     if (!stillContext) { sample.close(); return null; }
-    sample.draw(stillContext, 0, 0, width, height);
+    stillContext.fillStyle = '#000';
+    stillContext.fillRect(0, 0, width, height);
+    const fit = fitIn(width, height, { width: sample.displayWidth, height: sample.displayHeight });
+    sample.draw(stillContext, fit.x, fit.y, fit.width, fit.height);
     sample.close();
     return still;
   } finally {

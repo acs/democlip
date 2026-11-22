@@ -90,9 +90,9 @@ export async function uploadClip(settings: YouTubeSettings, handlers: YouTubeHan
 
     const api = await youtube();
     const service = await api.youtubeService();
-    // The picture the review shows, which is the take's own size: the encoder is given it
-    // so a small take is not upscaled on its way to the channel.
-    const picture = { width: el.cv.width || 1280, height: el.cv.height || 720 };
+    // The clip's own size: the encoder is given it so every take is written at the size
+    // the review showed.
+    const picture = session.clip.size() ?? { width: el.cv.width || 1280, height: el.cv.height || 720 };
     const video = await publishToYouTube(session.clip, {
       // The same card the export puts at its head, when the clip asks for one: a
       // published video is an exported video too.

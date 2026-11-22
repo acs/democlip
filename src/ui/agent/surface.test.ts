@@ -107,6 +107,7 @@ describe('describeClip', () => {
       { id: 'title', label: 'Title', control: 'text', value: '' },
       { id: 'description', label: 'Description', control: 'long-text', value: '' },
       { id: 'addToExport', label: 'Add to export', control: 'toggle', value: '' },
+      { id: 'size', label: 'Clip size', control: 'size', value: '' },
     ]);
   });
 

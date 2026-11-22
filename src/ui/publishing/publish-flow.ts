@@ -61,9 +61,9 @@ export async function publishClip(
   try {
     const api = await bluesky();
     const service = await api.blueskyService();
-    // The picture the review shows: the post's aspect ratio and the encoded video's own
-    // size are the same two numbers, read once, so the two cannot disagree.
-    const picture = { width: el.cv.width || 1280, height: el.cv.height || 720 };
+    // The clip's own size: the post's aspect ratio and the encoded video's own size are
+    // the same two numbers, read once, so the two cannot disagree.
+    const picture = session.clip.size() ?? { width: el.cv.width || 1280, height: el.cv.height || 720 };
     const { uri } = await publishToBluesky(session.clip, {
       // The same card the export puts at its head, when the clip asks for one: a
       // published video is an exported video too.

@@ -16,7 +16,10 @@ export class TakeFileInspector implements TakeFilePort {
       if (!video) throw new Error('the file has no video track');
       const duration = await input.computeDuration();
       const audio = await input.getPrimaryAudioTrack();
-      return { duration, hasAudio: !!audio };
+      const width = await video.getDisplayWidth();
+      const height = await video.getDisplayHeight();
+      const picture = width > 0 && height > 0 ? { width, height } : null;
+      return { duration, hasAudio: !!audio, picture };
     } finally {
       input.dispose();
     }
