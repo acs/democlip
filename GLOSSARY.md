@@ -121,10 +121,11 @@ included, so a published video opens with the same words the file would.
 | word | what it is | in the code |
 |---|---|---|
 | **clip property** | something about the clip the user can change after it is made — its title, its description, its **clip size**, or **add to export**. The app declares it: a label, which shared control edits it, and how to read and write the value on the clip. The value lives with the clip | `ClipProperty`, `registerClipProperty()` (`ui/clip/clip-properties.ts`); the value in `ClipProperties` (`src/domain/clip/ClipProperties.ts`) |
+| **logo** | the mark the clip wears at the head of every export: the **name** of one of the marks the app serves itself, from its own folder in the repository — or nothing, which is the ordinary case. It is a **clip property**, a value rather than a switch, and a name the app does not serve is refused rather than kept, so no export waits on a file that will not draw. A clip that wears one opens with a **title card** carrying it | `ui/logos.ts` (the app's own list), the value in `ClipProperties` |
 | **clip size** | the picture the clip is shown and exported at: a width and a height, both **even**. It starts at the takes' largest width and largest height, rounded up to even, and grows as a larger take arrives; once the person sets it in the **clip properties panel** it is kept, and a later take is fitted into it | `ClipSize` (`src/domain/clip/ClipSize.ts`), `Clip.size()` |
 | **fit** | how a take whose picture is another shape is drawn into the **clip size**: scaled to sit wholly inside it and centred, with the clip's background around it — nothing is cropped and nothing is stretched. The review and the export draw through the same fit | `ClipSize.frameFor()` (`src/domain/clip/ClipSize.ts`) |
 | **clip properties panel** | the one shared surface that shows and edits the clip's properties — a field per property, whatever it is. Opened from a **settings** control in the corner of the preview (the picture the clip is seen on, so it sits beside the clip as an annotation's settings control sits on it — the same three-sliders mark); it names no property, it asks the register. The clip's answer to the **properties inspector**, one level up | `ui/clip/properties-panel.ts` |
-| **title card** | a head the export puts on a file: the clip's first frame held still for **two seconds**, with its **title** and **description** drawn over it as **text annotations**, and, under them, the day the card was made and the app's name. It is what **add to export** asks for, and **every export takes it — the WebM and MP4 downloads, the file for editing, and a publish**, so a published video opens with it too | `IntroCard` (`src/domain/clip/IntroCard.ts`); the words in `ui/exporting/intro-text.ts`; `introFor()` (`ui/exporting/intro.ts`) |
+| **title card** | a head the export puts on a file: the clip's first frame held still for **two seconds**, with its **logo** above its **title** and **description** — the words drawn as **text annotations** — and, under them, the day the card was made and the app's name. It is what **add to export** asks for, and what a **logo** asks for on its own — a logo lives on the card, so a clip that wears one always opens with it — and **every export takes it — the WebM and MP4 downloads, the file for editing, and a publish**, so a published video opens with it too | `IntroCard` (`src/domain/clip/IntroCard.ts`); the words in `ui/exporting/intro-text.ts`; `introFor()` (`ui/exporting/intro.ts`) |
 
 A clip property is **not a fraction of the clip and is not scaled when the clip grows**,
 where a cut and an annotation are. It changes through the clip, is announced like every
@@ -147,9 +148,9 @@ press, and the automation surface refuses it with the profile named. An item no 
 declares is the person's, exactly as it was before there were profiles at all — so a profile
 that declares nothing is a **free** profile, and the built-in **Default** is that profile.
 
-In its first iteration a profile controls one item: the clip property **add to export**. That
-item is offered by the same register the clip properties are declared in, so a later iteration
-carries another one (a title, a default arrow colour, a logo) by declaring it, not by adding a
+In its first iteration a profile controls two items: the clip properties **add to export** and
+**logo**. Both are offered by the same register the clip properties are declared in, so a later
+iteration carries another one (a title, a default arrow colour) by declaring it, not by adding a
 second kind of configuration.
 
 A profile is **defined in its own surface** — the sheet its sliders mark opens — and never in

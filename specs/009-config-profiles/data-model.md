@@ -64,6 +64,18 @@ it declares is locked.
 - `all` is never empty and `activeId` always names one of `all`;
 - every transition answers a **new** book and leaves the receiver unchanged.
 
+## 2b. The logo — a value item, and the card that carries it
+
+| Piece | Where | Contract |
+|---|---|---|
+| the app's logos | `src/ui/logos.ts` | `LOGOS` (name → file) and `logoFile(name)`; the files are the app's own, in `web/public/logos/`. DOM-free, so a clip property can refuse an unknown name and a node test can read the list |
+| the clip property | `src/ui/clip/clip-properties.ts` | `id: 'logo'`, `control: 'text'`, `seedable: true`. Its value is a **name**, and `''` means none |
+| the card's value | `src/domain/clip/IntroCard.ts` | `logo: string` — the name, not a picture: the plan carries *which* mark, and the view turns it into an image |
+| what asks for a card | `src/ui/exporting/intro.ts` | **add to export** *or* a logo: a logo lives on the card, so a clip that wears one always opens with it |
+| the file the encoder gets | `src/application/ports/EncoderPort.ts` | `IntroFrame.logo`, built by `src/infra/offline-encoder.ts` from the plan |
+| the picture | `src/ui/exporting/logo-image.ts` | `loadLogo(name)` / `logoImage(name)`: decoded **once**, before the first frame (`FrameRenderer.prepare`); a logo that will not load draws nothing and the export goes on |
+| where it is drawn | `src/ui/exporting/frame-renderer.ts` + `intro-text.ts` | `LOGO_BOX` (above the words, centred) and `LOGO_SPACE`; the mark is fitted inside the box keeping its proportions, with a dark shadow so a pale mark reads over a pale picture. The words are stacked in what the box leaves |
+
 ## 3. The stored shape (the port's data)
 
 `src/domain/profile/Profiles.ts` (the types) · `src/application/ports/ProfileStorePort.ts` (the port)
@@ -127,8 +139,11 @@ applyProperty(id: string, value: string): boolean;
 
 `src/ui/clip/clip-properties.ts`
 
-- `seedable?: boolean` marks an item a profile **may control**. `addToExport` carries it;
-  `title`, `description` and the read-only `size` do not.
+- `seedable?: boolean` marks an item a profile **may control**. `addToExport` and `logo` carry
+  it; `title`, `description` and the read-only `size` do not.
+- `logo` is the **value** item: `control: 'text'`, and `with` refuses a name the app does not
+  serve (`ui/logos.ts`), so neither a person nor a written profile can leave a clip waiting on a
+  file that will never draw. `''` is the ordinary case — no logo.
 - `seedableClipProperties()` is the whole of what a config sheet offers and what applying
   walks, so a declaration for an item this build does not know is ignored.
 

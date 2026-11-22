@@ -118,6 +118,9 @@ class ClipPropertiesPanel {
   private row(property: ClipProperty): HTMLElement {
     const host = document.createElement('div');
     host.className = 'prop-row';
+    // Named by the property it draws, as the profile rows are: the panel names no property of
+    // its own, but a row still has to be findable.
+    host.dataset.id = property.id;
 
     const name = document.createElement('span');
     name.className = 'prop-name';

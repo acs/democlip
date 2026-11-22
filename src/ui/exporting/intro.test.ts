@@ -69,4 +69,22 @@ describe('introFor', () => {
     clip.setProperty('addToExport', 'true');
     expect(introFor(clip, DAY)?.stamp).toBe('2026-11-22 - DemoClip');
   });
+
+  it('carries the logo the clip wears, and none at all by default', () => {
+    const clip = withWords();
+    clip.setProperty('addToExport', 'true');
+    clip.setProperty('logo', 'democlip');
+    expect(introFor(clip, DAY)?.logo).toBe('democlip');
+
+    expect(introFor(withWords(), DAY)).toBeNull();          // no card, so nothing to carry
+    const plain = clipOf(4);
+    plain.setProperty('addToExport', 'true');
+    expect(introFor(plain, DAY)?.logo).toBe('');
+  });
+
+  it('is a card for a logo alone: a logo lives on the card, so a clip that wears one opens with it', () => {
+    const clip = clipOf(4);
+    clip.setProperty('logo', 'democlip');
+    expect(introFor(clip, DAY)).toMatchObject({ logo: 'democlip', seconds: INTRO_S, title: '' });
+  });
 });

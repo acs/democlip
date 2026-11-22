@@ -93,10 +93,12 @@ export async function uploadClip(settings: YouTubeSettings, handlers: YouTubeHan
     // The clip's own size: the encoder is given it so every take is written at the size
     // the review showed.
     const picture = session.clip.size() ?? { width: el.cv.width || 1280, height: el.cv.height || 720 };
+    // The same card the export puts at its head, when the clip asks for one — a published
+    // video is an exported video too — with its logo decoded before the first frame.
+    const intro = introFor(session.clip);
+    await frameRenderer.prepare(intro);
     const video = await publishToYouTube(session.clip, {
-      // The same card the export puts at its head, when the clip asks for one: a
-      // published video is an exported video too.
-      export: { audio: session.audio, fadeSeconds: FADE_S, annotations: 'drawn', intro: introFor(session.clip) },
+      export: { audio: session.audio, fadeSeconds: FADE_S, annotations: 'drawn', intro },
       details,
     }, {
       service,

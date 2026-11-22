@@ -50,13 +50,21 @@ describe('profileRows', () => {
 describe('defineRows', () => {
   it('offers one row per item a profile may control', () => {
     const rows = defineRows(book().get('tv')!, { active: true, locked: false });
-    expect(rows.map(row => row.id)).toEqual(['addToExport']);
+    expect(rows.map(row => row.id)).toEqual(['addToExport', 'logo']);
     expect(rows[0]).toMatchObject({ label: 'Add to export', control: 'toggle', free: false, value: 'true', editable: true });
+    // A value item rather than a switch, and free when the profile says nothing about it.
+    expect(rows[1]).toMatchObject({ label: 'Logo', control: 'text', free: true, value: '', editable: true });
   });
 
   it('says an item is free when the profile does not control it', () => {
     const rows = defineRows(book().get('gra')!, { active: false, locked: false });
-    expect(rows[0]).toMatchObject({ free: true, value: '' });
+    expect(rows.map(row => row.free)).toEqual([true, true]);
+  });
+
+  it('offers what a profile does control at the value it fixes', () => {
+    const wears = Profile.create('wears', 'Wears', { logo: 'democlip' })!;
+    const rows = defineRows(wears, { active: false, locked: false });
+    expect(rows.find(row => row.id === 'logo')).toMatchObject({ free: false, value: 'democlip' });
   });
 
   it('tells a controlled item fixed off apart from a free one', () => {
@@ -69,8 +77,8 @@ describe('defineRows', () => {
   it('is not editable for the active profile while the session has begun to capture', () => {
     const active = defineRows(book().get('tv')!, { active: true, locked: true });
     const other = defineRows(book().get('gra')!, { active: false, locked: true });
-    expect(active[0].editable).toBe(false);
-    expect(other[0].editable).toBe(true);
+    expect(active.every(row => !row.editable)).toBe(true);
+    expect(other.every(row => row.editable)).toBe(true);
   });
 });
 

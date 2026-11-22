@@ -7,8 +7,8 @@ import { ClipProperties } from '../../domain/clip/ClipProperties.js';
 // no change to the panel or anywhere else — which is what the seam exists for.
 
 describe('the clip property register', () => {
-  it('offers the title, the description, the switch and the size, in order', () => {
-    expect(clipProperties().map(property => property.id)).toEqual(['title', 'description', 'addToExport', 'size']);
+  it('offers the title, the description, the switch, the logo and the size, in order', () => {
+    expect(clipProperties().map(property => property.id)).toEqual(['title', 'description', 'addToExport', 'logo', 'size']);
     expect(clipProperty('title')?.label).toBe('Title');
     expect(clipProperty('description')?.control).toBe('long-text');
     expect(clipProperty('addToExport')?.control).toBe('toggle');
@@ -60,9 +60,25 @@ describe('the clip property register', () => {
     expect(size.value(ClipProperties.EMPTY)).toBe('');
   });
 
-  it('marks only the switch as one a profile may preload', () => {
-    // The one setting a profile carries in this iteration; the title, the description and
-    // the read-only size are not preloaded by a profile.
-    expect(seedableClipProperties().map(property => property.id)).toEqual(['addToExport']);
+  it('marks the switch and the logo as what a profile may control', () => {
+    // What a profile may declare in this iteration; the title, the description and the
+    // read-only size are never a profile's.
+    expect(seedableClipProperties().map(property => property.id)).toEqual(['addToExport', 'logo']);
+  });
+
+  it('takes the name of a logo the app ships, and nothing else, or nothing at all', () => {
+    const logo = clipProperty('logo')!;
+    expect(logo.control).toBe('text');
+    expect(logo.value(ClipProperties.EMPTY)).toBe('');
+
+    const worn = logo.with(ClipProperties.EMPTY, 'democlip')!;
+    expect(logo.value(worn)).toBe('democlip');
+    // A clip with no logo is the ordinary case, and an empty value clears it.
+    expect(logo.value(logo.with(worn, '')!)).toBe('');
+    // A name the app does not ship is refused rather than kept: a typo must not leave an
+    // export waiting for a file that will never draw.
+    expect(logo.with(ClipProperties.EMPTY, 'nope')).toBeNull();
+    // Surrounding space is the person's typing, not part of the name.
+    expect(logo.value(logo.with(ClipProperties.EMPTY, '  democlip  ')!)).toBe('democlip');
   });
 });

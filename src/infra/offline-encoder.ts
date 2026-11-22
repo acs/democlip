@@ -98,7 +98,7 @@ export class EncoderAdapter implements EncoderPort {
             outputTime: at,
             annotations: [],
             recordingLength: plan.recordingLength,
-            intro: { title: plan.intro.title, description: plan.intro.description, stamp: plan.intro.stamp },
+            intro: { title: plan.intro.title, description: plan.intro.description, stamp: plan.intro.stamp, logo: plan.intro.logo },
           });
           renderer.preview(context);
           await video.add(at, duration);

@@ -60,8 +60,10 @@ export async function doExport(target: ExportTarget = 'webm', annotations: Annot
   // an image annotation needs to be decoded. A picture not decoded draws nothing.
   await images.ready();
   // Whether the clip asks for a title card at the head of the file — its own property,
-  // read once here and handed to the export, which carries it in the plan.
+  // read once here and handed to the export, which carries it in the plan. Its logo, if it
+  // wears one, is decoded before the first frame rather than during it.
   const intro = introFor(session.clip);
+  await frameRenderer.prepare(intro);
   const outcome = await exportVideo.run(target, {
     annotations,
     intro,

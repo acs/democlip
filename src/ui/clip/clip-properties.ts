@@ -13,6 +13,7 @@
 
 import type { ClipProperties } from '../../domain/clip/ClipProperties.js';
 import type { Clip } from '../../domain/clip/Clip.js';
+import { logoFile } from '../logos.js';
 
 /** Which shared control edits a clip property. */
 export type ClipPropertyControl = 'text' | 'long-text' | 'toggle';
@@ -108,6 +109,23 @@ registerClipProperty({
   seedable: true,
   value: properties => (properties.get('addToExport') === 'true' ? 'true' : ''),
   with: (properties, value) => properties.with('addToExport', value === 'true' ? 'true' : ''),
+});
+
+// And the mark a clip wears at the head of its export: the **name** of one of the logos the
+// app ships (`ui/logos.ts`), or nothing at all. A name the app does not ship is refused rather
+// than kept, so a typo cannot leave an export with a logo that will never draw — and a
+// **profile** may fix it, so every clip made under that profile opens with the same mark.
+registerClipProperty({
+  id: 'logo',
+  label: 'Logo',
+  control: 'text',
+  seedable: true,
+  value: properties => properties.get('logo'),
+  with: (properties, value) => {
+    const name = value.trim();
+    if (name !== '' && !logoFile(name)) return null;
+    return properties.with('logo', name);
+  },
 });
 
 // And the clip's own size: the picture the review shows and every export writes — the

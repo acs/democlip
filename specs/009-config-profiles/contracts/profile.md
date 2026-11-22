@@ -158,8 +158,10 @@ export function applyActiveProfile(clip: Clip, profiles: Profiles): void;
 
 **Guarantees**
 
-- it walks `seedableClipProperties()` and nothing else, so a declaration for an item this build
-  does not know is **ignored** rather than applied;
+- it walks `seedableClipProperties()` — **Add to export** and **Logo** — and nothing else, so a
+  declaration for an item this build does not know is **ignored** rather than applied;
+- a declaration whose value the clip property refuses (a logo the app does not serve) changes
+  nothing at all, because applying goes through the property's own `with`;
 - it applies to an **empty** clip only, and a controlled value **wins** over what the clip held —
   that is what *fixing* means;
 - an item the active profile does not declare is left exactly as it is: the person's;
@@ -196,7 +198,8 @@ export function controllingIn(book: () => Profiles): Controlling;
 | a row | `.profile-row[data-id]` · `.profile-pick` · `.profile-avatar` · `.profile-check` | `role="menuitemradio"`, `aria-checked` for the active one; a pill of the profile's first letters in one of the tones, the name, a tick when active; disabled while the session is locked and it is not the active one |
 | the person's own row | `.profile-ico[data-act="define"|"rename"|"remove"]` | the sliders mark (the config sheet), the pencil and the bin. The built-in default has none: it controls nothing and cannot be renamed or removed |
 | a new profile | `.profile-new-btn` → `.profile-new-input` + `.profile-new-add` | the foot's **+ New Profile** turns into a name field; allowed while locked, and never moves the active profile then |
-| the config sheet | `#profile-def-bd` · `.pdef-row[data-id]` · `.pdef-opt[data-value]` | a modal titled with the profile's name, one row per item it may control; a toggle is a segmented **Free / On / Off** (`data-value` `free` / `true` / ``), anything else a **Free** switch and a field. `data-value` is what a check presses |
+| the config sheet | `#profile-def-bd` · `.pdef-row[data-id]` · `.pdef-opt[data-value]` | a modal titled with the profile's name, one row per item it may control; a **toggle** is a segmented **Free / On / Off** (`data-value` `free` / `true` / ``), and a **value** item is a plain field whose empty state fixes nothing. `data-value` is what a check presses |
+| the logo's mark | `web/public/logos/*.png` · `src/ui/logos.ts` | the marks the app serves itself; a clip's value is a **name** from the list, and a name it does not hold is refused by the clip property |
 
 **Guarantees**
 
@@ -216,5 +219,7 @@ export function controllingIn(book: () => Profiles): Controlling;
 - no profile in an exported file, a sidecar or a publish;
 - no profile change taken back by the clip's one undo (a profile is app configuration, not clip
   state; applying one is deliberately not undoable);
-- the profile controls only **Add to export**; later items are carried by flagging them
-  `seedable`, with no change to the classes above.
+- the profile controls **Add to export** and **Logo**; later items are carried by flagging them
+  `seedable`, with no change to the classes above;
+- the logo is drawn **on the card**, not over every frame: a clip that wears one asks for a card,
+  and the mark is not a watermark.

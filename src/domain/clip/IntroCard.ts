@@ -1,12 +1,15 @@
 // The title card an export may put at its head: the clip's first frame held still, with
-// what the clip says about itself — its **title** and its **description** — drawn over it,
-// and, under them, the day the card was made and the app's name.
+// what the clip says about itself — its **title**, its **description** and its **logo** —
+// drawn over it, and, under them, the day the card was made and the app's name.
 //
 // It is the clip's own, like a **clip property**, and it is a **value**: how long the
-// card lasts and which words it shows, decided before anything is encoded, so a plan
+// card lasts and what it shows, decided before anything is encoded, so a plan
 // can carry it and be read without a browser. The day line is always there, so a card
 // with nothing else to say still shows where it came from; only a card with no time to
 // be shown in is no card.
+//
+// The **logo** is a name from the app's own list (`ui/logos.ts`) rather than a picture: what
+// the card carries is which mark, and the view is what turns it into an image.
 
 export class IntroCard {
   private constructor(
@@ -18,15 +21,17 @@ export class IntroCard {
     readonly stamp: string,
     /** How long the card lasts, in seconds. */
     readonly seconds: number,
+    /** The name of the logo the clip wears at the head of the file; '' for none. */
+    readonly logo: string,
   ) {}
 
   /**
    * The card a clip's words make for the day it is made, or null when there is no time
    * to show it in.
    */
-  static of(title: string, description: string, when: Date, seconds: number): IntroCard | null {
+  static of(title: string, description: string, when: Date, seconds: number, logo = ''): IntroCard | null {
     if (!(seconds > 0)) return null;
-    return new IntroCard(title.trim(), description.trim(), stampOf(when), seconds);
+    return new IntroCard(title.trim(), description.trim(), stampOf(when), seconds, logo.trim());
   }
 }
 

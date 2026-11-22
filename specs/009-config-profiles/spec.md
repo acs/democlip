@@ -17,6 +17,7 @@
 - Q: Is there always at least one profile, and does this iteration include renaming and removing the profiles the person made? → A: **A built-in default that always exists, and yes to renaming and removing.** It falls back to the default when the active profile is removed; the person's own profiles can be renamed and removed.
 - Q: Is a profile a set of *defaults* the person can then override, and is that how a profile is defined? → A: **Neither.** The user's own words: "In a Profile … it is defined the config that is defined at Profile level, and that will be applied to DemoClip. And this config can not be changed by the user. So if `add_to_export` is under profile control, the user can not change it. If you want a free profile in which you can change anything, you don't define in the profile any config. If you define a config (a property for example) in the profile, it can not be changed!" A profile **declares which items it controls** and at what; an item it declares is applied and locked, an item it does not declare is free.
 - Q: Where is a profile's config defined, and how does a controlled item read? → A: **In the profile's own surface**, opened from the profile's row — never on the selector itself, which only lists, selects, creates, renames and removes. And a controlled item is **shown as a value, naming the profile** ("set by DemoClipTV"), with no control to change it.
+- Q: What else does a profile control in this iteration — "a profile needs a logo"? → A: **The clip's logo.** It is a **clip property** like **Add to export**, and its value is the **name of a logo the app itself serves** from its own folder in the repository — nothing is uploaded and nothing comes from elsewhere. Its value **may be empty**, which is the ordinary case: a clip that wears no logo. A clip that wears one opens its export with a card, because the card is where a logo lives.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -72,6 +73,35 @@ by DemoClipTV. The list itself shows no configuration at any point.
 3. **Given** a profile the person made, **When** its sliders mark is pressed, **Then** its config sheet opens, with one row per item a profile may control, each set Free, On or Off.
 4. **Given** the config sheet, **When** the person sets an item and closes it, **Then** the profile controls that item, and a clip made under it shows the value as fixed.
 5. **Given** a session that has begun to capture, **When** the person opens the list and tries to choose another profile, **Then** the choice is refused, plainly said, and the active profile is unchanged.
+
+---
+
+### User Story 4 - A profile that needs a logo, and the mark reaches the file (Priority: P2)
+
+A production environment needs its mark on what it publishes. **DemoClipTV**'s profile fixes
+a **logo** — the name of one of the logos DemoClip serves itself — and every clip made under
+that profile opens with a card carrying it, with nothing for the person to remember and
+nothing for them to change. A clip with no logo is the ordinary case: no card is asked for by
+a logo that is not there, and a name DemoClip does not ship is refused rather than kept, so an
+export never waits on a file that will never draw.
+
+**Why this priority**: it is the same guardrail as the first story, over an item that is a
+**value** rather than a switch — which is what proves the machinery carries more than one kind
+of configuration.
+
+**Independent Test**: store a profile that fixes **Logo** to a name DemoClip serves, load the
+app, make a clip, and export it: the first frames of the file carry the mark, and the clip's
+settings show the logo as a value naming the profile. With the built-in **Default** active,
+the same row is an ordinary field.
+
+**Acceptance Scenarios**:
+
+1. **Given** a profile that fixes **Logo**, **When** a clip is made under it, **Then** the clip's settings show the logo as a value naming the profile, with no field to change it.
+2. **Given** the same clip, **When** the person exports it, **Then** the file opens with a card carrying the mark.
+3. **Given** a profile that fixes **Logo** and leaves **Add to export** free, **When** a clip is made under it, **Then** the export still opens with a card — a logo lives on the card, so a clip that wears one always opens with it.
+4. **Given** the built-in **Default** active, **When** the person opens the clip's settings, **Then** **Logo** is an ordinary field, empty by default.
+5. **Given** a logo the app does not ship, **When** it is set — by the person or written into a profile — **Then** it is refused and the clip carries no logo, so an export never waits on a file that will never draw.
+6. **Given** a profile whose sheet is open, **When** the person types a name into **Logo**, **Then** the profile fixes it — and clearing the field returns the item to the person.
 
 ---
 
@@ -133,7 +163,7 @@ remove it, and confirm the app falls back to **Default** and the item is the per
 - **FR-012**: A profile's configuration MUST be defined in the **profile's own surface**, opened from that profile's row, and MUST NOT be defined or shown in the list of profiles.
 - **FR-013**: From the moment a session begins to capture, its active profile MUST be fixed: choosing another MUST be refused, plainly said, until the session ends. The session ends at **New**, when the clip is exported, or when the share ends. The active profile's own declarations MUST also be frozen then, so nothing moves under a clip already being made; another profile's MAY still be defined, renamed and removed.
 - **FR-014**: Applying a profile's item to a clip MUST NOT be what the app's one undo takes back: the undo takes back the person's own last change, and never puts back a value a profile is holding.
-- **FR-015**: The items a profile may control in this iteration are limited to the clip property **Add to export**; the app MUST be able to offer further items in a later iteration without a person's existing profiles being lost.
+- **FR-015**: The items a profile may control in this iteration are the clip property **Add to export** and the clip property **Logo**; the app MUST be able to offer further items in a later iteration without a person's existing profiles being lost.
 - **FR-016**: The profiles the person made MUST be renameable and removable; the built-in **Default** MUST NOT be renamed, removed or given a config surface.
 - **FR-017**: Removing the active profile MUST leave the app under another profile that exists, never under none.
 - **FR-018**: When the profiles cannot be read back, the app MUST still open, work under the built-in **Default**, and say that the profiles could not be kept.
@@ -142,12 +172,17 @@ remove it, and confirm the app falls back to **Default** and the item is the per
 - **FR-021**: A session MUST remember the profile it is under, so a session restored after a reload comes back fixed to the same profile and the control shows it active.
 - **FR-022**: Creating a profile while a session has begun to capture MUST NOT change that session's active profile; the new profile joins the list and may be chosen once the session ends.
 - **FR-023**: A profile's declaration for an item this build does not know MUST be kept and MUST NOT be applied, so a profile written by a later version reads and one written earlier still opens.
+- **FR-024**: A clip MUST be able to carry a **logo** — the name of one of the logos the app serves from its own folder in the repository — as a clip property the person sets and a profile may fix. Its value MAY be empty, and empty is the ordinary case: the clip wears no logo.
+- **FR-025**: A logo whose name the app does not serve MUST be refused rather than kept, by the person's own control and by a written profile alike, so no export waits on a file that will never draw.
+- **FR-026**: Every export of a clip that wears a logo MUST open with a card carrying it — **webm, mp4, the file for editing and a publish alike** — because the card is where a logo lives. A clip that wears one therefore asks for a card even when **Add to export** is off, and its words are whatever the clip has, the day line always among them.
+- **FR-027**: The logo MUST be decoded before the file's first frame is written, so the card's very first frame wears it — a card is read the moment it appears — and a logo that will not load MUST NOT stop the export: the card is written without it.
 
 ### Key Entities
 
 - **Profile**: a named set of the app's configuration a person works under — for example **DemoClipTV** or **GraditoneTV** — and a **consistent production environment** for that way of working: the configuration it needs, applied every time a clip is made under it. It holds **declarations**: which items it controls, and the value each is fixed at. It is kept outside any clip, so it outlives the clip, the page and the session. A profile that declares nothing is a **free** profile.
 - **Active profile**: the one profile the app is working under. There is exactly one at any time, and what it declares is in force while it is active.
-- **Controlled item**: an item the active profile declares. It is applied to the clip and is not the person's to change: the clip's settings show its value and name the profile, and the app's other surfaces refuse it. An item no profile declares is the person's, exactly as before profiles existed.
+- **Controlled item**: an item the active profile declares. It is applied to the clip and is not the person's to change: the clip's settings show its value and name the profile, and the app's other surfaces refuse it. An item no profile declares is the person's, exactly as before profiles existed. The items a profile may control in this iteration are **Add to export** and the **Logo**.
+- **Logo**: a clip property: the name of one of the marks the app serves from its own folder, or nothing. A clip that wears one opens every export with a card carrying it. It is a **value** rather than a switch, which is why it can be empty — and why a name the app does not serve is refused rather than kept.
 - **Declaration**: what a profile says about one item — that it controls it, and the value it is fixed at. An item may legitimately be fixed at an empty value (a switch fixed **off**), which is why "declared" and "empty" are told apart here and not in the clip's own properties.
 - **Built-in default profile**: the profile the app always has and falls back to, so an app with nothing set up behaves as it always did. It declares nothing, is never renamed or removed, and has no config surface.
 
@@ -168,6 +203,7 @@ remove it, and confirm the app falls back to **Default** and the item is the per
 - **SC-011**: A session restored after a reload comes back under the same profile, in 100% of cases.
 - **SC-012**: The list of profiles never shows or sets what a profile controls, in 100% of cases; a profile's configuration is reachable only from that profile's own sheet.
 - **SC-013**: Letting a profile go leaves the app usable and the item the person's again, in 100% of cases, with whatever value it last applied still on the clip.
+- **SC-014**: A clip made under a profile that fixes a logo opens its export with that mark on the card, in 100% of cases, with nothing for the person to do — and a clip with no logo opens with no card from the logo, in 100% of cases.
 
 ## Assumptions
 
@@ -175,7 +211,10 @@ remove it, and confirm the app falls back to **Default** and the item is the per
 - A session "begins to capture" when it starts recording a take or brings a take in by **import** — the moment the session stops being empty. Before that a profile may be chosen freely; after that it is fixed.
 - The session already outlives a reload in the app; the profile it is under is part of what comes back.
 - Profiles are the person's own settings for the app on this machine, not a part of a clip: they survive the end of a session and a new clip, and they are not saved into an exported file, a sidecar or a publish. Syncing a profile between devices or people is out of scope.
-- A profile carries exactly one configurable item in this iteration — the clip property **Add to export** — and is built so later items (default arrow colours, whether a title and description are required to export, whether a logo must be present) can be added without losing what exists. Those later items are explicitly out of scope now.
+- A profile controls two items in this iteration — the clip property **Add to export** and the clip property **Logo** — and is built so later items (default arrow colours, whether a title and description are required to export) can be added without losing what exists. Those later items are explicitly out of scope now.
+- The logos the app can wear are **files in the repository**, served beside the app from its own folder, and a clip's value is the **name** of one of them: nothing is uploaded by the person and nothing is fetched from anywhere else. Adding a mark is adding a file and a line to the app's own list.
+- A **logo asks for a card**: the card is where a clip's mark is drawn, so a clip that wears one opens with it whether or not **Add to export** is on. The card's words are then whatever the clip has, with the day line always among them.
+- A logo the app does not serve is refused by the clip property itself, so neither a person nor a written profile can leave a clip waiting on a file that will not draw.
 - Applying a profile's item is a **load**, not the person's edit: it is announced so every view follows it, and it is not what the one **undo** takes back.
 - A clip that came back after a reload keeps the values it holds. Because a profile may not be chosen once capture has begun, and its own declarations are frozen then, a controlled item cannot fall out of step with the clip in any ordinary path.
 - The built-in **Default** is the app's free profile, so it has no config surface: a person who wants a freer profile makes a new one and leaves it controlling nothing.

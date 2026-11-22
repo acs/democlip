@@ -112,27 +112,21 @@ class ProfileDef {
       return host;
     }
 
-    // Anything else takes a value, and a Free switch to hand the item back.
-    const free = document.createElement('label');
-    free.className = 'pdef-free';
-    const check = document.createElement('input');
-    check.type = 'checkbox';
-    check.checked = row.free;
-    check.disabled = !row.editable;
-    check.addEventListener('change', () => this.declare(profileId, row.id, check.checked ? null : row.value));
-    const freeText = document.createElement('span');
-    freeText.textContent = 'Free';
-    free.append(check, freeText);
-
+    // Anything else is a value with a field: what the person types is what the profile fixes,
+    // and an empty field means it fixes nothing — the item is the person's, as always.
     const input = document.createElement('input');
     input.type = 'text';
     input.className = 'pdef-input';
     input.value = row.value;
-    input.disabled = row.free || !row.editable;
+    input.placeholder = 'none';
+    input.disabled = !row.editable;
     input.setAttribute('aria-label', row.label);
-    input.addEventListener('change', () => this.declare(profileId, row.id, input.value));
+    input.addEventListener('change', () => {
+      const value = input.value.trim();
+      this.declare(profileId, row.id, value === '' ? null : value);
+    });
 
-    host.append(free, input);
+    host.append(input);
     return host;
   }
 

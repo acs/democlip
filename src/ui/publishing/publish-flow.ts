@@ -64,10 +64,12 @@ export async function publishClip(
     // The clip's own size: the post's aspect ratio and the encoded video's own size are
     // the same two numbers, read once, so the two cannot disagree.
     const picture = session.clip.size() ?? { width: el.cv.width || 1280, height: el.cv.height || 720 };
+    // The same card the export puts at its head, when the clip asks for one — a published
+    // video is an exported video too — with its logo decoded before the first frame.
+    const intro = introFor(session.clip);
+    await frameRenderer.prepare(intro);
     const { uri } = await publishToBluesky(session.clip, {
-      // The same card the export puts at its head, when the clip asks for one: a
-      // published video is an exported video too.
-      export: { audio: session.audio, fadeSeconds: FADE_S, annotations: 'drawn', intro: introFor(session.clip) },
+      export: { audio: session.audio, fadeSeconds: FADE_S, annotations: 'drawn', intro },
       text,
       alt,
       aspectRatio: AspectRatio.of(picture.width, picture.height).reduced(),
