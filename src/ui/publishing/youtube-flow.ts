@@ -11,6 +11,7 @@ import { session } from '../../session.js';
 import { publishToYouTube, type YouTubePublicationProgress } from '../../application/publish-to-youtube.js';
 import { encoder } from '../../infra/offline-encoder.js';
 import { frameRenderer } from '../exporting/frame-renderer.js';
+import { introFor } from '../exporting/intro.js';
 import { keep } from '../keeping/keep.js';
 import { el } from '../dom.js';
 import { VideoDetails } from '../../domain/youtube/VideoDetails.js';
@@ -93,7 +94,9 @@ export async function uploadClip(settings: YouTubeSettings, handlers: YouTubeHan
     // so a small take is not upscaled on its way to the channel.
     const picture = { width: el.cv.width || 1280, height: el.cv.height || 720 };
     const video = await publishToYouTube(session.clip, {
-      export: { audio: session.audio, fadeSeconds: FADE_S, annotations: 'drawn' },
+      // The same card the export puts at its head, when the clip asks for one: a
+      // published video is an exported video too.
+      export: { audio: session.audio, fadeSeconds: FADE_S, annotations: 'drawn', intro: introFor(session.clip) },
       details,
     }, {
       service,

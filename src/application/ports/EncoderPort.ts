@@ -16,6 +16,14 @@ export interface EncodedVideo {
   readonly stats: ExportStats;
 }
 
+/** The title card shown at the head of the file. */
+export interface IntroFrame {
+  readonly title: string;
+  readonly description: string;
+  /** The line under the words: the day the card was made, and the app's name. */
+  readonly stamp: string;
+}
+
 export interface Frame {
   readonly sourceTime: number;
   readonly outputTime: number;
@@ -23,6 +31,8 @@ export interface Frame {
   readonly annotations: readonly Annotation[];
   /** The recording's own length, which the annotations' stretches are fractions of. */
   readonly recordingLength: number;
+  /** Set on the frames of the card at the head of the file, which holds no clip picture. */
+  readonly intro?: IntroFrame | null;
 }
 
 export interface EncodeOptions {

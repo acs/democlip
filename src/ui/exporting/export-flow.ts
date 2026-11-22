@@ -13,6 +13,7 @@ import { sidecarNameFor, writeSidecar } from '../../infra/annotation-sidecar.js'
 import { clock } from '../../infra/clock.js';
 import { images } from '../../infra/images.js';
 import { frameRenderer } from './frame-renderer.js';
+import { introFor } from './intro.js';
 import { el, setStatus, toast } from '../dom.js';
 import { beginEncoding, endEncoding, encodingAt } from '../clip/timeline-ui.js';
 import { playback } from '../clip/playback.js';
@@ -59,15 +60,19 @@ export async function doExport(target: ExportTarget = 'webm', annotations: Annot
   // The export draws frames in a tight loop, so it waits once, here, for every picture
   // an image annotation needs to be decoded. A picture not decoded draws nothing.
   await images.ready();
+  // Whether the clip asks for a title card at the head of the file — its own property,
+  // read once here and handed to the export, which carries it in the plan.
+  const intro = introFor(session.clip);
   const outcome = await exportVideo.run(target, {
     annotations,
+    intro,
     onProgress: source => encodingAt(source, session.clip.total()),
   });
   if (outcome.kind === 'exported') {
     // A file that carries its annotations does not hold them: they are written beside it,
     // under the file's own name, so a clip that goes out to be worked on comes back with
     // them. Written before the clip is forgotten, since the pictures travel too.
-    if (annotations === 'carried') await saveSidecar(outcome.filename);
+    if (annotations === 'carried') await saveSidecar(outcome.filename, intro?.seconds ?? 0);
     keep.forget();
     setStatus('ready', 'Export complete');
     toast(annotations === 'carried'
@@ -103,10 +108,10 @@ export async function doExport(target: ExportTarget = 'webm', annotations: Annot
  * the clip kept goes with it: a picture is bytes, not numbers, and the store they live in
  * is let go with the clip.
  */
-async function saveSidecar(forFile: string): Promise<void> {
+async function saveSidecar(forFile: string, introSeconds: number): Promise<void> {
   const sidecar = AnnotationSidecar.of(
-    session.clip.keptLength(),
-    session.clip.annotationsAsExported(),
+    session.clip.keptLength() + introSeconds,
+    session.clip.annotationsAsExported(introSeconds),
     await images.all(),
   );
   downloadPort.save(new Blob([await writeSidecar(sidecar)], { type: 'application/json' }), sidecarNameFor(forFile));

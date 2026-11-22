@@ -5,6 +5,8 @@ import type { UploadedVideo, YouTubeService } from './youtube-service.js';
 import { VIDEO_MAX_SECONDS, type UploadableVideo } from '../domain/youtube/UploadableVideo.js';
 import { VideoDetails, watchUrl } from '../domain/youtube/VideoDetails.js';
 import { Clip } from '../domain/clip/Clip.js';
+import { IntroCard } from '../domain/clip/IntroCard.js';
+import type { ExportPlan } from '../domain/clip/ExportPlan.js';
 import { Take } from '../domain/clip/Take.js';
 import type { TakeRepository } from '../domain/clip/TakeRepository.js';
 
@@ -94,6 +96,36 @@ describe('publishToYouTube', () => {
 
   it('takes a clip right at the ceiling', async () => {
     await expect(publishToYouTube(clipOf(VIDEO_MAX_SECONDS), settings(), deps(new FakeService()))).resolves.toBeTruthy();
+  });
+
+  it('carries the title card into the encode when the export has one', async () => {
+    const intro = IntroCard.of('A demo', 'What it shows', new Date(2026, 0, 2, 12), 3)!;
+    const captured: { plan?: ExportPlan } = {};
+    const service = new FakeService();
+
+    await publishToYouTube(clipOf(2), { ...settings(), export: { ...settings().export, intro } }, deps(service, undefined, {
+      encode: async plan => { captured.plan = plan; return new Blob(['mp4'], { type: 'video/mp4' }); },
+    }));
+
+    expect(captured.plan?.intro).toBe(intro);
+    expect(captured.plan?.total).toBeCloseTo(4.95);   // 1.95s of clip, and the 3s card
+    expect(service.uploads).toHaveLength(1);
+  });
+
+  it('refuses a clip the card would push past the account\u2019s ceiling', async () => {
+    const intro = IntroCard.of('A demo', 'What it shows', new Date(2026, 0, 2, 12), 3)!;
+    const service = new FakeService();
+    let encodes = 0;
+
+    await expect(publishToYouTube(clipOf(VIDEO_MAX_SECONDS), {
+      ...settings(),
+      export: { ...settings().export, intro },
+    }, deps(service, undefined, {
+      encode: async () => { encodes++; return new Blob(['mp4'], { type: 'video/mp4' }); },
+    }))).rejects.toThrow(/up to 15 minutes/);
+
+    expect(encodes).toBe(0);
+    expect(service.uploads).toHaveLength(0);
   });
 
   it('refuses a clip with nothing in it', async () => {

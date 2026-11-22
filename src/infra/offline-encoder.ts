@@ -9,17 +9,21 @@ import {
   Quality, VideoSampleSink, WEBM, WebMOutputFormat,
 } from 'mediabunny';
 import type { ExportPlan } from '../domain/clip/ExportPlan.js';
+import type { Take } from '../domain/clip/Take.js';
 import type { ExportTarget } from '../domain/export/ExportTarget.js';
 import type {
   EncodedVideo, EncoderPort, ExportStats, FrameRendererPort, EncodeOptions,
 } from '../application/ports/EncoderPort.js';
 import { fitsBudget as budgetFits, specFor, videoBitrate } from './export-target.js';
 import type { VideoCodecChoice } from './export-target.js';
+import { firstPresentedSample } from './first-sample.js';
 
 const AUDIO_BITRATE = 128_000;
 const KEYFRAME_S = 2;
 const SAMPLE_RATE = 48_000;
 const REPORT_EVERY = 8;
+/** The card at the head of a file is drawn at this rate — a still, so it costs little. */
+const INTRO_FPS = 30;
 
 export class EncoderAdapter implements EncoderPort {
   available(): boolean {
@@ -76,6 +80,31 @@ export class EncoderAdapter implements EncoderPort {
 
     await output.start();
     let frames = 0;
+
+    // The card at the head, if the export has one: the first kept frame held still,
+    // with the clip's title and description drawn over it by the renderer.
+    if (plan.intro) {
+      const still = await firstStill(plan, takes, canvas.width, canvas.height);
+      if (still) {
+        const step = 1 / INTRO_FPS;
+        for (let at = 0; at < plan.intro.seconds - 0.0001; at += step) {
+          const duration = Math.min(step, plan.intro.seconds - at);
+          context.globalAlpha = 1;
+          context.drawImage(still, 0, 0);
+          renderer.draw(context, {
+            sourceTime: 0,
+            outputTime: at,
+            annotations: [],
+            recordingLength: plan.recordingLength,
+            intro: { title: plan.intro.title, description: plan.intro.description, stamp: plan.intro.stamp },
+          });
+          renderer.preview(context);
+          await video.add(at, duration);
+          frames++;
+        }
+      }
+    }
+
     for (const step of plan.steps) {
       if (step.joinAt !== null) renderer.hold(context);
 
@@ -133,6 +162,43 @@ export class EncoderAdapter implements EncoderPort {
       realtime: plan.total > 0 ? plan.total * 1000 / ms : 0,
     };
     return { blob, stats };
+  }
+}
+
+/**
+ * The first kept frame of the export, held on a canvas of the export's own size — what
+ * the title card draws as its background. Null when the first take has no picture to take
+ * one from. A detached canvas rather than the decoder's own sample, so it stays valid
+ * after the input is disposed.
+ */
+async function firstStill(
+  plan: ExportPlan,
+  takes: readonly Take[],
+  width: number,
+  height: number,
+): Promise<HTMLCanvasElement | null> {
+  const piece = plan.pieces[0];
+  if (!piece) return null;
+  const input = new Input({
+    source: new BufferSource(await takes[piece.takeIndex].blob.arrayBuffer()),
+    formats: [WEBM, MP4],
+  });
+  try {
+    const track = await input.getPrimaryVideoTrack();
+    if (!track) return null;
+    const first = await input.getFirstTimestamp();
+    const sample = await firstPresentedSample(new VideoSampleSink(track), first + piece.from);
+    if (!sample) return null;
+    const still = document.createElement('canvas');
+    still.width = width;
+    still.height = height;
+    const stillContext = still.getContext('2d');
+    if (!stillContext) { sample.close(); return null; }
+    sample.draw(stillContext, 0, 0, width, height);
+    sample.close();
+    return still;
+  } finally {
+    input.dispose();
   }
 }
 

@@ -27,5 +27,7 @@ export function planExport(clip: Clip, settings: ExportSettings): ExportPlan | n
   // A file that carries its annotations draws none of them: they travel beside it, and
   // drawing them in as well would put each of them in the picture twice over.
   const annotations = settings.annotations === 'carried' ? AnnotationSet.EMPTY : clip.annotations;
-  return ExportPlan.of(segments, clip.takes.all(), to, clip.timeline(), settings, annotations);
+  return ExportPlan.of(
+    segments, clip.takes.all(), to, clip.timeline(), settings, annotations, settings.intro ?? null,
+  );
 }

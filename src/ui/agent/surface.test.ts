@@ -106,6 +106,7 @@ describe('describeClip', () => {
     expect(described.properties).toEqual([
       { id: 'title', label: 'Title', control: 'text', value: '' },
       { id: 'description', label: 'Description', control: 'long-text', value: '' },
+      { id: 'addToExport', label: 'Add to export', control: 'toggle', value: '' },
     ]);
   });
 

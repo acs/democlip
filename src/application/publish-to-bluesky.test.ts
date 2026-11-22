@@ -3,6 +3,8 @@ import { describe, expect, it } from 'vitest';
 import { publishToBluesky, type PublicationDeps, type PublicationProgress } from './publish-to-bluesky.js';
 import type { BlueskyService, PostedPost, VideoJob } from './bluesky-service.js';
 import { AspectRatio } from '../domain/bluesky/AspectRatio.js';
+import { IntroCard } from '../domain/clip/IntroCard.js';
+import type { ExportPlan } from '../domain/clip/ExportPlan.js';
 import type { BlobRef, PostRecord } from '../domain/bluesky/BlueskyPost.js';
 import type { PublishableVideo } from '../domain/bluesky/PublishableVideo.js';
 import { Clip } from '../domain/clip/Clip.js';
@@ -110,6 +112,22 @@ describe('publishToBluesky', () => {
 
     expect(stageChanges(progress)).toEqual(['encoding', 'uploading', 'processing', 'posting']);
     expect(progress.filter(p => p.stage === 'processing').map(p => p.progress)).toContain(50);
+  });
+
+  it('carries the title card into the encode when the export has one', async () => {
+    const intro = IntroCard.of('A demo', 'What it shows', new Date(2026, 0, 2, 12), 3)!;
+    const captured: { plan?: ExportPlan } = {};
+    const service = new FakeService(
+      { jobId: 'job-1', state: 'JOB_STATE_CREATED' },
+      [{ jobId: 'job-1', state: 'JOB_STATE_COMPLETED', blob: blobRef }],
+    );
+
+    await publishToBluesky(clipOf(2), { ...settings, export: { ...settings.export, intro } }, deps(service, undefined, {
+      encode: async plan => { captured.plan = plan; return new Blob(['mp4'], { type: 'video/mp4' }); },
+    }));
+
+    expect(captured.plan?.intro).toBe(intro);
+    expect(captured.plan?.total).toBeCloseTo(4.95);   // 1.95s of clip, and the 3s card
   });
 
   it('posts when the video service answers with an error that still carries the blob', async () => {

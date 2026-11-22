@@ -4,6 +4,7 @@ import { planExport } from './export-clip.js';
 import { Clip } from '../domain/clip/Clip.js';
 import { Arrow } from '../domain/annotation/Arrow.js';
 import { Span } from '../domain/clip/Span.js';
+import { IntroCard } from '../domain/clip/IntroCard.js';
 import { Take } from '../domain/clip/Take.js';
 import type { TakeRepository } from '../domain/clip/TakeRepository.js';
 
@@ -61,6 +62,14 @@ describe('planExport', () => {
 
   it('carries whether the clip has sound', () => {
     expect(planExport(clipOf(4), { audio: true, fadeSeconds: 0.08, annotations: 'drawn' })?.audio).toBe(true);
+  });
+
+  it('puts a title card at the head of the file when the export has one', () => {
+    const intro = IntroCard.of('A demo', 'What it shows', new Date(2026, 0, 2, 12), 3)!;
+    const plan = planExport(clipOf(10), { ...settings, intro })!;
+    expect(plan.intro).toBe(intro);
+    expect(plan.pieces[0].at).toBe(3);              // the clip's own frames start after it
+    expect(plan.total).toBeCloseTo(12.95);          // 9.95s of clip and 3s of card
   });
 
   it('draws no annotations into a file that carries them beside it', () => {

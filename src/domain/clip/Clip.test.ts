@@ -364,6 +364,19 @@ describe('Clip, leaving as a file and coming back', () => {
     expect(written.kind).toBe('arrow');
   });
 
+  it('pushes the written annotations along by the card at the head of the file', () => {
+    const clip = clipOf(4, 4);                     // 8s
+    clip.addAnnotation(arrow('a', 0.25, 0.375));   // 2s-3s
+    clip.approve(Span.of(0, 0.125));               // 0s-1s gone: the file holds 7s, plus 3s of card
+
+    const [written] = clip.annotationsAsExported(3);
+
+    // The file is ten long, the card takes the first three, and the arrow is one second
+    // into the clip after that: 4s to 5s of the ten.
+    expect(written.s).toBeCloseTo(4 / 10);
+    expect(written.e).toBeCloseTo(5 / 10);
+  });
+
   it('writes nothing for an annotation the cuts took entirely', () => {
     const clip = clipOf(4);
     clip.addAnnotation(arrow('a', 0.25, 0.375));   // 1s-1.5s
