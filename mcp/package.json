@@ -1,6 +1,6 @@
 {
   "name": "democlip-mcp",
-  "version": "1.0.108",
+  "version": "1.0.109",
   "description": "Drive DemoClip from an agent: an MCP server that opens a browser on the app, lets you record with the normal picker, and edits the clip while you watch.",
   "license": "MIT",
   "type": "module",
