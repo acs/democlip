@@ -86,12 +86,17 @@ export function startMirror(): void {
   (function loop() {
     if (!mirroring) return;
     if (capture.sources.screen && capture.current() && el.sv.readyState >= 2) {
-      drawFrame(el.sv);
-      drawRegion();
-      // Webcam overlay, inside the recording region (what will be recorded).
-      const region = capture.region;
-      drawWebcamOverlay(ctx, region.x * el.cv.width, region.y * el.cv.height,
-                             region.w * el.cv.width, region.h * el.cv.height);
+      // A frame that will not draw must not stop the preview: this loop is the only
+      // thing painting it, and one throw here ends it for the rest of the session — the
+      // picture freezes, and whatever was over it is never drawn again.
+      try {
+        drawFrame(el.sv);
+        drawRegion();
+        // Webcam overlay, inside the recording region (what will be recorded).
+        const region = capture.region;
+        drawWebcamOverlay(ctx, region.x * el.cv.width, region.y * el.cv.height,
+                               region.w * el.cv.width, region.h * el.cv.height);
+      } catch { /* the next frame will try again */ }
     } else if (capture.sources.webcam && el.wcv.readyState >= 2) {
       ctx.drawImage(el.wcv, 0, 0, el.cv.width, el.cv.height);
       el.cv.style.cursor = '';
