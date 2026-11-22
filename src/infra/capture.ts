@@ -11,6 +11,23 @@ import { CropRegion } from '../domain/capture/CropRegion.js';
 
 export type ScreenCapture = CaptureSession;
 
+/**
+ * Conditional Focus, which is Chrome's and not in the DOM types: a captured **tab** or
+ * window takes the focus when the share starts, so the app the person is driving goes
+ * behind what they are recording — the preview carries on, but their controls are
+ * hidden. A `CaptureController` lets the app say which surface keeps the focus, and
+ * `'no-focus-change'` keeps this tab in front, which is where the app belongs.
+ */
+interface FocusController {
+  setFocusBehavior(behavior: 'focus-captured-surface' | 'no-focus-change'): void;
+}
+
+/** Chrome's controller, when this browser has one; null anywhere else. */
+function focusController(): FocusController | null {
+  const Controller = (globalThis as { CaptureController?: new () => FocusController }).CaptureController;
+  return Controller ? new Controller() : null;
+}
+
 export class CaptureAdapter implements CapturePort {
   private screenCapture: CaptureSession | null = null;
   private webcamStream: MediaStream | null = null;
@@ -48,13 +65,22 @@ export class CaptureAdapter implements CapturePort {
     // Chrome decides whether the option appears and whether its box starts ticked,
     // and the user still has to agree, so a share without audio is possible and the
     // flow says so.
+    //
+    // The `controller` asks for the other half of the same thing: the **focus**. Sharing
+    // a tab or a window otherwise brings it to the front, and the app — whose preview is
+    // where the share is watched — goes behind it. See `focusController`.
     const videoConstraints = {
       frameRate: { ideal: 30, max: 60 },
       cursor: 'always',
     } as MediaTrackConstraints;
+    const controller = focusController();
     const stream = await navigator.mediaDevices.getDisplayMedia({
       video: videoConstraints, audio: true, systemAudio: 'include',
+      ...(controller ? { controller } : {}),
     } as DisplayMediaStreamOptions);
+    // This tab is the one that stays in front, whichever surface was picked.
+    try { controller?.setFocusBehavior('no-focus-change'); } catch { /* a surface that takes no focus */ }
+
     const hasAudio = stream.getAudioTracks().length > 0;
     this.screenCapture = { stream, hasAudio };
     this.sources = this.sources.withScreen(true);
