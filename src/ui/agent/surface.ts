@@ -31,6 +31,14 @@ export interface AnnotationPropertySummary {
   readonly value: string;
 }
 
+/** One of the clip's own properties, as the properties panel would show it. */
+export interface ClipPropertySummary {
+  readonly id: string;
+  readonly label: string;
+  readonly control: string;
+  readonly value: string;
+}
+
 /** One annotation of the clip, as data. */
 export interface AnnotationSummary {
   readonly id: string;
@@ -49,6 +57,8 @@ export interface ClipDescription {
   /** The cuts, as fractions of the clip. */
   readonly cuts: readonly { readonly s: number; readonly e: number }[];
   readonly annotations: readonly AnnotationSummary[];
+  /** What the clip says about itself — its title, its description. */
+  readonly properties: readonly ClipPropertySummary[];
 }
 
 /** The numbers and strings a kind needs to make a new annotation. */
@@ -83,6 +93,8 @@ export interface AgentSurface {
     /** May wait on the browser: an image's picture is decoded and kept first. */
     annotate(kind: string, params: AnnotationParams): Promise<Result<{ id: string }>>;
     setProperty(id: string, property: string, value: string): Result<{ value: string }>;
+    /** Change what the clip says about itself — its title, its description. */
+    setClipProperty(property: string, value: string): Result<{ value: string }>;
     remove(id: string): Result<{ kind: string }>;
     undo(): Result<{ change: string }>;
   };

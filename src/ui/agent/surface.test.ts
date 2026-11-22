@@ -76,6 +76,7 @@ describe('the gate', () => {
         cut: () => ({ ok: true, removed: 0 }),
         annotate: async () => ({ ok: false, reason: 'none' }),
         setProperty: () => ({ ok: false, reason: 'none' }),
+        setClipProperty: () => ({ ok: false, reason: 'none' }),
         remove: () => ({ ok: false, reason: 'none' }),
         undo: () => ({ ok: false, reason: 'nothing to undo' }),
       },
@@ -102,6 +103,18 @@ describe('describeClip', () => {
     expect(described.takes).toEqual([{ index: 0, seconds: 3 }, { index: 1, seconds: 4 }]);
     expect(described.cuts).toEqual([]);
     expect(described.annotations).toEqual([]);
+    expect(described.properties).toEqual([
+      { id: 'title', label: 'Title', control: 'text', value: '' },
+      { id: 'description', label: 'Description', control: 'long-text', value: '' },
+    ]);
+  });
+
+  it('reports the clip\'s own properties with the value it holds', () => {
+    const clip = clipOf(3);
+    clip.setProperty('title', 'A demo');
+    const described = describeClip(clip);
+    expect(described.properties.find(property => property.id === 'title')).toMatchObject({ value: 'A demo' });
+    expect(described.properties.find(property => property.id === 'description')).toMatchObject({ value: '' });
   });
 
   it('reports a cut as a fraction of the clip, and the kept length it leaves', () => {

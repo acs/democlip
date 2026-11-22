@@ -1,10 +1,11 @@
 // The surface's editing operations.
 //
 // Every one is the app's own: a cut is the clip's own approve, an annotation goes in
-// through the clip, a property change goes through the kind's own descriptor, and the
-// undo is the clip's one undo. There is no second implementation of any rule, so a
-// change an agent makes is announced to the views, taken back by the one undo, and
-// kept with the clip — exactly as a person's change is.
+// through the clip, a property change goes through the kind's own descriptor — or, for
+// the clip's own properties, the clip register's — and the undo is the clip's one undo.
+// There is no second implementation of any rule, so a change an agent makes is announced
+// to the views, taken back by the one undo, and kept with the clip — exactly as a
+// person's change is.
 //
 // A refusal is a **value**, not a throw: the app's answer, with a reason, and the clip
 // left alone.
@@ -17,6 +18,7 @@ import { Span } from '../../domain/clip/Span.js';
 import type { Clip } from '../../domain/clip/Clip.js';
 import type { Annotation } from '../../domain/annotation/Annotation.js';
 import { pluginOf, propertiesOf } from '../annotating/annotation-plugin.js';
+import { clipProperty } from '../clip/clip-properties.js';
 import { MIN_SECTION } from '../cutting/selection.js';
 import type { AnnotationParams, Result } from './surface.js';
 
@@ -34,6 +36,7 @@ export interface Editor {
   cut(from: number, to: number): Result<{ removed: number }>;
   annotate(kind: string, params: AnnotationParams): Promise<Result<{ id: string }>>;
   setProperty(id: string, property: string, value: string): Result<{ value: string }>;
+  setClipProperty(property: string, value: string): Result<{ value: string }>;
   remove(id: string): Result<{ kind: string }>;
   undo(): Result<{ change: string }>;
 }
@@ -70,6 +73,16 @@ export function createEditor(clip: Clip, make: MakeAnnotation): Editor {
       if (!next) return { ok: false, reason: `${property} will not take ${JSON.stringify(value)}` };
       clip.changeAnnotation(id, next);
       return { ok: true, value: descriptor.value(next) };
+    },
+
+    setClipProperty(property, value) {
+      const descriptor = clipProperty(property);
+      if (!descriptor) return { ok: false, reason: `a clip has no property called ${property}` };
+      if (typeof value !== 'string') return { ok: false, reason: 'a property value is a string' };
+      const next = descriptor.with(clip.properties, value);
+      if (!next) return { ok: false, reason: `${property} will not take ${JSON.stringify(value)}` };
+      clip.setProperty(property, next.get(property));
+      return { ok: true, value: next.get(property) };
     },
 
     remove(id) {
