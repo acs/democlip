@@ -268,6 +268,73 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 .cam-item-name{flex:1;min-width:0;white-space:nowrap;text-overflow:ellipsis;overflow:hidden;}
 .cam-item-check{flex-shrink:0;color:var(--green);font-size:12px;}
 
+/* PROFILES — the toolbar pill and its popover. The chrome is the camera menu's; these are
+   its own rows: a pill with the profile's first letters, its name, a tick when it is the one
+   in use, a pencil and a bin; the settings it carries, as the same shared controls the clip
+   properties use; and a New Profile button at the foot. */
+.icon-btn-lbl{pointer-events:none;}
+.profile-pill{width:auto;min-width:30px;padding:0 9px;border-radius:100px;font-family:var(--font-mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;}
+.profile-menu{min-width:286px;padding:8px;}
+.profile-title{font-family:var(--font-ui);font-size:13px;font-weight:700;letter-spacing:.02em;color:var(--text);text-align:center;padding:4px 0 8px;}
+.profile-row{display:flex;flex-direction:column;gap:5px;padding:5px;border-radius:10px;border:1px solid transparent;}
+.profile-row.active{background:var(--glass);border-color:var(--glass-b);}
+.profile-line{display:flex;align-items:center;gap:7px;}
+.profile-pick{display:flex;align-items:center;gap:9px;flex:1;min-width:0;padding:4px 5px;border-radius:8px;border:none;background:transparent;color:var(--text);font-family:var(--font-ui);font-size:14px;letter-spacing:.01em;text-align:left;cursor:pointer;transition:background .15s;}
+.profile-pick:hover:not(:disabled){background:var(--glass-b);}
+.profile-pick:disabled{cursor:not-allowed;opacity:.55;}
+.profile-avatar{flex-shrink:0;width:40px;height:26px;border-radius:100px;display:flex;align-items:center;justify-content:center;font-family:var(--font-ui);font-size:12px;font-weight:700;letter-spacing:.02em;color:#fff;background:var(--crimson);}
+.profile-avatar.av-0{background:var(--crimson);}
+.profile-avatar.av-1{background:var(--brand-orange);}
+.profile-avatar.av-2{background:var(--blue);}
+.profile-avatar.av-3{background:var(--green);}
+.profile-avatar.av-4{background:var(--amber);color:#2A1C00;}
+.profile-name{flex:1;min-width:0;white-space:nowrap;text-overflow:ellipsis;overflow:hidden;}
+.profile-check{flex-shrink:0;color:var(--green);font-size:13px;font-weight:700;}
+.profile-acts{display:flex;align-items:center;gap:1px;flex-shrink:0;}
+.profile-ico{width:26px;height:26px;border-radius:7px;border:none;background:transparent;color:var(--text-mid);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s,color .15s;}
+.profile-ico:hover:not(:disabled){background:var(--glass-b);color:var(--text);}
+.profile-ico:disabled{cursor:not-allowed;opacity:.3;}
+.profile-ico svg{pointer-events:none;}
+.profile-rename-input{flex:1;min-width:0;padding:7px 9px;border-radius:8px;border:1px solid var(--glass-b2);background:var(--surface);color:var(--text);font-family:var(--font-ui);font-size:14px;outline:none;}
+.profile-lock{padding:6px 6px 0;margin:0;font-family:var(--font-ui);font-size:11px;line-height:1.45;color:var(--text-mid);}
+.profile-foot{display:flex;align-items:center;gap:6px;padding:8px 1px 1px;margin-top:6px;border-top:1px solid var(--glass-b);}
+.profile-new-btn{flex:1;padding:9px 12px;border-radius:9px;border:1px solid var(--crimson);background:var(--crimson);color:#fff;font-family:var(--font-ui);font-size:13px;font-weight:600;cursor:pointer;transition:filter .15s;}
+.profile-new-btn:hover{filter:brightness(1.08);}
+.profile-new-input{flex:1;min-width:0;padding:8px 10px;border-radius:9px;border:1px solid var(--glass-b2);background:var(--surface);color:var(--text);font-family:var(--font-ui);font-size:14px;outline:none;}
+.profile-new-input:focus{border-color:var(--text-mid);}
+.profile-new-add,.profile-new-cancel{padding:8px 12px;border-radius:9px;border:1px solid var(--glass-b2);background:var(--glass);color:var(--text);font-family:var(--font-ui);font-size:13px;cursor:pointer;transition:background .15s;}
+.profile-new-add{background:var(--crimson);border-color:var(--crimson);color:#fff;font-weight:600;}
+.profile-new-add:hover{filter:brightness(1.08);}
+.profile-new-cancel:hover{background:var(--glass-b);}
+
+.prop-note{font-family:var(--font-mono);font-size:9px;letter-spacing:.09em;text-transform:uppercase;color:var(--text-dim);}
+
+/* PROFILE CONFIG — what a profile fixes. A modal, in the family of the text entry dialog:
+   one row per item a profile may control, and a segmented Free / On / Off (or a Free switch
+   and a field) to say whether this profile controls it and at what. */
+.pdef-bd{position:fixed;inset:0;z-index:150;display:flex;align-items:center;justify-content:center;background:rgba(3,4,10,0.55);opacity:0;visibility:hidden;transition:opacity .16s,visibility 0s linear .16s;}
+.pdef-bd.on{opacity:1;visibility:visible;transition:opacity .16s,visibility 0s;}
+.pdef-panel{position:relative;width:min(92vw,420px);padding:20px;border-radius:12px;border:1px solid var(--glass-b2);background:var(--surface);backdrop-filter:blur(20px) saturate(1.4);-webkit-backdrop-filter:blur(20px) saturate(1.4);display:flex;flex-direction:column;gap:12px;box-shadow:0 18px 50px rgba(0,0,0,.45);}
+.pdef-close{position:absolute;top:12px;right:12px;width:26px;height:26px;border-radius:7px;border:none;background:transparent;color:var(--text-mid);font-size:16px;line-height:1;cursor:pointer;transition:background .15s,color .15s;}
+.pdef-close:hover{background:var(--glass-b);color:var(--text);}
+.pdef-title{margin:0;font-family:var(--font-ui);font-size:15px;font-weight:700;color:var(--text);}
+.pdef-sub{margin:0;font-family:var(--font-ui);font-size:12px;line-height:1.5;color:var(--text-mid);}
+.pdef-rows{display:flex;flex-direction:column;gap:13px;padding:2px 0;}
+.pdef-row{display:flex;flex-direction:column;gap:6px;}
+.pdef-name{font-family:var(--font-ui);font-size:13px;color:var(--text);}
+.pdef-seg{display:flex;align-self:flex-start;border:1px solid var(--glass-b2);border-radius:8px;overflow:hidden;}
+.pdef-opt{padding:6px 14px;border:none;border-right:1px solid var(--glass-b2);background:transparent;color:var(--text-mid);font-family:var(--font-ui);font-size:12px;cursor:pointer;transition:background .15s,color .15s;}
+.pdef-opt:last-child{border-right:none;}
+.pdef-opt:hover:not(:disabled){background:var(--glass-b);color:var(--text);}
+.pdef-opt[aria-pressed="true"]{background:var(--crimson);color:#fff;}
+.pdef-opt:disabled{cursor:not-allowed;opacity:.45;}
+.pdef-free{display:flex;align-items:center;gap:8px;font-family:var(--font-mono);font-size:9px;letter-spacing:.09em;text-transform:uppercase;color:var(--text-mid);cursor:pointer;}
+.pdef-input{padding:8px 10px;border-radius:8px;border:1px solid var(--glass-b2);background:var(--glass);color:var(--text);font-family:var(--font-ui);font-size:14px;outline:none;}
+.pdef-input:disabled{opacity:.45;cursor:not-allowed;}
+.pdef-foot{display:flex;justify-content:flex-end;}
+.pdef-done{padding:9px 18px;border-radius:9px;border:1px solid var(--crimson);background:var(--crimson);color:#fff;font-family:var(--font-ui);font-size:13px;font-weight:600;cursor:pointer;transition:filter .15s;}
+.pdef-done:hover{filter:brightness(1.08);}
+
 /* PROPERTIES INSPECTOR — at the body, beside the picked annotation, so the preview
    cannot clip it. The same panel look as the camera menu, with a row per property. */
 .prop-menu{position:fixed;z-index:120;min-width:180px;max-width:240px;padding:10px;border-radius:10px;border:1px solid var(--glass-b2);background:var(--surface);backdrop-filter:blur(20px) saturate(1.4);-webkit-backdrop-filter:blur(20px) saturate(1.4);display:flex;flex-direction:column;gap:10px;opacity:0;visibility:hidden;transform:translateY(4px);transition:opacity .16s,transform .16s,visibility 0s linear .16s;}

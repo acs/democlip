@@ -55,7 +55,30 @@ describe('Session', () => {
 
   it('holds no view state: ending it needs no view', () => {
     const session = sessionWith([2]);
-    // Nothing but the clip and the audio flag is on the session.
-    expect(Object.keys(session).sort()).toEqual(['audio', 'clip']);
+    // Nothing but the session's own state is on it: the clip, the audio flag, and
+    // whether it has begun to capture. None of them is a view's.
+    expect(Object.keys(session).sort()).toEqual(['audio', 'captured', 'clip']);
+  });
+
+  // The capture latch: what a **profile** is fixed by. Raised by a take that really
+  // started, and cleared with the rest when the session ends.
+  it('has not captured until a take begins', () => {
+    expect(sessionWith([2]).hasCaptured).toBe(false);
+    expect(sessionWith([]).hasCaptured).toBe(false);
+  });
+
+  it('has captured from the moment a take begins, and stays so', () => {
+    const session = sessionWith([]);
+    session.beginCapture();
+    expect(session.hasCaptured).toBe(true);
+    session.beginCapture();
+    expect(session.hasCaptured).toBe(true);
+  });
+
+  it('forgets that it captured when it ends', () => {
+    const session = sessionWith([2]);
+    session.beginCapture();
+    session.end();
+    expect(session.hasCaptured).toBe(false);
   });
 });

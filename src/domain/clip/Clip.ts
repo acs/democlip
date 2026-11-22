@@ -282,6 +282,21 @@ export class Clip {
     return true;
   }
 
+  /**
+   * Fix one of the clip's properties to a value a **profile** controls. It is a load rather
+   * than the person's edit — the value is the profile's, not theirs — so it is announced, so
+   * every view follows it, and it is deliberately **not** what the one undo takes back: the
+   * undo would otherwise be able to put back a value the profile is holding. Applying the
+   * value an item already holds is no change at all.
+   */
+  applyProperty(id: string, value: string): boolean {
+    const previous = this.props.get(id);
+    if (previous === value) return false;
+    this.props = this.props.with(id, value);
+    this.announce({ type: 'property-changed', id, value, previous });
+    return true;
+  }
+
   // ── Undo ───────────────────────────────────────────────────────────────────
 
   /** Is there a change to take back? */

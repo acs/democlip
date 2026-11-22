@@ -84,6 +84,9 @@
         <div class="s-dot" id="s-dot"></div>
         <span id="s-text">Initialising</span>
       </div>
+      <button class="icon-btn profile-pill" id="profile-btn" aria-haspopup="menu" aria-expanded="false" aria-label="Profiles" title="Profiles">
+        <span class="icon-btn-lbl" id="profile-initials">—</span>
+      </button>
     </div>
   </header>
 
@@ -243,7 +246,7 @@
         <div class="help-num">4</div>
         <div class="help-step-body">
           <div class="help-step-title">Export and publish</div>
-          <div class="help-step-desc">Give the clip a <strong>title</strong> and a <strong>description</strong> from the <strong>settings control</strong> in the corner of the preview (the three sliders over the picture) — what it says about itself, and what publishing fills its fields from. Switch on <strong>Add to export</strong> there and <strong>every export — a file or a publish — opens with a 2-second card</strong>: the clip's first frame, with those two lines over it and the date and the app's name under them. Then hit Export to choose where the clip goes: a <strong>WebM</strong> or <strong>MP4</strong> file to download, <strong>Bluesky</strong> to publish it as a video post (sign in with your handle first), or <strong>YouTube</strong> to upload it to your own channel (sign in with Google). Either file is encoded faster than real time — the timeline counts down how much is left, and the preview shows the frames as they are written, so you can watch it happen without waiting for it.</div>
+          <div class="help-step-desc">Give the clip a <strong>title</strong> and a <strong>description</strong> from the <strong>settings control</strong> in the corner of the preview (the three sliders over the picture) — what it says about itself, and what publishing fills its fields from. Switch on <strong>Add to export</strong> there and <strong>every export — a file or a publish — opens with a 2-second card</strong>: the clip's first frame, with those two lines over it and the date and the app's name under them. A <strong>profile</strong> — the pill at the right-hand end of the header, wearing the active profile's first letters — can <strong>fix</strong> that switch instead: set it in a profile and every clip made under it is set that way, with <strong>the switch not yours to move</strong> while that profile is in use — the row shows the value and names the profile. Press the pill to choose a profile, create one, rename or remove it; the <strong>sliders mark</strong> on a profile's row opens what that profile controls. The choice is <strong>fixed from the moment you start recording</strong> until the session ends, and the app always has a <strong>Default</strong> that controls nothing, so nothing changes if you never use them. Then hit Export to choose where the clip goes: a <strong>WebM</strong> or <strong>MP4</strong> file to download, <strong>Bluesky</strong> to publish it as a video post (sign in with your handle first), or <strong>YouTube</strong> to upload it to your own channel (sign in with Google). Either file is encoded faster than real time — the timeline counts down how much is left, and the preview shows the frames as they are written, so you can watch it happen without waiting for it.</div>
         </div>
       </div>
       <div class="help-step">
@@ -263,6 +266,20 @@
 
 <!-- CAMERA MENU — at the body, for the same reason as the Export menu -->
 <div class="cam-menu" id="cam-menu" role="menu" aria-label="Camera"></div>
+
+<!-- PROFILE MENU — at the body, because the header clips what overflows it -->
+<div class="cam-menu profile-menu" id="profile-menu" role="menu" aria-label="Profiles"></div>
+
+<!-- PROFILE CONFIG — what a profile fixes, opened from its sliders mark -->
+<div class="pdef-bd" id="profile-def-bd" role="dialog" aria-modal="true" aria-labelledby="profile-def-title">
+  <div class="pdef-panel">
+    <button class="pdef-close" id="profile-def-close" type="button" aria-label="Close">×</button>
+    <h2 class="pdef-title" id="profile-def-title">Profile</h2>
+    <p class="pdef-sub">What this profile fixes. An item left free is yours to change, exactly as it always was.</p>
+    <div class="pdef-rows" id="profile-def-rows"></div>
+    <div class="pdef-foot"><button class="pdef-done" id="profile-def-done" type="button">Done</button></div>
+  </div>
+</div>
 
 <!-- PROPERTIES INSPECTOR — at the body, beside the picked annotation, so the preview cannot clip it -->
 <div class="prop-menu" id="prop-menu" role="dialog" aria-label="Annotation properties"></div>

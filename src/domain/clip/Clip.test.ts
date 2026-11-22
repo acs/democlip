@@ -455,3 +455,38 @@ describe('Clip size', () => {
     expect(rebuilt.size()?.toString()).toBe('1920x1080');
   });
 });
+
+// Applying what a **profile** fixes: announced, so every view follows it, and deliberately
+// not what the one undo takes back — the profile would only put it back.
+describe('Clip.applyProperty', () => {
+  it('announces the change, so the views follow it', () => {
+    const clip = Clip.empty(new FakeTakes());
+    const seen: ClipEvent[] = [];
+    clip.onChange(event => seen.push(event));
+
+    expect(clip.applyProperty('addToExport', 'true')).toBe(true);
+    expect(clip.properties.get('addToExport')).toBe('true');
+    expect(seen).toEqual([{ type: 'property-changed', id: 'addToExport', value: 'true', previous: '' }]);
+  });
+
+  it('is no change at all when the clip already holds the value', () => {
+    const clip = Clip.empty(new FakeTakes());
+    clip.applyProperty('addToExport', 'true');
+    const seen: ClipEvent[] = [];
+    clip.onChange(event => seen.push(event));
+
+    expect(clip.applyProperty('addToExport', 'true')).toBe(false);
+    expect(seen).toEqual([]);
+  });
+
+  it('is not what the one undo takes back: the person’s own last change still is', () => {
+    const clip = Clip.empty(new FakeTakes());
+    clip.setProperty('title', 'A demo');
+    clip.applyProperty('addToExport', 'true');
+
+    expect(clip.pendingUndo()).toEqual({ type: 'property-changed', id: 'title', value: 'A demo', previous: '' });
+    clip.undo();
+    expect(clip.properties.get('title')).toBe('');
+    expect(clip.properties.get('addToExport')).toBe('true');
+  });
+});

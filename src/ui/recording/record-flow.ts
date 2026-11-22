@@ -183,6 +183,9 @@ export function startTake(): void {
 async function startRecording(): Promise<void> {
   const outcome = record.start();
   if (outcome.kind === 'refused') { toast(outcome.reason); return; }
+  // A take has really begun: from here the sitting session has captured, so its profile is
+  // fixed until the session ends — even if this take is stopped and nothing comes of it.
+  session.beginCapture();
   setPhase('recording');
   // The preview shows the source this take is drawn from, so it is that source's size —
   // the webcam's own when the screen is off, not the size the last screen left behind

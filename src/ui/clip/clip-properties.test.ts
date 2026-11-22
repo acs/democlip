@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { clipProperties, clipProperty, registerClipProperty, type ClipProperty } from './clip-properties.js';
+import { clipProperties, clipProperty, registerClipProperty, seedableClipProperties, type ClipProperty } from './clip-properties.js';
 import { ClipProperties } from '../../domain/clip/ClipProperties.js';
 
 // The register, proved in node: the two the app offers, and that a new property needs
@@ -58,5 +58,11 @@ describe('the clip property register', () => {
     expect(size.with(ClipProperties.EMPTY, '1920x1080')).toBeNull();
     // And with no clip handed in there is no derived size to show.
     expect(size.value(ClipProperties.EMPTY)).toBe('');
+  });
+
+  it('marks only the switch as one a profile may preload', () => {
+    // The one setting a profile carries in this iteration; the title, the description and
+    // the read-only size are not preloaded by a profile.
+    expect(seedableClipProperties().map(property => property.id)).toEqual(['addToExport']);
   });
 });

@@ -42,6 +42,7 @@ import { youTubeAccount, uploadClip } from './ui/publishing/youtube-flow.js';
 import { blueskyAccount, publishClip } from './ui/publishing/publish-flow.js';
 import { keep } from './ui/keeping/keep.js';
 import { resumeClip } from './ui/keeping/resume-flow.js';
+import { loadProfiles, applyProfile, initProfiles, controlling } from './ui/profile/profile-flow.js';
 import { capture } from './infra/capture.js';
 
 function init(): void {
@@ -107,7 +108,7 @@ function init(): void {
 
   // What the clip says about itself — its title and its description — edited from a
   // settings control in the timeline header, and used when the clip is published.
-  clipPropertiesPanel.init();
+  clipPropertiesPanel.init(controlling);
 
   // Every view resets itself when the clip is cleared. The session names no view.
   initViewLifetime();
@@ -117,8 +118,17 @@ function init(): void {
   // only the one that forced it — and a stored clip is opened back into the
   // review on the way in. The session is over at New, or when the clip is
   // exported, and the kept copy goes with it.
+  //
+  // The profiles are read in first, and seed a fresh clip, so a clip that comes
+  // back is never rewritten by the active profile — a restored clip carries its
+  // own values.
   keep.watch();
-  void resumeClip();
+  void (async () => {
+    await loadProfiles();
+    initProfiles();
+    const restored = await resumeClip();
+    if (!restored) applyProfile();
+  })();
 
   // PWA install prompt
   window.addEventListener('beforeinstallprompt', e => {
@@ -193,10 +203,10 @@ function init(): void {
     el.agentChip.classList.add('on');
     window.democlip = createAgentSurface({
       version: appVersion(),
-      describe: () => describeClip(session.clip),
+      describe: () => describeClip(session.clip, controlling),
       sources: () => recording.sources(),
       takes: createTakes(session.clip, recording),
-      edit: createEditor(session.clip, makeAnnotation),
+      edit: createEditor(session.clip, makeAnnotation, controlling),
       view: createViewer(playback, currentPhase, () => session.clip.total()),
       out: createOut(
         { export: (target, annotations) => doExport(target, annotations) },

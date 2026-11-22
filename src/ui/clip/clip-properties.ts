@@ -36,6 +36,13 @@ export interface ClipProperty {
    */
   readonly readOnly?: boolean;
   /**
+   * True for a property a **profile** may preload onto a new clip — **add to export** in
+   * this iteration. A profile carries settings keyed by property id, and only the
+   * seedable ones are ever applied, so flagging one here is the whole of teaching a
+   * profile to carry it.
+   */
+  readonly seedable?: boolean;
+  /**
    * The value the control shows for these properties. The clip is handed in for a
    * property whose value it derives rather than stores — the clip size — so the panel
    * and the agent surface show the size the clip is shown and exported at.
@@ -62,6 +69,15 @@ export function clipProperty(id: string): ClipProperty | null {
   return registry.get(id) ?? null;
 }
 
+/**
+ * The properties a **profile** may carry — the seedable ones, in the same order. Seeding
+ * walks this list and nothing else, so a stored setting for a property this build does
+ * not preload is ignored rather than applied.
+ */
+export function seedableClipProperties(): readonly ClipProperty[] {
+  return clipProperties().filter(property => property.seedable === true);
+}
+
 // The title and the description, the first two. Both are free text — what a destination
 // will take is the destination's own rule (`domain/youtube/VideoDetails.ts`), not the
 // clip's — and a description is a paragraph where a title is a line.
@@ -82,11 +98,14 @@ registerClipProperty({
 });
 
 // And the one switch: whether an export puts a title card — these two lines over the
-// clip's first frame — at the head of the file. Off unless it is turned on.
+// clip's first frame — at the head of the file. Off unless it is turned on. It is the one
+// property a **profile** may preload (`seedable`), so a clip made under DemoClipTV opens
+// its export with the card without the switch being pressed.
 registerClipProperty({
   id: 'addToExport',
   label: 'Add to export',
   control: 'toggle',
+  seedable: true,
   value: properties => (properties.get('addToExport') === 'true' ? 'true' : ''),
   with: (properties, value) => properties.with('addToExport', value === 'true' ? 'true' : ''),
 });
