@@ -43,8 +43,8 @@ test('a clip is given a title and a description, and they come back after a relo
   await app.seed(takes);
   await app.review();
 
-  // The settings control is offered in the review, beside the clip's length, and opens
-  // the app's own popover — the annotation inspector's shape, one level up.
+  // The settings control is offered in the review, in the corner of the preview, and
+  // opens the app's own popover — the annotation inspector's shape, one level up.
   await expect(page.locator('#props-btn')).toBeVisible();
   await page.locator('#props-btn').click();
   await expect(page.locator('#clip-prop-menu')).toHaveClass(/on/);
