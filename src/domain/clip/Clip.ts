@@ -6,7 +6,9 @@
 //   * the takes, in order, and so the clip's length (the sum of them, derived, so
 //     it cannot drift from the takes it is made of);
 //   * the cuts — the stretches approved out of it — as a set that cannot overlap;
-//   * the annotations — what is drawn over the picture — as a set that can.
+//   * the annotations — what is drawn over the picture — as a set that can;
+//   * what the clip says about itself — its title, its description — which nothing
+//     else is a fraction of and nothing is scaled when the clip grows.
 //
 // — and it owns the rules that relate them, which used to be spread between the
 // marks module, the exporter and a couple of fields on the app: a cut that is
@@ -24,6 +26,7 @@
 import { Span } from './Span.js';
 import { SpanSet } from './SpanSet.js';
 import { TimelineMap } from './TimelineMap.js';
+import { ClipProperties } from './ClipProperties.js';
 import { AnnotationSet } from '../annotation/AnnotationSet.js';
 import { annotationFrom } from '../annotation/kinds.js';
 import type { Annotation, StoredAnnotation } from '../annotation/Annotation.js';
@@ -35,15 +38,16 @@ export type Segment = { takeIndex: number; from: number; to: number };
 
 /**
  * A clip written down: the takes it is made of (the recording bytes and the
- * length each one has), its cuts and its annotations. `snapshot()` gives one and
- * `restore()` takes one back, and it is the shape a store persists — the blobs are
- * the recordings themselves. `annotations` is optional so a clip written down
- * before annotations existed still reads back.
+ * length each one has), its cuts, its annotations and what it says about itself.
+ * `snapshot()` gives one and `restore()` takes one back, and it is the shape a store
+ * persists — the blobs are the recordings themselves. `annotations` and `properties`
+ * are optional so a clip written down before either existed still reads back.
  */
 export interface ClipSnapshot {
   takes: ReadonlyArray<{ blob: Blob; duration: number }>;
   cuts: ReadonlyArray<{ s: number; e: number }>;
   annotations?: ReadonlyArray<StoredAnnotation>;
+  properties?: Readonly<Record<string, string>>;
 }
 
 /**
@@ -62,6 +66,7 @@ export type ClipEvent =
   | { type: 'annotation-added'; annotation: Annotation }
   | { type: 'annotation-changed'; annotation: Annotation; previous: Annotation }
   | { type: 'annotation-removed'; annotation: Annotation }
+  | { type: 'property-changed'; id: string; value: string; previous: string }
   | { type: 'cleared' };
 
 /**
@@ -72,7 +77,8 @@ export type ClipChange =
   | { type: 'cut-approved'; cut: Span; removed: number; before: SpanSet }
   | { type: 'annotation-added'; annotation: Annotation }
   | { type: 'annotation-changed'; annotation: Annotation; previous: Annotation }
-  | { type: 'annotation-removed'; annotation: Annotation };
+  | { type: 'annotation-removed'; annotation: Annotation }
+  | { type: 'property-changed'; id: string; value: string; previous: string };
 
 export type ClipListener = (event: ClipEvent) => void;
 
@@ -84,11 +90,12 @@ export class Clip {
     private readonly repo: TakeRepository,
     private removed: SpanSet,
     private notes: AnnotationSet,
+    private props: ClipProperties,
   ) {}
 
   /** A clip with nothing in it yet. */
   static empty(takes: TakeRepository): Clip {
-    return new Clip(takes, SpanSet.EMPTY, AnnotationSet.EMPTY);
+    return new Clip(takes, SpanSet.EMPTY, AnnotationSet.EMPTY, ClipProperties.EMPTY);
   }
 
   /** Listen for what happens to the clip. Call the returned function to stop. */
@@ -109,6 +116,11 @@ export class Clip {
   /** What is drawn over the picture, as fractions of the clip. May overlap. */
   get annotations(): AnnotationSet {
     return this.notes;
+  }
+
+  /** What the clip says about itself — its title, its description. */
+  get properties(): ClipProperties {
+    return this.props;
   }
 
   /** How long the clip is: the sum of its takes, never a field beside them. */
@@ -238,6 +250,22 @@ export class Clip {
     return taken;
   }
 
+  // ── What the clip says about itself ─────────────────────────────────────────
+
+  /**
+   * Set one of the clip's own properties — its title, its description. Says whether
+   * anything changed: setting a property to what it already holds is not a change, so
+   * it is announced to nobody and is not what the undo would take back.
+   */
+  setProperty(id: string, value: string): boolean {
+    const previous = this.props.get(id);
+    if (previous === value) return false;
+    this.props = this.props.with(id, value);
+    this.lastChange = { type: 'property-changed', id, value, previous };
+    this.announce({ type: 'property-changed', id, value, previous });
+    return true;
+  }
+
   // ── Undo ───────────────────────────────────────────────────────────────────
 
   /** Is there a change to take back? */
@@ -280,6 +308,10 @@ export class Clip {
         this.notes = this.notes.change(last.annotation.id, last.previous);
         this.announce({ type: 'annotation-changed', annotation: last.previous, previous: last.annotation });
         break;
+      case 'property-changed':
+        this.props = this.props.with(last.id, last.previous);
+        this.announce({ type: 'property-changed', id: last.id, value: last.previous, previous: last.value });
+        break;
     }
     return last;
   }
@@ -309,13 +341,14 @@ export class Clip {
 
   /**
    * Everything this clip is made of, so it can be written down and read back:
-   * its takes, its cuts and its annotations.
+   * its takes, its cuts, its annotations and what it says about itself.
    */
   snapshot(): ClipSnapshot {
     return {
       takes: this.repo.all().map(take => ({ blob: take.blob, duration: take.duration })),
       cuts: this.removed.spans.map(span => ({ s: span.s, e: span.e })),
       annotations: this.notes.all.map(annotation => annotation.stored()),
+      properties: this.props.toRecord(),
     };
   }
 
@@ -337,6 +370,7 @@ export class Clip {
         .map(stored => annotationFrom(stored))
         .filter((annotation): annotation is Annotation => annotation !== null),
     );
+    this.props = ClipProperties.of(snapshot.properties);
     this.lastChange = null;
   }
 
@@ -345,6 +379,7 @@ export class Clip {
     this.repo.clear();
     this.removed = SpanSet.EMPTY;
     this.notes = AnnotationSet.EMPTY;
+    this.props = ClipProperties.EMPTY;
     this.lastChange = null;
     this.announce({ type: 'cleared' });
   }

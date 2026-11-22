@@ -44,12 +44,13 @@ interface StoredTake {
   duration: number;
 }
 
-/** The small half: how many takes, the cuts, the annotations, and the sound. */
+/** The small half: how many takes, the cuts, the annotations, what it says, and the sound. */
 interface Meta {
   version: number;
   count: number;
   cuts: Array<{ s: number; e: number }>;
   annotations?: StoredAnnotation[];
+  properties?: Record<string, string>;
   audio: boolean;
 }
 
@@ -120,7 +121,7 @@ export function loadClip(): Promise<StoredClip | null> {
     // Every take the small half counts has to be there, or the clip is not one
     // to hand back: a missing take would make every position after it wrong.
     if (takes.length !== meta.count || takes.some(take => !take || !(take.duration > 0))) return null;
-    return { clip: { takes: takes as StoredTake[], cuts: meta.cuts, annotations: meta.annotations ?? [] }, audio: !!meta.audio };
+    return { clip: { takes: takes as StoredTake[], cuts: meta.cuts, annotations: meta.annotations ?? [], properties: meta.properties ?? {} }, audio: !!meta.audio };
   }).catch(() => null);
 }
 
@@ -151,6 +152,7 @@ function metaOf(clip: Clip, audio: boolean): Meta {
     count: clip.takes.count(),
     cuts: clip.cuts.spans.map(span => ({ s: span.s, e: span.e })),
     annotations: clip.annotations.all.map(annotation => annotation.stored()),
+    properties: clip.properties.toRecord(),
     audio,
   };
 }
