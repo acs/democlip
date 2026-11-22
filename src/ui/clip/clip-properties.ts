@@ -14,7 +14,7 @@
 import type { ClipProperties } from '../../domain/clip/ClipProperties.js';
 
 /** Which shared control edits a clip property. */
-export type ClipPropertyControl = 'text' | 'long-text';
+export type ClipPropertyControl = 'text' | 'long-text' | 'toggle';
 
 /**
  * Something about the clip the user can change after it is made. The app declares it;
@@ -68,4 +68,14 @@ registerClipProperty({
   control: 'long-text',
   value: properties => properties.get('description'),
   with: (properties, value) => properties.with('description', value),
+});
+
+// And the one switch: whether an export puts a title card — these two lines over the
+// clip's first frame — at the head of the file. Off unless it is turned on.
+registerClipProperty({
+  id: 'addToExport',
+  label: 'Add to export',
+  control: 'toggle',
+  value: properties => (properties.get('addToExport') === 'true' ? 'true' : ''),
+  with: (properties, value) => properties.with('addToExport', value === 'true' ? 'true' : ''),
 });

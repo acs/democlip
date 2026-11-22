@@ -114,6 +114,25 @@ class ClipPropertiesPanel {
   private row(property: ClipProperty): HTMLElement {
     const host = document.createElement('div');
     host.className = 'prop-row';
+
+    // A toggle is one labelled checkbox, rather than a name over a control.
+    if (property.control === 'toggle') {
+      const label = document.createElement('label');
+      label.className = 'prop-toggle';
+      const check = document.createElement('input');
+      check.type = 'checkbox';
+      check.className = 'prop-check';
+      check.checked = property.value(session.clip.properties) === 'true';
+      check.addEventListener('change', () => this.applyOne(property, check));
+      const name = document.createElement('span');
+      name.className = 'prop-name';
+      name.textContent = property.label;
+      label.append(check, name);
+      host.append(label);
+      this.fields.push({ property, input: check });
+      return host;
+    }
+
     const name = document.createElement('span');
     name.className = 'prop-name';
     name.textContent = property.label;
@@ -133,7 +152,10 @@ class ClipPropertiesPanel {
 
   /** Apply one field through the clip: it announces, the one undo holds it, and it is kept. */
   private applyOne(property: ClipProperty, input: HTMLInputElement | HTMLTextAreaElement): void {
-    const next = property.with(session.clip.properties, input.value);
+    const value = input instanceof HTMLInputElement && input.type === 'checkbox'
+      ? (input.checked ? 'true' : '')
+      : input.value;
+    const next = property.with(session.clip.properties, value);
     if (!next) { toast(`${property.label} not changed — that value is not allowed`); return; }
     session.clip.setProperty(property.id, next.get(property.id));
   }

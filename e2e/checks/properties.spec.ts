@@ -49,7 +49,7 @@ test('a clip is given a title and a description, and they come back after a relo
   await page.locator('#props-btn').click();
   await expect(page.locator('#clip-prop-menu')).toHaveClass(/on/);
 
-  await page.locator('#clip-prop-menu input').fill('A short demo');
+  await page.locator('#clip-prop-menu input.prop-input').fill('A short demo');
   await page.locator('#clip-prop-menu textarea').fill('What the clip shows');
   await page.locator('#props-btn').click();
   await expect(page.locator('#clip-prop-menu')).not.toHaveClass(/on/);
@@ -62,7 +62,7 @@ test('a clip is given a title and a description, and they come back after a relo
   await page.reload();
   await expect.poll(() => properties(page)).toEqual({ title: 'A short demo', description: 'What the clip shows' });
   await page.locator('#props-btn').click();
-  await expect(page.locator('#clip-prop-menu input')).toHaveValue('A short demo');
+  await expect(page.locator('#clip-prop-menu input.prop-input')).toHaveValue('A short demo');
   await expect(page.locator('#clip-prop-menu textarea')).toHaveValue('What the clip shows');
 });
 
@@ -74,7 +74,7 @@ test('the one undo takes a clip property back', async ({ page }) => {
   await app.review();
 
   await page.locator('#props-btn').click();
-  await page.locator('#clip-prop-menu input').fill('A short demo');
+  await page.locator('#clip-prop-menu input.prop-input').fill('A short demo');
   await page.locator('#props-btn').click();
   await expect.poll(() => properties(page)).toEqual({ title: 'A short demo' });
 

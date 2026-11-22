@@ -7,10 +7,11 @@ import { ClipProperties } from '../../domain/clip/ClipProperties.js';
 // no change to the panel or anywhere else — which is what the seam exists for.
 
 describe('the clip property register', () => {
-  it('offers the title and the description, in order', () => {
-    expect(clipProperties().map(property => property.id)).toEqual(['title', 'description']);
+  it('offers the title, the description and the switch, in order', () => {
+    expect(clipProperties().map(property => property.id)).toEqual(['title', 'description', 'addToExport']);
     expect(clipProperty('title')?.label).toBe('Title');
     expect(clipProperty('description')?.control).toBe('long-text');
+    expect(clipProperty('addToExport')?.control).toBe('toggle');
   });
 
   it('answers null for a property this build does not offer', () => {
@@ -38,5 +39,14 @@ describe('the clip property register', () => {
     expect(clipProperty('subtitle')?.id).toBe('subtitle');
     expect(clipProperties().map(property => property.id)).toContain('subtitle');
     expect(clipProperty('title')?.label).toBe(before);
+  });
+
+  it('keeps the switch as "true" or nothing, whatever it is handed', () => {
+    const addToExport = clipProperty('addToExport')!;
+    expect(addToExport.value(ClipProperties.EMPTY)).toBe('');
+    const on = addToExport.with(ClipProperties.EMPTY, 'true')!;
+    expect(addToExport.value(on)).toBe('true');
+    expect(addToExport.value(addToExport.with(on, 'false')!)).toBe('');
+    expect(addToExport.value(addToExport.with(on, 'no')!)).toBe('');
   });
 });
