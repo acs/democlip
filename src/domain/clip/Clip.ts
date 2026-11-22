@@ -213,20 +213,22 @@ export class Clip {
 
   /**
    * The annotations as a file of the kept stretches holds them: every stretch moved
-   * into the file's own time, since the cuts are applied there, and any annotation the
-   * cuts took entirely dropped. This is what an export writes beside a file rather than
-   * into it, so that what comes back is what the file holds.
+   * into the file's own time — the cuts applied there, and a title card at the head
+   * pushing them along by `introSeconds` — and any annotation the cuts took entirely
+   * dropped. This is what an export writes beside a file rather than into it, so that
+   * what comes back is what the file holds.
    */
-  annotationsAsExported(): StoredAnnotation[] {
+  annotationsAsExported(introSeconds = 0): StoredAnnotation[] {
     const total = this.total();
     const kept = this.keptLength();
     if (!(total > 0) || !(kept > 0)) return [];
+    const length = kept + introSeconds;         // the file's own length, card and all
     const map = this.timeline();
     const out: StoredAnnotation[] = [];
     for (const annotation of this.notes.all) {
       const stored = annotation.stored();
-      const s = map.keptOf(stored.s * total) / kept;
-      const e = map.keptOf(stored.e * total) / kept;
+      const s = (introSeconds + map.keptOf(stored.s * total)) / length;
+      const e = (introSeconds + map.keptOf(stored.e * total)) / length;
       if (!(e - s > 0.0005)) continue;               // the cuts took the whole of it
       out.push({ ...stored, s, e });
     }

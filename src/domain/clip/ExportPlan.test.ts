@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { ExportPlan } from './ExportPlan.js';
 import { Take } from './Take.js';
+import { IntroCard } from './IntroCard.js';
 import { TimelineMap } from './TimelineMap.js';
 import { Span } from './Span.js';
 import { AnnotationSet } from '../annotation/AnnotationSet.js';
@@ -80,6 +81,26 @@ describe('ExportPlan', () => {
     const plan = planOf({ audio: true, fadeSeconds: 0.5, annotations: 'drawn' });
     expect(plan.audio).toBe(true);
     expect(plan.fadeSeconds).toBe(0.5);
+  });
+
+  it('pushes the clip along by the title card at the head', () => {
+    const { map, segments } = parts();
+    const intro = IntroCard.of('A demo', 'What it shows', 3)!;
+    const plan = ExportPlan.of(segments, takes, 10, map, { audio: false, fadeSeconds: 0.08, annotations: 'drawn' }, AnnotationSet.EMPTY, intro);
+
+    expect(plan.intro).toBe(intro);
+    expect(plan.introSeconds).toBe(3);
+    expect(plan.pieces.map(p => p.at)).toEqual([3, 6, 7]);   // each kept stretch, three later
+    expect(plan.total).toBeCloseTo(12);                      // 9s of clip and 3s of card
+    expect(plan.steps.map(s => s.joinAt)).toEqual([null, 7]); // the first join is on the clip too
+    expect(plan.outputTimeOf(2)).toBeCloseTo(5);              // a moment of the clip, three in
+  });
+
+  it('has no card, and pushes nothing, when the export has none', () => {
+    const plan = planOf();
+    expect(plan.intro).toBeNull();
+    expect(plan.introSeconds).toBe(0);
+    expect(plan.total).toBeCloseTo(9);
   });
 
   it('shows the annotations through the same mapping the review uses', () => {

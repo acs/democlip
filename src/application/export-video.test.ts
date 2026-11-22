@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { ExportVideo } from './export-video.js';
 import { Clip } from '../domain/clip/Clip.js';
 import { Take } from '../domain/clip/Take.js';
+import { IntroCard } from '../domain/clip/IntroCard.js';
 import type { TakeRepository } from '../domain/clip/TakeRepository.js';
 import type { EncoderPort, EncodeOptions, ExportStats, FrameRendererPort } from './ports/EncoderPort.js';
 import type { ExportPlan } from '../domain/clip/ExportPlan.js';
@@ -47,17 +48,19 @@ const stats: ExportStats = { bytes: 2048, seconds: 2, frames: 60, realtime: 10 }
 const encoder = (options: { available?: boolean; fail?: boolean; fits?: boolean } = {}) => {
   let encoded = 0;
   let last: EncodeOptions | undefined;
+  let plan: ExportPlan | undefined;
   const port: EncoderPort = {
     available: () => options.available ?? true,
     fitsBudget: () => options.fits ?? true,
-    encode: async (_plan: ExportPlan, _renderer: FrameRendererPort, encodeOptions: EncodeOptions) => {
+    encode: async (thePlan: ExportPlan, _renderer: FrameRendererPort, encodeOptions: EncodeOptions) => {
+      plan = thePlan;
       last = encodeOptions;
       encoded++;
       if (options.fail) throw new Error('the encoder broke');
       return { blob: new Blob(['encoded']), stats };
     },
   };
-  return { port, get encoded() { return encoded; }, get last() { return last; } };
+  return { port, get encoded() { return encoded; }, get last() { return last; }, get plan() { return plan; } };
 };
 
 const downloads = (): DownloadPort & { saved: string[] } => {
@@ -144,6 +147,25 @@ describe('ExportVideo', () => {
     await useCase.run('mp4', { maxBytes: 5_000_000 });
 
     expect(enc.last?.maxBytes).toBe(5_000_000);
+  });
+
+  it('puts a title card at the head of the plan when the caller asks for one', async () => {
+    const intro = IntroCard.of('A demo', 'What it shows', 3)!;
+    const { useCase, enc } = build(clipOf(2));
+
+    await useCase.run('webm', { intro });
+
+    expect(enc.plan?.intro).toBe(intro);
+    expect(enc.plan?.introSeconds).toBe(3);
+  });
+
+  it('has no title card when the caller asks for none', async () => {
+    const { useCase, enc } = build(clipOf(2));
+
+    await useCase.run('webm');
+
+    expect(enc.plan?.intro).toBeNull();
+    expect(enc.plan?.introSeconds).toBe(0);
   });
 
   it('refuses, and writes nothing, when the budget cannot be met', async () => {

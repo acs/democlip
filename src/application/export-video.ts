@@ -6,6 +6,7 @@
 import type { Clip } from '../domain/clip/Clip.js';
 import type { ExportTarget } from '../domain/export/ExportTarget.js';
 import type { AnnotationExport } from '../domain/clip/ExportPlan.js';
+import type { IntroCard } from '../domain/clip/IntroCard.js';
 import type { EncoderPort, ExportStats, FrameRendererPort } from './ports/EncoderPort.js';
 import type { DownloadPort } from './ports/DownloadPort.js';
 import type { ClockPort } from './ports/ClockPort.js';
@@ -31,6 +32,8 @@ export interface ExportDeps {
 /** How one export is asked for: where its annotations go, and how it reports progress. */
 export interface ExportRunOptions {
   readonly annotations?: AnnotationExport;
+  /** A title card at the head of the file, or null for none. */
+  readonly intro?: IntroCard | null;
   readonly onProgress?: (source: number) => void;
   /**
    * The largest file the caller will take, in bytes. The export holds its bitrate under
@@ -51,6 +54,7 @@ export class ExportVideo {
       audio: this.deps.audio(),
       fadeSeconds: this.deps.fadeSeconds,
       annotations: options.annotations ?? 'drawn',
+      intro: options.intro ?? null,
     });
     if (!plan) return { kind: 'refused', reason: 'There is nothing to export.' };
     const picture = this.deps.picture();

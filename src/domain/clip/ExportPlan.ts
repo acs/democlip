@@ -16,6 +16,7 @@ import type { Take } from './Take.js';
 import { AnnotationSet } from '../annotation/AnnotationSet.js';
 import type { Annotation } from '../annotation/Annotation.js';
 import { TimelineMap } from './TimelineMap.js';
+import type { IntroCard } from './IntroCard.js';
 
 /** One kept stretch of one take, placed in the file the export will write. */
 export interface ExportPiece {
@@ -42,6 +43,8 @@ export interface ExportSettings {
   fadeSeconds: number;
   /** Drawn in for a file to watch, carried in a **sidecar** for a file to work on. */
   annotations: AnnotationExport;
+  /** A title card at the head of the file, or null for none. */
+  intro?: IntroCard | null;
 }
 
 export class ExportPlan {
@@ -56,6 +59,10 @@ export class ExportPlan {
     readonly annotations: AnnotationSet,   // what is drawn over the picture
     private readonly map: TimelineMap,
     private readonly starts: readonly number[],
+    /** The card at the head of the file, or null. */
+    readonly intro: IntroCard | null,
+    /** How long that card is, which is how far the clip's own frames are pushed along. */
+    readonly introSeconds: number,
   ) {}
 
   /**
@@ -63,7 +70,9 @@ export class ExportPlan {
    * what the clip says survives the cuts; `to` is where the export stops, in
    * seconds of the recording; `map` is the recording and the timeline mapped both
    * ways, which is where a frame's position comes from; `annotations` is what the
-   * clip says is drawn over the picture.
+   * clip says is drawn over the picture. `intro` is a card at the head of the file,
+   * if the export has one: it takes the first seconds, and every kept stretch lands
+   * that much later.
    */
   static of(
     segments: readonly Segment[],
@@ -72,7 +81,9 @@ export class ExportPlan {
     map: TimelineMap,
     settings: ExportSettings,
     annotations: AnnotationSet = AnnotationSet.EMPTY,
+    intro: IntroCard | null = null,
   ): ExportPlan {
+    const offset = intro?.seconds ?? 0;
     const starts: number[] = [];
     let running = 0;
     for (const take of takes) { starts.push(running); running += take.duration; }
@@ -80,7 +91,7 @@ export class ExportPlan {
     const pieces: ExportPiece[] = [];
     let total = 0;
     for (const seg of segments) {
-      pieces.push({ takeIndex: seg.takeIndex, from: seg.from, to: seg.to, at: total });
+      pieces.push({ takeIndex: seg.takeIndex, from: seg.from, to: seg.to, at: offset + total });
       total += seg.to - seg.from;
     }
 
@@ -102,8 +113,8 @@ export class ExportPlan {
     });
 
     return new ExportPlan(
-      pieces, steps, takes, to, total, settings.audio, settings.fadeSeconds,
-      annotations, map, starts,
+      pieces, steps, takes, to, offset + total, settings.audio, settings.fadeSeconds,
+      annotations, map, starts, intro, offset,
     );
   }
 
@@ -130,12 +141,12 @@ export class ExportPlan {
   }
 
   /**
-   * Where a moment of the recording lands in the output file — the kept time.
-   * This is the expression the exporter reached for by hand, in one place, so the
-   * frame loop has no units to mix up.
+   * Where a moment of the recording lands in the output file — the kept time, pushed
+   * along by the card at the head if the export has one. This is the expression the
+   * exporter reached for by hand, in one place, so the frame loop has no units to mix up.
    */
   outputTimeOf(source: number): number {
-    return this.map.keptOf(source);
+    return this.introSeconds + this.map.keptOf(source);
   }
 
   /** Is a different take on the other side of this piece? Then a join is there. */
