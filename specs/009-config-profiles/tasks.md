@@ -160,6 +160,7 @@ fixed by a profile, locked, and **drawn** into the encoded file.
 - [x] T054 Give the panel's rows their `data-id`, so a check can point at one property's row now that there is more than one field.
 - [x] T055 Tests: `logos.test.ts`, the logo rules in `clip-properties.test.ts`, the card in `IntroCard.test.ts` and `intro.test.ts`, and the surface's property list.
 - [x] T056 The browser check, `e2e/checks/profile-logo.spec.ts`: the mark in the file (pixels counted, with the picture there in both runs), the value naming the profile with no field, the sheet defining it, and a name the app does not serve refused.
+- [x] T059 Draw a mark **at its own proportions**: the fit is a rule of its own in `src/ui/exporting/logo-rect.ts` (`LOGO_ROW`, `LOGO_SPACE`, `logoRect`), worked out in pixels so a fraction of the picture's width is never compared with one of its height — the mistake that stretched the mark — and proved in node for marks of every shape, with the row read back from an encoded frame.
 - [x] T058 Make the logo a **list** rather than a field: `ClipPropertyControl` gains `choice` and a property declares its own `choices` (`src/ui/clip/clip-properties.ts`), the panel draws a `select` from them and shows a choice by its label, a profile's sheet draws the same list with **Not fixed** above it, and the automation surface is told the choices too.
 - [x] T057 Correct the documents for the new item: `spec.md` (US4, FR-024–FR-027, SC-014), `GLOSSARY.md`, `FEATURES.md`, the help panel, `data-model.md`, `contracts/profile.md` and `research.md` R12.
 

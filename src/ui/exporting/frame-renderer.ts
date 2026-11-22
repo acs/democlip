@@ -7,7 +7,8 @@ import type { Annotation } from '../../domain/annotation/Annotation.js';
 import type { IntroCard } from '../../domain/clip/IntroCard.js';
 import { drawAnnotations } from '../annotating/annotation-layer.js';
 import { DISSOLVE_S, dissolve } from '../clip/dissolve.js';
-import { introText, LOGO_BOX, LOGO_SPACE } from './intro-text.js';
+import { introText } from './intro-text.js';
+import { LOGO_SPACE, logoRect } from './logo-rect.js';
 import { loadLogo, logoImage } from './logo-image.js';
 import { el } from '../dom.js';
 
@@ -64,25 +65,20 @@ export class FrameRenderer implements FrameRendererPort {
   }
 
   /**
-   * The clip's logo, fitted inside its box and centred in it, keeping the mark's own
-   * proportions — with a dark shadow under it so a pale logo still reads over a pale picture,
-   * which is the same reason the card's words are drawn with a dark edge.
+   * The clip's logo: the rectangle `logoRect` works out, which draws a mark as tall as the row
+   * and keeps its proportions — **scaled, never stretched** — with a dark shadow under it so a
+   * pale mark still reads over a pale picture, which is the same reason the card's words are
+   * drawn with a dark edge.
    */
   private drawLogo(context: CanvasRenderingContext2D, intro: IntroFrame, w: number, h: number): void {
     const image = intro.logo ? logoImage(intro.logo) : null;
     if (!image || !image.width || !image.height) return;
 
-    const aspect = image.width / image.height;
-    const width = Math.min(LOGO_BOX.w, LOGO_BOX.h * aspect);
-    const height = width / aspect;
-    const at = {
-      x: LOGO_BOX.x + (LOGO_BOX.w - width) / 2,
-      y: LOGO_BOX.y + (LOGO_BOX.h - height) / 2,
-    };
+    const rect = logoRect({ w, h }, image);
     context.save();
     context.shadowColor = 'rgba(2,3,8,0.72)';
     context.shadowBlur = Math.max(2, h * 0.02);
-    context.drawImage(image, at.x * w, at.y * h, width * w, height * h);
+    context.drawImage(image, rect.x, rect.y, rect.width, rect.height);
     context.restore();
   }
 

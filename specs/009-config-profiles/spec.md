@@ -176,6 +176,7 @@ remove it, and confirm the app falls back to **Default** and the item is the per
 - **FR-025**: A logo whose name the app does not serve MUST be refused rather than kept, by the person's own control and by a written profile alike, so no export waits on a file that will never draw.
 - **FR-026**: Every export of a clip that wears a logo MUST open with a card carrying it — **webm, mp4, the file for editing and a publish alike** — because the card is where a logo lives. A clip that wears one therefore asks for a card even when **Add to export** is off, and its words are whatever the clip has, the day line always among them.
 - **FR-027**: The logo MUST be decoded before the file's first frame is written, so the card's very first frame wears it — a card is read the moment it appears — and a logo that will not load MUST NOT stop the export: the card is written without it.
+- **FR-028**: A logo MUST be drawn at **its own proportions** — scaled, never stretched, whatever the shape of the clip's picture — and as tall as the card's logo row, so marks of any shape are read at the same size. A mark that is wider than the row allows MUST be bounded by the picture's width instead, still at its own proportions.
 
 ### Key Entities
 
@@ -215,6 +216,7 @@ remove it, and confirm the app falls back to **Default** and the item is the per
 - The logos the app can wear are **files in the repository**, served beside the app from its own folder, and a clip's value is the **name** of one of them: nothing is uploaded by the person and nothing is fetched from anywhere else. Adding a mark is adding a file and a line to the app's own list.
 - A **logo asks for a card**: the card is where a clip's mark is drawn, so a clip that wears one opens with it whether or not **Add to export** is on. The card's words are then whatever the clip has, with the day line always among them.
 - A logo the app does not serve is refused by the clip property itself, so neither a person nor a written profile can leave a clip waiting on a file that will not draw.
+- A mark is drawn by **its height**, not into a box whose edges are fractions of two different lengths: the picture's width and its height are different lengths, and fitting a mark to both would deform it. It is scaled to the card's logo row, bounded by the width only when it is very wide, and every mark comes out the same height so a row of them reads evenly.
 - Applying a profile's item is a **load**, not the person's edit: it is announced so every view follows it, and it is not what the one **undo** takes back.
 - A clip that came back after a reload keeps the values it holds. Because a profile may not be chosen once capture has begun, and its own declarations are frozen then, a controlled item cannot fall out of step with the clip in any ordinary path.
 - The built-in **Default** is the app's free profile, so it has no config surface: a person who wants a freer profile makes a new one and leaves it controlling nothing.

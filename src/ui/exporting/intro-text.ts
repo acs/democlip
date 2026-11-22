@@ -22,16 +22,9 @@ const GAP = 0.045;       // between the title and the description, as a fraction
 const STAMP_GAP = 0.05;  // between the description and the day line
 const LINE = 1.4;        // a line's advance, in its own font sizes
 
-/**
- * The box the card's **logo** is fitted into, as fractions of the picture: above the words,
- * centred. The renderer fits the mark inside it, keeping its own proportions, so a wide logo
- * and a tall one both sit in the same place — and the box is as tall as it is wide, so a
- * portrait mark (Graditone's clef) is no smaller than a landscape one (DemoClip's camera).
- */
-export const LOGO_BOX = { x: 0.39, y: 0.08, w: 0.22, h: 0.22 };
-
-/** What the words keep clear above them when the card wears a logo. */
-export const LOGO_SPACE = LOGO_BOX.y + LOGO_BOX.h + 0.05;
+// Where the card's **logo** goes is `LOGO_ROW` and `logoRect` in `logo-rect.ts` — how tall a mark
+// is drawn, how wide it may be, and the rectangle that keeps its proportions. All this needs from
+// it is how much room the words leave above them, which the caller hands in as `top`.
 
 /** One line of the card: its words, its size, and the space above it. */
 interface CardLine {

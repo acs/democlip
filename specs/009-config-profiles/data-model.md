@@ -75,7 +75,7 @@ it declares is locked.
 | what asks for a card | `src/ui/exporting/intro.ts` | **add to export** *or* a logo: a logo lives on the card, so a clip that wears one always opens with it |
 | the file the encoder gets | `src/application/ports/EncoderPort.ts` | `IntroFrame.logo`, built by `src/infra/offline-encoder.ts` from the plan |
 | the picture | `src/ui/exporting/logo-image.ts` | `loadLogo(name)` / `logoImage(name)`: decoded **once**, before the first frame (`FrameRenderer.prepare`); a logo that will not load draws nothing and the export goes on |
-| where it is drawn | `src/ui/exporting/frame-renderer.ts` + `intro-text.ts` | `LOGO_BOX` (above the words, centred) and `LOGO_SPACE`; the mark is fitted inside the box keeping its proportions, with a dark shadow so a pale mark reads over a pale picture. The words are stacked in what the box leaves |
+| where it is drawn | `src/ui/exporting/logo-rect.ts` + `frame-renderer.ts` | `LOGO_ROW` (how tall a mark is, the widest it may be, where the row starts), `LOGO_SPACE` (what the words keep clear) and `logoRect(picture, mark)`, which works the rectangle out **in pixels** — the mistake it exists to prevent is comparing a fraction of the picture's width with one of its height and stretching the mark to fit. The mark is drawn there with a dark shadow, so a pale mark reads over a pale picture |
 
 ## 3. The stored shape (the port's data)
 
