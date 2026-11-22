@@ -6,6 +6,7 @@
 // It owns the DOM and the fact of being open; it decides nothing about Bluesky.
 
 import { el } from '../dom.js';
+import { session } from '../../session.js';
 import {
   blueskyAccount, signInToBluesky, signOutOfBluesky, publishClip,
   type BlueskyAccount, type PublishedPost, type PublishProgress,
@@ -62,7 +63,18 @@ class PublishDialog {
     el.pubComposeView.style.display = account ? '' : 'none';
     // The handle is what a person recognises; the DID is the fallback when the
     // account will not say.
-    if (account) el.pubAs.textContent = 'Signed in as ' + (account.handle ?? account.did);
+    if (account) {
+      el.pubAs.textContent = 'Signed in as ' + (account.handle ?? account.did);
+      this.prefill();
+    }
+  }
+
+  // The clip's own title and description — set once in the properties panel — fill the
+  // post's text and its alt, so the branding goes out with the post. Either may still be
+  // changed here, for this post alone.
+  private prefill(): void {
+    el.pubText.value = session.clip.properties.get('title');
+    el.pubAlt.value = session.clip.properties.get('description');
   }
 
   private async signIn(): Promise<void> {
