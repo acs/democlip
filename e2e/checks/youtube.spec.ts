@@ -389,7 +389,7 @@ test('publishing with the card on uploads a video that opens with it', async ({ 
   const chunk = asked.find(call => call.method === 'PUT' && (call.bytes?.length ?? 0) > 0);
   expect(chunk?.bytes).toBeTruthy();
   const duration = await durationOf(page, chunk!.bytes!, 'video/mp4');
-  // One second of clip and three of card: about 3.95s.
-  expect(duration).toBeGreaterThan(3.4);
-  expect(duration).toBeLessThan(5);
+  // One second of clip and two of card: about 2.95s.
+  expect(duration).toBeGreaterThan(2.4);
+  expect(duration).toBeLessThan(4);
 });

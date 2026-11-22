@@ -128,9 +128,9 @@ test('exporting a small take to MP4 keeps its own size too', async ({ page }) =>
 });
 
 // The card at the head of a file: the clip's title and description over its first frame,
-// for three seconds, when the clip asks for it. The file is three seconds longer than the
+// for two seconds, when the clip asks for it. The file is two seconds longer than the
 // clip, and its first frames are the card rather than the recording.
-test('a clip that asks for the card gets three seconds of it at the head of the file', async ({ page }) => {
+test('a clip that asks for the card gets two seconds of it at the head of the file', async ({ page }) => {
   const app = boot(page);
   await app.goto();
   const takes = await makeTakes(page, { width: 640, height: 360, seconds: 1 });
@@ -147,9 +147,9 @@ test('a clip that asks for the card gets three seconds of it at the head of the 
 
   const bytes = await exportFile(page, '#exp-webm');
   const duration = await durationOf(page, bytes, 'video/webm');
-  // One second of clip and three of card: about 3.95s, the export stopping a hair early.
-  expect(duration).toBeGreaterThan(3.4);
-  expect(duration).toBeLessThan(5);
+  // One second of clip and two of card: about 2.95s, the export stopping a hair early.
+  expect(duration).toBeGreaterThan(2.4);
+  expect(duration).toBeLessThan(4);
 });
 
 /** The first frame of a file, as the count of near-white pixels — enough to see whether
