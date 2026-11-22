@@ -23,6 +23,10 @@ export interface ProfileSettingRow {
 export interface ProfileRow {
   readonly id: string;
   readonly name: string;
+  /** The first letters of the name, for the row's and the toolbar's pill — 'Dem'. */
+  readonly avatar: string;
+  /** Which of the avatar colours this profile keeps — the same one every time it is drawn. */
+  readonly tone: number;
   readonly active: boolean;
   /** May this profile be chosen now? False for the others while the session has begun to capture. */
   readonly selectable: boolean;
@@ -31,6 +35,29 @@ export interface ProfileRow {
   /** May this profile be renamed or removed now? */
   readonly manageable: boolean;
   readonly settings: readonly ProfileSettingRow[];
+}
+
+/** How many avatar colours there are; the tone is one of these. */
+export const AVATAR_TONES = 5;
+
+/**
+ * The letters a profile's pill shows: the first three of its name, the first one
+ * capitalised — DemoClipTV is Dem, Default is Def. A name is never empty, so a pill always
+ * has something in it.
+ */
+export function avatarLetters(name: string): string {
+  const letters = name.replace(/\s+/g, '').trim().slice(0, 3);
+  return letters.charAt(0).toUpperCase() + letters.slice(1);
+}
+
+/**
+ * A profile's own colour, from its id alone, so a pill keeps its colour between openings
+ * and after a reload rather than being handed out by position.
+ */
+export function avatarTone(id: string): number {
+  let hash = 0;
+  for (let at = 0; at < id.length; at++) hash = (hash * 31 + id.charCodeAt(at)) % 997;
+  return hash % AVATAR_TONES;
 }
 
 /**
@@ -46,6 +73,8 @@ export function profileRows(book: Profiles, locked: boolean): ProfileRow[] {
     return {
       id: profile.id,
       name: profile.name,
+      avatar: avatarLetters(profile.name),
+      tone: avatarTone(profile.id),
       active,
       selectable: !locked || active,
       fixed,

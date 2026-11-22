@@ -46,12 +46,13 @@ exporting the clip writes the title card without the person touching the setting
 ### User Story 2 - Choose a profile, or make a new one, from the toolbar (Priority: P2)
 
 A person has more than one way of working — DemoClipTV for one channel, GraditoneTV
-for another — and each carries its own settings. An icon sits at the right-hand end
-of the toolbar. Pressing it opens the list of profiles, with the active one marked;
-while the session has yet to take a recording, choosing another makes it the active
-profile at once. From the same place the person creates a new profile by giving it a
-name, which is then theirs to set up and use. Once capture has begun in that session
-the profile is fixed, and another cannot be chosen until the session ends.
+for another — and each carries its own settings. A pill at the right-hand end of the
+toolbar, wearing the active profile's first letters, opens the list of profiles with the
+active one marked; while the session has yet to take a recording, choosing another makes
+it the active profile at once. From the same place the person creates a new profile by
+giving it a name, sets up what it carries, renames it or removes it. Once capture has
+begun in that session the profile is fixed, and another cannot be chosen until the
+session ends.
 
 **Why this priority**: Choosing and creating profiles is how a person moves between
 the ways of working. It is what makes the profiles in the first story reachable.
@@ -124,7 +125,7 @@ Rename it, then remove it, and confirm the app still has a profile to fall back 
 - **FR-002**: The app MUST have exactly one **active profile** at any time, and MUST work under it.
 - **FR-003**: The active profile MUST **preload** the value of the clip property **Add to export** for a clip started while it is active: the clip starts with that value and the person may still change it on the clip.
 - **FR-004**: Changing a clip property on a clip MUST NOT change any profile.
-- **FR-005**: A profile icon MUST be shown in the toolbar, at its right-most position.
+- **FR-005**: A profile control MUST be shown in the toolbar, at its right-most position, wearing the active profile's first letters (Dem for DemoClipTV), so what the clip is about to be made under is readable without opening anything.
 - **FR-006**: Pressing the profile icon MUST open the list of profiles, showing every profile and marking the active one.
 - **FR-007**: While the session has not begun to capture, choosing a profile from the list MUST make it the active profile at once.
 - **FR-008**: The person MUST be able to create a new profile by giving it a name; the new profile MUST join the list and be selectable as the active profile.
@@ -163,7 +164,7 @@ Rename it, then remove it, and confirm the app still has a profile to fall back 
 - **SC-006**: The app is usable in 100% of cases with no profile set up by the person — the built-in default stands.
 - **SC-007**: No sequence of removing profiles leaves the app without a profile to work under.
 - **SC-008**: A person who never opens the profile list sees the app behave exactly as it does today.
-- **SC-009**: The profile icon is at the right-most position of the toolbar, and the list is opened in one press from anywhere in the app.
+- **SC-009**: The profile control is at the right-most position of the toolbar, wearing the active profile's first letters, and the list is opened in one press from anywhere in the app.
 - **SC-010**: Once a session has begun to capture, no attempt to change its profile succeeds, in 100% of cases, and the person is told why.
 - **SC-011**: A session restored after a reload comes back under the same profile, in 100% of cases.
 

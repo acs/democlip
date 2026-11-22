@@ -12,6 +12,7 @@ import { profileStore } from '../../infra/profile-store.js';
 import { onPhaseChange } from '../../state.js';
 import { el, toast } from '../dom.js';
 import { seedActiveProfile } from './seed.js';
+import { avatarLetters } from './profile-rows.js';
 import { profileMenu } from './profile-menu.js';
 
 export const profiles = new ManageProfiles({
@@ -41,7 +42,7 @@ export function seedClip(): void {
   seedActiveProfile(session.clip, profiles.current);
 }
 
-/** Wire the toolbar icon and the menu: the icon toggles it, and the book's changes redraw it. */
+/** Wire the toolbar pill and the menu: the pill toggles it, and the book's changes redraw both. */
 export function initProfileMenu(): void {
   profileMenu.init({
     list: () => profiles.current,
@@ -57,6 +58,19 @@ export function initProfileMenu(): void {
   // while the menu is open. A change behind a closed menu costs nothing.
   session.clip.onChange(() => profileMenu.refresh());
   onPhaseChange(() => profileMenu.refresh());
+  paintProfileButton();
+}
+
+/**
+ * The toolbar pill shows the active profile's first letters — Dem for DemoClipTV, Def for
+ * Default — so what the clip is about to be made under is readable without opening anything.
+ */
+export function paintProfileButton(): void {
+  const active = profiles.current.active();
+  el.profileInitials.textContent = avatarLetters(active.name);
+  const label = `Profiles — working under ${active.name}`;
+  el.profileBtn.setAttribute('aria-label', label);
+  el.profileBtn.title = label;
 }
 
 /**
@@ -66,5 +80,6 @@ export function initProfileMenu(): void {
  */
 function report(outcome: ProfileResult): void {
   if (!outcome.ok) { toast(outcome.reason); return; }
+  paintProfileButton();
   if (!locked()) seedClip();
 }

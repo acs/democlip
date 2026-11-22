@@ -16,7 +16,8 @@ active profile **preloads** that value onto a clip as it starts, so a clip under
 DemoClipTV opens its export with a title card without the setting being switched on. The
 clip keeps its own value; changing it never changes the profile.
 
-An icon sits at the right-most end of the toolbar. It opens the list of profiles, with
+A pill sits at the right-most end of the toolbar, wearing the active profile's first
+letters. It opens the list of profiles, with
 the active one marked, and from the same place a new one is created. The choice belongs
 to the session: the profile may be switched freely until the session **begins to
 capture**, and from that moment it is fixed until the session ends — a refusal that is
@@ -37,7 +38,7 @@ the session's own capture state.
 (IndexedDB) is untouched: a profile is app configuration, not clip state
 
 **Testing**: Vitest in node for every rule in `src/domain/` and the use case; Playwright
-in `e2e/` for what is drawn — the toolbar icon, the menu, the seeding, the refusal and
+in `e2e/` for what is drawn — the toolbar pill, the panel, the seeding, the refusal and
 the reload
 
 **Target Platform**: the browser (Chrome 94+, Firefox 130+), as the app is today
@@ -69,7 +70,7 @@ to carry more later without losing existing profiles
   `Session.test.ts` (the latch) and `application/profiles.test.ts` (the lock, the
   fallback, the store failure), each with a fake behind the port. Pass.
 - **IV. What is drawn, played or encoded is proved in a browser** — an `e2e/checks/`
-  spec drives the real app: the icon at the right-most position of the toolbar, the menu,
+  spec drives the real app: the pill at the right-most position of the toolbar, the panel,
   a profile created and chosen, a clip seeded, the refusal once capture has begun, and the
   profiles coming back after a reload. Pass.
 - **V. The words come first** — `GLOSSARY.md` gains **profile**, **active profile** and
@@ -136,7 +137,7 @@ src/
 │   └── lifecycle/new-session-flow.ts  # seed the fresh clip after session.end()
 ├── main.ts                       # load the profiles, seed at startup, wire the button and the menu
 web/
-├── index.html                    # the #profile-btn icon at the right-most end of the header, #profile-menu
+├── index.html                    # the #profile-btn pill at the right-most end of the header, #profile-menu
 ├── styles.css                    # the menu, in the header chip/menu family
 GLOSSARY.md                       # profile, active profile, built-in default profile — written first
 FEATURES.md                       # one line: profiles
@@ -146,7 +147,7 @@ FEATURES.md                       # one line: profiles
 a profile is, that the built-in default cannot go, that removing the active one falls
 back, that the active profile cannot change once a session has begun to capture — live in
 `src/domain/` and `src/application/`. Persistence is `src/infra/profile-store.ts` behind
-`ProfileStorePort`. Everything drawn — the icon, the popover, the seeding — is in
+`ProfileStorePort`. Everything drawn — the pill, the panel, the seeding — is in
 `src/ui/profile/`. Nothing in `domain/` or `application/` imports the view or a browser.
 
 ## Complexity Tracking

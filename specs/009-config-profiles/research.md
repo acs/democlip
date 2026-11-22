@@ -168,6 +168,15 @@ requirement.
 - *A `<select>`.* Rejected: it cannot carry create/rename/remove, nor show why a choice is
   refused while capturing.
 
+**Amended after the first cut.** The user looked at the shipped version and asked for the
+shape they already use in **Graditone**: the toolbar control wears the **active profile's
+first letters** rather than a generic person glyph, and the panel is a titled list of
+avatar pills with a tick on the one in use, a pencil and a bin on each of the person's own
+rows, and a **+ New Profile** button at the foot. That is what shipped — in DemoClip's own
+palette and tokens, not Graditone's — and it is a better read than the first cut: which
+profile a clip is about to be made under is legible without opening anything. Both the
+toolbar position and the one-press opening are unchanged from the decision above.
+
 ## R8 — Locked state in the menu
 
 **Decision**: while the session is locked, the menu still opens and still shows every

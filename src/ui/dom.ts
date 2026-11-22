@@ -105,6 +105,7 @@ export const el = {
   themeIco:  byId<SVGElement>('theme-ico'),
   themeBtn:  byId<HTMLButtonElement>('theme-btn'),
   profileBtn:  byId<HTMLButtonElement>('profile-btn'),
+  profileInitials: byId<HTMLElement>('profile-initials'),
   profileMenu: byId<HTMLElement>('profile-menu'),
 };
 

@@ -114,6 +114,7 @@ export class ManageProfiles {
   readonly current: Profiles;
   choose(id: string): ProfileResult<{ active: string }>;
   create(name: string): ProfileResult<{ id: string }>;
+  setSetting(id: string, propertyId: string, value: string): ProfileResult<{ value: string }>;
   rename(id: string, name: string): ProfileResult<{ id: string; name: string }>;
   remove(id: string): ProfileResult<{ activeId: string }>;
 }
@@ -122,8 +123,8 @@ export class ManageProfiles {
 **Guarantees**
 
 - **the capture lock**: while `capturing()` is true, `choose` is refused, `create` does not
-  move the active profile, and `rename`/`remove` of the **active** profile are refused;
-  every refusal is `{ ok: false, reason }` with a plain sentence;
+  move the active profile, and `setSetting`/`rename`/`remove` of the **active** profile are
+  refused; every refusal is `{ ok: false, reason }` with a plain sentence;
 - the domain holds the rules (`Profiles`), so the use case adds only the session's answer
   and persistence — it imports no view, DOM or `session`;
 - a successful change is saved through the port; a failed save is reported through `warn`
@@ -160,19 +161,20 @@ export function seedActiveProfile(clip: Clip, profiles: Profiles): void;
 
 | Piece | Id / selector | Contract |
 |---|---|---|
-| the icon | `#profile-btn` | `class="icon-btn"`, an inline SVG, `aria-haspopup="true"`, `aria-expanded`; it is the **last** child of `.hdr-actions`, so it is the right-most control in the header |
-| the menu | `#profile-menu` | a body-level popover, `role="menu"`, built on each open; placed under the button and flipped above near the viewport's foot; closes on an outside click, Escape or resize |
-| a profile | `.profile-item[data-id]` | `role="menuitemradio"`, `aria-checked` for the active one; disabled (with the reason shown once) while the session is locked and it is not the active one |
-| a new profile | `.profile-new` + an input | creates a profile from a typed name; allowed while locked, and never moves the active profile while locked |
-| rename / remove | on the person's own rows | offered for the person's own profiles; the built-in default has neither, and the **active** profile's are refused while locked |
+| the pill | `#profile-btn` · `#profile-initials` | the header's `class="icon-btn profile-pill"`, holding a span with the active profile's first letters; `aria-haspopup="true"`, `aria-expanded`, and an `aria-label` naming the active profile. It is the **last** child of `.hdr-actions`, so it is the right-most control in the header |
+| the panel | `#profile-menu` | a body-level popover, `role="menu"`, built on each open; a `.profile-title` heading, then a row per profile, then the foot; placed under the pill and flipped above near the viewport's foot; closes on an outside click (read from `event.composedPath()`, since a setting re-renders the row the press began on), Escape or resize |
+| a profile | `.profile-row[data-id]` · `.profile-pick` | `role="menuitemradio"`, `aria-checked` for the active one; a `.profile-avatar` pill in one of the tones with the profile's first letters, the `.profile-name`, a `.profile-check` when active; disabled (with `.profile-lock` shown once) while the session is locked and it is not the active one |
+| what it carries | `.profile-settings` · `.profile-setting` | one control per seedable clip property, from the clip property's own declared `control`; not editable for the built-in default or for the active profile while locked |
+| rename / remove | `.profile-ico[data-act="rename"|"remove"]` | a pencil and a bin on the person's own rows only; the built-in default has neither |
+| a new profile | `.profile-new-btn` → `.profile-new-input` + `.profile-new-add` | the foot's **+ New Profile** button turns into a name field; creating is allowed while locked, and never moves the active profile while locked |
 
 **Guarantees**
 
-- the icon is in the header's icon-button family and opens the menu in **one press from
-  anywhere in the app** (SC-002, SC-009);
-- the active profile is always visible in the menu, locked or not (whether it is
+- the pill is in the header's icon-button family, wears the active profile's first letters,
+  and opens the panel in **one press from anywhere in the app** (SC-002, SC-009);
+- the active profile is always visible in the panel, locked or not (whether it is
   switchable is what the lock changes);
-- the menu names no rule of its own: it asks `ManageProfiles` and shows what it is told,
+- the panel names no rule of its own: it asks `ManageProfiles` and shows what it is told,
   the way `camera-menu.ts` shows the camera list.
 
 ## Out of scope this iteration

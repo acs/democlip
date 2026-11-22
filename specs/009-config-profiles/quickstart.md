@@ -1,7 +1,7 @@
 # Quickstart: Configuration Profiles
 
 How to see the feature work, once it is built. The rules are unit-tested in node; what is
-drawn — the toolbar icon, the menu, the seeding, the refusal — is driven in a real browser
+drawn — the toolbar pill, the panel, the seeding, the refusal — is driven in a real browser
 by the end-to-end suite.
 
 ## Prerequisites
@@ -48,10 +48,10 @@ npm run test:e2e -- e2e/checks/profiles.spec.ts
 
 The check boots the app and drives the toolbar:
 
-1. **The icon is right-most** — `#profile-btn` is visible, and it is the last control in
-   `.hdr-actions`.
-2. **The list** — press it; `#profile-menu` opens and shows the built-in **Default**, marked
-   active.
+1. **The pill is right-most** — `#profile-btn` is visible, wears the active profile's first
+   letters (`#profile-initials`), and is the last control in `.hdr-actions`.
+2. **The panel** — press it; `#profile-menu` opens on the **Profiles** heading with the
+   built-in **Default**, marked active.
 3. **Create and choose** — create **DemoClipTV**, turn its **Add to export** on, choose it;
    the row becomes the marked one.
 4. **A clip is seeded** — seed a take (the fixture's path) and open the clip's settings; the
@@ -81,9 +81,10 @@ recording.
 npm run dev
 ```
 
-1. Press the profile icon at the right-hand end of the header; the menu shows **Default**,
-   active.
-2. Create **DemoClipTV**, open it, and switch **Add to export** on; choose it.
+1. Press the pill at the right-hand end of the header (it wears the active profile's first
+   letters); the panel shows **Default**, active.
+2. Press **+ New Profile**, name it **DemoClipTV**, and switch its **Add to export** on;
+   then press its row to choose it.
 3. Share a screen and record a take. Open the settings control in the corner of the preview:
    **Add to export** is already on, before you touch it.
 4. Open the profile menu again: the other rows are out, with the reason that a profile is

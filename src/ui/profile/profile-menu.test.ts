@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { profileRows } from './profile-rows.js';
+import { avatarLetters, avatarTone, AVATAR_TONES, profileRows } from './profile-rows.js';
 import { Profile } from '../../domain/profile/Profile.js';
 import { Profiles } from '../../domain/profile/Profiles.js';
 
@@ -53,5 +53,28 @@ describe('profileRows', () => {
     expect(fallback.fixed).toBe(true);
     expect(fallback.manageable).toBe(false);
     expect(fallback.settings[0].editable).toBe(false);
+  });
+});
+
+describe('the avatar a profile is drawn with', () => {
+  it('is the first three letters of the name, with the first capitalised', () => {
+    expect(avatarLetters('DemoClipTV')).toBe('Dem');
+    expect(avatarLetters('Default')).toBe('Def');
+    expect(avatarLetters('GraditoneTV')).toBe('Gra');
+    expect(avatarLetters('Ana')).toBe('Ana');
+  });
+
+  it('skips the spaces, so a two-word name still fills the pill', () => {
+    expect(avatarLetters('My TV')).toBe('MyT');
+    expect(avatarLetters('  Ana  ')).toBe('Ana');
+    expect(avatarLetters('Acme')).toBe('Acm');
+  });
+
+  it('is one of the tones, and the same one for the same profile every time', () => {
+    const tone = avatarTone('tv');
+    expect(tone).toBeGreaterThanOrEqual(0);
+    expect(tone).toBeLessThan(AVATAR_TONES);
+    expect(avatarTone('tv')).toBe(tone);
+    expect(profileRows(book(), false).map(row => row.avatar)).toEqual(['Def', 'Dem', 'Gra']);
   });
 });
