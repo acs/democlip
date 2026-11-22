@@ -16,6 +16,7 @@ import type {
 } from '../application/ports/EncoderPort.js';
 import { fitsBudget as budgetFits, specFor, videoBitrate } from './export-target.js';
 import type { VideoCodecChoice } from './export-target.js';
+import { firstPresentedSample } from './first-sample.js';
 
 const AUDIO_BITRATE = 128_000;
 const KEYFRAME_S = 2;
@@ -186,7 +187,7 @@ async function firstStill(
     const track = await input.getPrimaryVideoTrack();
     if (!track) return null;
     const first = await input.getFirstTimestamp();
-    const sample = await new VideoSampleSink(track).getSample(first + piece.from);
+    const sample = await firstPresentedSample(new VideoSampleSink(track), first + piece.from);
     if (!sample) return null;
     const still = document.createElement('canvas');
     still.width = width;
