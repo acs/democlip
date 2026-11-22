@@ -37,23 +37,33 @@ export class CompositorAdapter implements CompositorPort {
   private videoTracks(input: CompositorInput): MediaStreamTrack[] {
     const screen = input.screen?.getVideoTracks() ?? [];
     const webcam = input.webcam?.getVideoTracks() ?? [];
-    if (!screen.length) return webcam;
-    if (input.region === undefined) return screen;
-    const full = input.region.x === 0 && input.region.y === 0 && input.region.w === 1 && input.region.h === 1;
+    const region = input.region;
+    const full = !region || (region.x === 0 && region.y === 0 && region.w === 1 && region.h === 1);
+    // The camera alone, when the screen is off: cropped through the canvas when the
+    // person cropped it, and otherwise its own bytes, untouched.
+    if (!screen.length) {
+      if (webcam.length && !full) return this.canvasTracks(input, webcam[0], false);
+      return webcam;
+    }
     // A whole share with nothing drawn over it is recorded raw, at the screen's own
     // size — there is no crop to take and no bubble to draw, so the canvas would only
     // be a copy. (The signal is the webcam, not `drawBubble`: the view always hands
     // one, because the bubble is drawn when there is a camera and not otherwise.)
     if (full && !webcam.length) return screen;
-    return this.canvasTracks(input, screen[0]);
+    return this.canvasTracks(input, screen[0], true);
   }
 
-  private canvasTracks(input: CompositorInput, screen: MediaStreamTrack): MediaStreamTrack[] {
+  /**
+   * The picture drawn on a canvas: the crop of a source, and the webcam bubble over it
+   * when the source is the screen. The camera, which is the whole picture when the
+   * screen is off, is cropped the same way but carries no bubble of itself.
+   */
+  private canvasTracks(input: CompositorInput, source: MediaStreamTrack, withBubble: boolean): MediaStreamTrack[] {
     const canvas = document.createElement('canvas');
     const video = document.createElement('video');
     video.muted = true;
     video.playsInline = true;
-    video.srcObject = new MediaStream([screen]);
+    video.srcObject = new MediaStream([source]);
     void video.play();
     this.video = video;
     const context = canvas.getContext('2d');
@@ -79,7 +89,7 @@ export class CompositorAdapter implements CompositorPort {
       const sw = region.w * vw;
       const sh = region.h * vh;
       this.context.drawImage(this.video, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
-      input.drawBubble?.(this.context, canvas.width, canvas.height);
+      if (withBubble) input.drawBubble?.(this.context, canvas.width, canvas.height);
       this.frame = requestAnimationFrame(draw);
     };
     draw();

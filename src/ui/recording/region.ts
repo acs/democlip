@@ -2,9 +2,10 @@
 //
 // The region is always shown as a red box over the preview — by default it
 // covers the whole source. Drag to select a smaller region (only it is
-// recorded); a plain click resets back to the full source. The overlay is
-// painted straight onto the preview canvas, so it can never end up in the
-// recording (which reads from the source <video>).
+// recorded); a plain click resets back to the full source. It crops whatever
+// picture is on the preview: the shared screen, or the camera when the screen is
+// off. The overlay is painted straight onto the preview canvas, so it can never
+// end up in the recording (which reads from the source <video>).
 
 import { currentPhase } from '../../state.js';
 import { capture } from '../../infra/capture.js';
@@ -104,8 +105,9 @@ function toCanvas(e: PointerEvent): { x: number; y: number } {
 }
 
 function onDown(e: PointerEvent): void {
-  // A crop is a crop of the screen: with the screen off there is nothing to crop.
-  if (currentPhase() !== 'live' || !capture.sources.screen) return;
+  // A crop is a crop of the picture: the shared screen, or the camera when it is the
+  // whole picture. With neither on there is nothing under the pointer to crop.
+  if (currentPhase() !== 'live' || !(capture.sources.screen || capture.sources.webcam)) return;
   const p = toCanvas(e);
   crop.begin(p.x, p.y);
   try { el.cv.setPointerCapture(e.pointerId); } catch { /* not capturable */ }
