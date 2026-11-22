@@ -85,7 +85,7 @@ describe('ExportPlan', () => {
 
   it('pushes the clip along by the title card at the head', () => {
     const { map, segments } = parts();
-    const intro = IntroCard.of('A demo', 'What it shows', 3)!;
+    const intro = IntroCard.of('A demo', 'What it shows', new Date(2026, 0, 2, 12), 3)!;
     const plan = ExportPlan.of(segments, takes, 10, map, { audio: false, fadeSeconds: 0.08, annotations: 'drawn' }, AnnotationSet.EMPTY, intro);
 
     expect(plan.intro).toBe(intro);

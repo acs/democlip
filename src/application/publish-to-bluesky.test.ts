@@ -115,7 +115,7 @@ describe('publishToBluesky', () => {
   });
 
   it('carries the title card into the encode when the export has one', async () => {
-    const intro = IntroCard.of('A demo', 'What it shows', 3)!;
+    const intro = IntroCard.of('A demo', 'What it shows', new Date(2026, 0, 2, 12), 3)!;
     const captured: { plan?: ExportPlan } = {};
     const service = new FakeService(
       { jobId: 'job-1', state: 'JOB_STATE_CREATED' },

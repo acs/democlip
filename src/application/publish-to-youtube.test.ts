@@ -99,7 +99,7 @@ describe('publishToYouTube', () => {
   });
 
   it('carries the title card into the encode when the export has one', async () => {
-    const intro = IntroCard.of('A demo', 'What it shows', 3)!;
+    const intro = IntroCard.of('A demo', 'What it shows', new Date(2026, 0, 2, 12), 3)!;
     const captured: { plan?: ExportPlan } = {};
     const service = new FakeService();
 
@@ -113,7 +113,7 @@ describe('publishToYouTube', () => {
   });
 
   it('refuses a clip the card would push past the account\u2019s ceiling', async () => {
-    const intro = IntroCard.of('A demo', 'What it shows', 3)!;
+    const intro = IntroCard.of('A demo', 'What it shows', new Date(2026, 0, 2, 12), 3)!;
     const service = new FakeService();
     let encodes = 0;
 

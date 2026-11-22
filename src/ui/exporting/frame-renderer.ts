@@ -52,9 +52,9 @@ export class FrameRenderer implements FrameRendererPort {
   }
 
   private cardText(intro: IntroFrame, w: number, h: number): readonly Annotation[] {
-    const key = `${intro.title}\u0000${intro.description}\u0000${w}x${h}`;
+    const key = `${intro.title}\u0000${intro.description}\u0000${intro.stamp}\u0000${w}x${h}`;
     if (this.card?.key !== key) {
-      this.card = { key, text: introText(intro.title, intro.description, { w, h }) };
+      this.card = { key, text: introText(intro.title, intro.description, intro.stamp, { w, h }) };
     }
     return this.card.text;
   }

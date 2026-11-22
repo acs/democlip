@@ -150,7 +150,7 @@ describe('ExportVideo', () => {
   });
 
   it('puts a title card at the head of the plan when the caller asks for one', async () => {
-    const intro = IntroCard.of('A demo', 'What it shows', 3)!;
+    const intro = IntroCard.of('A demo', 'What it shows', new Date(2026, 0, 2, 12), 3)!;
     const { useCase, enc } = build(clipOf(2));
 
     await useCase.run('webm', { intro });

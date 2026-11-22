@@ -20,6 +20,8 @@ export interface EncodedVideo {
 export interface IntroFrame {
   readonly title: string;
   readonly description: string;
+  /** The line under the words: the day the card was made, and the app's name. */
+  readonly stamp: string;
 }
 
 export interface Frame {

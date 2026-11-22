@@ -65,7 +65,7 @@ describe('planExport', () => {
   });
 
   it('puts a title card at the head of the file when the export has one', () => {
-    const intro = IntroCard.of('A demo', 'What it shows', 3)!;
+    const intro = IntroCard.of('A demo', 'What it shows', new Date(2026, 0, 2, 12), 3)!;
     const plan = planExport(clipOf(10), { ...settings, intro })!;
     expect(plan.intro).toBe(intro);
     expect(plan.pieces[0].at).toBe(3);              // the clip's own frames start after it

@@ -5,8 +5,8 @@ import { Clip } from '../../domain/clip/Clip.js';
 import { Take } from '../../domain/clip/Take.js';
 import type { TakeRepository } from '../../domain/clip/TakeRepository.js';
 
-// The rule the export and both publishes ask: whether this clip wants a card, and how
-// long it is. It reads the clip's own property and nothing else.
+// The rule the export and both publishes ask: whether this clip wants a card, and what it
+// shows. It reads the clip's own property and nothing else.
 
 class FakeTakes implements TakeRepository {
   private takes: Take[] = [];
@@ -41,15 +41,19 @@ const withWords = (): Clip => {
   return clip;
 };
 
+const DAY = new Date(2026, 10, 22, 9, 30);   // 22 November 2026
+
 describe('introFor', () => {
   it('is no card until the clip asks for one', () => {
-    expect(introFor(withWords())).toBeNull();
+    expect(introFor(withWords(), DAY)).toBeNull();
   });
 
-  it('is a card of two seconds when the clip asks and has words', () => {
+  it('is a card of two seconds when the clip asks, with the day line under the words', () => {
     const clip = withWords();
     clip.setProperty('addToExport', 'true');
-    expect(introFor(clip)).toMatchObject({ title: 'A demo', description: 'What it shows', seconds: 2 });
+    expect(introFor(clip, DAY)).toMatchObject({
+      title: 'A demo', description: 'What it shows', stamp: '2026-11-22 - DemoClip', seconds: 2,
+    });
     expect(INTRO_S).toBe(2);
   });
 
@@ -57,12 +61,12 @@ describe('introFor', () => {
     const clip = clipOf(4);
     clip.setProperty('title', 'A demo');
     clip.setProperty('addToExport', 'true');
-    expect(introFor(clip)?.title).toBe('A demo');
+    expect(introFor(clip, DAY)?.title).toBe('A demo');
   });
 
-  it('is no card when the clip asks but has nothing to say', () => {
+  it('is a card even when the clip asks with nothing to say: the day line is always there', () => {
     const clip = clipOf(4);
     clip.setProperty('addToExport', 'true');
-    expect(introFor(clip)).toBeNull();
+    expect(introFor(clip, DAY)?.stamp).toBe('2026-11-22 - DemoClip');
   });
 });
