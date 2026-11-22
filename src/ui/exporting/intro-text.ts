@@ -25,9 +25,10 @@ const LINE = 1.4;        // a line's advance, in its own font sizes
 /**
  * The box the card's **logo** is fitted into, as fractions of the picture: above the words,
  * centred. The renderer fits the mark inside it, keeping its own proportions, so a wide logo
- * and a square one both sit in the same place.
+ * and a tall one both sit in the same place — and the box is as tall as it is wide, so a
+ * portrait mark (Graditone's clef) is no smaller than a landscape one (DemoClip's camera).
  */
-export const LOGO_BOX = { x: 0.37, y: 0.09, w: 0.26, h: 0.15 };
+export const LOGO_BOX = { x: 0.39, y: 0.08, w: 0.22, h: 0.22 };
 
 /** What the words keep clear above them when the card wears a logo. */
 export const LOGO_SPACE = LOGO_BOX.y + LOGO_BOX.h + 0.05;

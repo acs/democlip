@@ -13,11 +13,17 @@ import { expect, test, type Page } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
 import { boot } from '../helpers/app.js';
 import { makeTakes } from '../fixtures/takes.js';
+import { pageModule } from '../helpers/page-module.js';
 
 const KEY = 'democlip_profiles';
+const HOOKS = pageModule('e2e/support/app-hooks.ts');
 
-/** Where the card puts a logo, as fractions of the picture — `LOGO_BOX` in `intro-text.ts`. */
-const LOGO_BOX = { x: 0.37, y: 0.09, w: 0.26, h: 0.15 };
+/**
+ * The band of the card the logo is drawn in: the top of the picture, above the words. The box
+ * itself is `LOGO_BOX` in `src/ui/exporting/intro-text.ts`, inside this band — the check is that
+ * the mark is drawn at the head of the card, not that it lands on a particular pixel.
+ */
+const LOGO_BAND = { x: 0.2, y: 0.03, w: 0.6, h: 0.3 };
 
 /** A written book whose DemoClipTV profile fixes **Add to export** — and a logo, or not. */
 const book = (controls: Record<string, string>) => ({
@@ -87,7 +93,7 @@ async function logoBox(page: Page, bytes: Buffer): Promise<{ bright: number; pai
     }
     URL.revokeObjectURL(url);
     return { bright, painted };
-  }, { base64: bytes.toString('base64'), box: LOGO_BOX });
+  }, { base64: bytes.toString('base64'), box: LOGO_BAND });
 }
 
 /** A clip of one second, made under the profile the book has active. */
@@ -109,8 +115,8 @@ test('a profile that fixes a logo puts it on the head of the export', async ({ p
   // The mark the app ships is drawn where the card puts a logo — over a picture that is
   // itself there, so a blank frame cannot pass for this.
   const box = await logoBox(page, bytes);
-  expect(box.bright).toBeGreaterThan(200);
-  expect(box.painted).toBeGreaterThan(1000);
+  expect(box.bright).toBeGreaterThan(500);
+  expect(box.painted).toBeGreaterThan(5000);
 });
 
 test('a card with no logo puts nothing there, so the count is the picture alone', async ({ page }) => {
@@ -127,8 +133,8 @@ test('a card with no logo puts nothing there, so the count is the picture alone'
 
   const bytes = await exportFile(page, '#exp-webm');
   const box = await logoBox(page, bytes);
-  expect(box.bright).toBeLessThan(20);
-  expect(box.painted).toBeGreaterThan(1000);    // the picture is there; only the mark is not
+  expect(box.bright).toBeLessThan(30);
+  expect(box.painted).toBeGreaterThan(5000);    // the picture is there; only the mark is not
 });
 
 test('the logo a profile fixes is not the person’s to change, and names the profile', async ({ page }) => {
@@ -172,5 +178,90 @@ test('a logo is defined in the profile’s own sheet, and reaches the export fro
   await app.add(takes);
   await app.review();
   const bytes = await exportFile(page, '#exp-webm');
-  expect((await logoBox(page, bytes)).bright).toBeGreaterThan(200);
+  expect((await logoBox(page, bytes)).bright).toBeGreaterThan(500);
+});
+
+/** Set the clip's own logo — free, because the profile in these checks controls other items. */
+const setLogo = (page: Page, name: string): Promise<unknown> =>
+  page.evaluate(async ([url, value]) => {
+    const { session } = await import(/* @vite-ignore */ url as string);
+    return session.clip.setProperty('logo', value as string);
+  }, [HOOKS, name] as [string, string]);
+
+/**
+ * Decode the same moment of two files and count the pixels of the band that differ.
+ *
+ * This is the proof that works for **any** mark: it says nothing about what colour a logo is,
+ * only that the head of the card is not the same picture as it was without one — so a yellow
+ * clef and a white camera are held to the same standard.
+ */
+async function bandDiffers(page: Page, a: Buffer, b: Buffer): Promise<number> {
+  return page.evaluate(async ({ left, right, box }) => {
+    const frameAt = async (base64: string): Promise<ImageData> => {
+      const binary = atob(base64);
+      const data = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) data[i] = binary.charCodeAt(i);
+      const url = URL.createObjectURL(new Blob([data], { type: 'video/webm' }));
+      const video = document.createElement('video');
+      video.preload = 'auto';
+      video.muted = true;
+      video.src = url;
+      await new Promise<void>(resolve => {
+        video.addEventListener('loadeddata', () => resolve(), { once: true });
+        setTimeout(resolve, 3000);
+      });
+      video.currentTime = 0.5;
+      await new Promise<void>(resolve => {
+        video.addEventListener('seeked', () => resolve(), { once: true });
+        setTimeout(resolve, 3000);
+      });
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const context = canvas.getContext('2d')!;
+      context.drawImage(video, 0, 0);
+      URL.revokeObjectURL(url);
+      return context.getImageData(
+        Math.round(box.x * canvas.width), Math.round(box.y * canvas.height),
+        Math.round(box.w * canvas.width), Math.round(box.h * canvas.height),
+      );
+    };
+
+    const one = await frameAt(left);
+    const two = await frameAt(right);
+    let differs = 0;
+    for (let at = 0; at < one.data.length; at += 4) {
+      if (Math.abs(one.data[at] - two.data[at]) > 60
+        || Math.abs(one.data[at + 1] - two.data[at + 1]) > 60
+        || Math.abs(one.data[at + 2] - two.data[at + 2]) > 60) differs++;
+    }
+    return differs;
+  }, { left: a.toString('base64'), right: b.toString('base64'), box: LOGO_BAND });
+}
+
+test('every mark the app ships draws on the card, and a name it does not serve draws nothing', async ({ page }) => {
+  const app = boot(page);
+  await app.goto();
+  await writeBook(page, book({ addToExport: 'true' }));
+  await page.reload();
+  await expect(page.locator('#s-text')).toHaveText('Ready');
+  const takes = await makeTakes(page, { width: 640, height: 360, seconds: 1 });
+  await app.add(takes);
+  await app.review();
+
+  // The card with no mark on it: the frame everything below is held against.
+  const bare = await exportFile(page, '#exp-webm');
+
+  // Each mark the app lists, drawn — which is also what proves the file behind the name is
+  // really served: a name with no picture behind it would leave the band as it was.
+  for (const name of ['democlip', 'graditone']) {
+    await setLogo(page, name);
+    const marked = await exportFile(page, '#exp-webm');
+    expect(await bandDiffers(page, bare, marked), `${name} is not on the card`).toBeGreaterThan(2000);
+  }
+
+  // A name the app does not serve: nothing is drawn, and the export is not held up by it.
+  await setLogo(page, 'nope');
+  const nothing = await exportFile(page, '#exp-webm');
+  expect(await bandDiffers(page, bare, nothing)).toBeLessThan(50);
 });

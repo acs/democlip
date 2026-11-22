@@ -2,7 +2,7 @@ DemoClip — third-party notices
 ==============================
 
 DemoClip itself is MIT licensed (see LICENSE.md). The built app bundles the
-library below, unmodified.
+libraries below, and carries the asset below, unmodified.
 
 This is the template: the build fills in the version from what is actually
 installed (see the `democlip-notices` plugin in vite.config.ts) and ships the
@@ -37,3 +37,14 @@ AT Protocol OAuth client for the browser {{@atproto/oauth-client-browser}}
   a public-client OAuth flow — PKCE, pushed authorization requests, and DPoP —
   and signs the account's own requests. It is loaded only when a clip is
   published, never on a normal load, and never at all if you do not publish.
+
+-------------------------------------------------------------------------------
+
+Graditone logo — web/public/logos/graditone.png
+  https://github.com/graditone/graditone
+  MIT License
+  Copyright (c) 2026 Graditone
+
+  What it does here: one of the marks a clip may wear at the head of its export,
+  for a profile that publishes Graditone's work. The file is copied into the
+  app's own public/logos/ unmodified; nothing else of that project is used.

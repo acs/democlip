@@ -17,6 +17,7 @@ export interface Logo {
 
 export const LOGOS: readonly Logo[] = [
   { name: 'democlip', file: '/logos/democlip.png' },
+  { name: 'graditone', file: '/logos/graditone.png' },
 ];
 
 /** The file a logo's name means, or null for one this build does not ship. */
