@@ -22,7 +22,7 @@ export interface ProfileRow {
   readonly selectable: boolean;
   /** The built-in default: nothing is done to it. It is the app's free profile. */
   readonly fixed: boolean;
-  /** May this profile be defined, renamed or removed now? */
+  /** May this profile be opened or removed now? Its name is set in its own dialog. */
   readonly manageable: boolean;
 }
 

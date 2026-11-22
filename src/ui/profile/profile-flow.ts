@@ -55,13 +55,14 @@ export function initProfiles(): void {
     choose: id => report(profiles.choose(id)),
     create: name => report(profiles.create(name)),
     define: id => profileDef.open(id),
-    rename: (id, name) => report(profiles.rename(id, name)),
     remove: id => report(profiles.remove(id)),
   });
   profileDef.init({
     list: () => profiles.current,
     locked,
     declare: (id, property, value) => report(profiles.declare(id, property, value)),
+    // The name is set in the profile's own dialog, and the list behind it follows.
+    rename: (id, name) => report(profiles.rename(id, name)),
   });
   el.profileBtn.addEventListener('click', () => profileMenu.toggle());
   // The rows say what the lock changes — a take starting, a session ending — so redraw while
@@ -92,5 +93,8 @@ export function paintProfileButton(): void {
 function report(outcome: ProfileResult): void {
   if (!outcome.ok) { toast(outcome.reason); return; }
   paintProfileButton();
+  // The selector is open behind the profile's dialog, so it follows a name or an item changed
+  // there — and a change to what the active profile fixes reaches the clip.
+  profileMenu.refresh();
   if (!locked()) applyProfile();
 }

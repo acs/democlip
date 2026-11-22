@@ -153,8 +153,9 @@ In its first iteration a profile controls two items: the clip properties **add t
 iteration carries another one (a title, a default arrow colour) by declaring it, not by adding a
 second kind of configuration.
 
-A profile is **defined in its own surface** — the sheet its sliders mark opens — and never in
-the selector, which only lists, selects, creates, renames and removes. A declaration for an
+A profile is **defined in its own surface** — the dialog its sliders mark opens, where it is
+**named** and where what it controls is decided — and never in the selector, which only lists,
+selects, creates and removes. A declaration for an
 item this build does not know is kept and never applied, so a profile written by a later
 version still reads.
 

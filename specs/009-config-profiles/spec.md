@@ -54,10 +54,10 @@ the same row is an ordinary switch that the person can move.
 A person has more than one way of working — DemoClipTV for one channel, GraditoneTV for
 another — and each carries its own configuration. A pill at the right-hand end of the
 toolbar, wearing the active profile's first letters, opens the list of profiles with the
-active one marked; choosing another applies it at once. A profile's own configuration is
-**not** shown or set in that list: the person's own profiles carry a sliders mark that opens
-the profile's config sheet, where each item it may control is set to **Free**, **On** or
-**Off** — or, for an item with a value, to Free or a value.
+active one marked; choosing another applies it at once. Nothing about a profile is set in that
+list: the person's own profiles carry a sliders mark that opens **the profile's own dialog**,
+where its **name** is set and each item it may control is set to **Free**, **On** or **Off** —
+or, for an item with a value, to a mark or to none. Removal stays in the list, with the bin.
 
 **Why this priority**: Choosing profiles and saying what each fixes is how the guardrails in
 the first story are set up and used.
@@ -70,7 +70,8 @@ by DemoClipTV. The list itself shows no configuration at any point.
 
 1. **Given** the app is open, **When** the person looks at the toolbar, **Then** a pill sits at the right-most position, wearing the active profile's first letters.
 2. **Given** the pill is pressed, **When** the list opens, **Then** every profile is shown with the active one marked, and nothing about what any profile controls.
-3. **Given** a profile the person made, **When** its sliders mark is pressed, **Then** its config sheet opens, with one row per item a profile may control, each set Free, On or Off.
+3. **Given** a profile the person made, **When** its sliders mark is pressed, **Then** its own dialog opens: its name, then one row per item a profile may control, each set Free, On or Off.
+4. **Given** a profile's own dialog, **When** the person changes its **name**, **Then** the profile is renamed and the list behind it shows the new name — and the list itself offers no way to rename it.
 4. **Given** the config sheet, **When** the person sets an item and closes it, **Then** the profile controls that item, and a clip made under it shows the value as fixed.
 5. **Given** a session that has begun to capture, **When** the person opens the list and tries to choose another profile, **Then** the choice is refused, plainly said, and the active profile is unchanged.
 
@@ -160,11 +161,11 @@ remove it, and confirm the app falls back to **Default** and the item is the per
 - **FR-009**: A profile MUST have a non-empty name; creating one with a blank name MUST be refused and said plainly.
 - **FR-010**: At least one profile MUST always exist: the app MUST ship a built-in **Default** that controls nothing and cannot be renamed or removed, so no state is reached in which the app has no profile, or in which an item is controlled that the person cannot undo by letting the profile go.
 - **FR-011**: The active profile, every profile's declarations and the active choice MUST survive a reload and reopening the app.
-- **FR-012**: A profile's configuration MUST be defined in the **profile's own surface**, opened from that profile's row, and MUST NOT be defined or shown in the list of profiles.
+- **FR-012**: A profile's configuration, and **its name**, MUST be set in the **profile's own surface**, opened from that profile's row, and MUST NOT be set or shown in the list of profiles. The list selects a profile, creates one, and lets one go; nothing else about a profile is done there.
 - **FR-013**: From the moment a session begins to capture, its active profile MUST be fixed: choosing another MUST be refused, plainly said, until the session ends. The session ends at **New**, when the clip is exported, or when the share ends. The active profile's own declarations MUST also be frozen then, so nothing moves under a clip already being made; another profile's MAY still be defined, renamed and removed.
 - **FR-014**: Applying a profile's item to a clip MUST NOT be what the app's one undo takes back: the undo takes back the person's own last change, and never puts back a value a profile is holding.
 - **FR-015**: The items a profile may control in this iteration are the clip property **Add to export** and the clip property **Logo**; the app MUST be able to offer further items in a later iteration without a person's existing profiles being lost.
-- **FR-016**: The profiles the person made MUST be renameable and removable; the built-in **Default** MUST NOT be renamed, removed or given a config surface.
+- **FR-016**: The profiles the person made MUST be renameable — in the profile's own surface, with its configuration — and removable from the list. The built-in **Default** MUST NOT be renamed, removed or given a surface of its own.
 - **FR-017**: Removing the active profile MUST leave the app under another profile that exists, never under none.
 - **FR-018**: When the profiles cannot be read back, the app MUST still open, work under the built-in **Default**, and say that the profiles could not be kept.
 - **FR-019**: Working under a profile MUST leave every other part of the app — recording, cutting, annotating, exporting, publishing — exactly as it is today.
@@ -182,6 +183,7 @@ remove it, and confirm the app falls back to **Default** and the item is the per
 
 - **Profile**: a named set of the app's configuration a person works under — for example **DemoClipTV** or **GraditoneTV** — and a **consistent production environment** for that way of working: the configuration it needs, applied every time a clip is made under it. It holds **declarations**: which items it controls, and the value each is fixed at. It is kept outside any clip, so it outlives the clip, the page and the session. A profile that declares nothing is a **free** profile.
 - **Active profile**: the one profile the app is working under. There is exactly one at any time, and what it declares is in force while it is active.
+- **A profile's own surface**: the dialog its sliders mark opens — where the profile is **named** and where what it controls is decided. The list of profiles only chooses, creates and lets go; the name and the configuration both live here.
 - **Controlled item**: an item the active profile declares. It is applied to the clip and is not the person's to change: the clip's settings show its value and name the profile, and the app's other surfaces refuse it. An item no profile declares is the person's, exactly as before profiles existed. The items a profile may control in this iteration are **Add to export** and the **Logo**.
 - **Logo**: a clip property: one of the marks the app serves from its own folder — **chosen from the list the app declares**, not typed — or nothing. A clip that wears one opens every export with a card carrying it. It is a **value** rather than a switch, which is why it can be empty, and why **None** (no logo) and **Not fixed** (the person's) are told apart where a profile is defined.
 - **Declaration**: what a profile says about one item — that it controls it, and the value it is fixed at. An item may legitimately be fixed at an empty value (a switch fixed **off**), which is why "declared" and "empty" are told apart here and not in the clip's own properties.

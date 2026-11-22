@@ -5,11 +5,10 @@
 // itself each time it opens (above the pill when there is no room below, and against the
 // window's right edge, since the pill is there).
 //
-// The selector only *selects*: a row is a pill with the profile's first letters, its name,
-// a tick when it is the one in use, and — on the person's own profiles — a sliders mark, a
-// pencil and a bin. What a profile **controls** is not shown here and is not set here: it is
-// the profile's own definition, in its own sheet (`profile-def.ts`), which is what the
-// sliders mark opens.
+// The selector only *selects*: a row is a pill with the profile's first letters, its name, a tick
+// when it is the one in use, and — on the person's own profiles — a sliders mark and a bin. A
+// profile is neither named nor configured here: both are its own dialog (`profile-def.ts`), which
+// the sliders mark opens.
 //
 // It names no rule of its own. It asks for the book and whether the session has begun to
 // capture, draws the rows from the answer, and hands every press to the flow.
@@ -25,12 +24,10 @@ export interface ProfileMenuHandlers {
   choose(id: string): void;
   create(name: string): void;
   define(id: string): void;
-  rename(id: string, name: string): void;
   remove(id: string): void;
 }
 
 const SLIDERS = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><line x1="4" y1="8" x2="20" y2="8"/><line x1="4" y1="16" x2="20" y2="16"/><circle cx="10" cy="8" r="2.6"/><circle cx="15" cy="16" r="2.6"/></svg>';
-const PENCIL = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>';
 const BIN = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/></svg>';
 
 const GAP = 6;      // between the pill and the menu
@@ -42,13 +39,11 @@ const NO_HANDLERS: ProfileMenuHandlers = {
   choose: () => {},
   create: () => {},
   define: () => {},
-  rename: () => {},
   remove: () => {},
 };
 
 class ProfileMenu {
   private handlers: ProfileMenuHandlers = NO_HANDLERS;
-  private renaming: string | null = null;
   private creating = false;
 
   private readonly onDocumentClick = (event: MouseEvent): void => {
@@ -84,7 +79,6 @@ class ProfileMenu {
   }
 
   open(): void {
-    this.renaming = null;
     this.creating = false;
     this.render();
     const pill = el.profileBtn.getBoundingClientRect();
@@ -134,12 +128,8 @@ class ProfileMenu {
 
     const line = document.createElement('div');
     line.className = 'profile-line';
-    if (this.renaming === row.id) {
-      line.append(this.renameInput(row));
-    } else {
-      line.append(this.pick(row));
-      if (!row.fixed) line.append(this.acts(row));
-    }
+    line.append(this.pick(row));
+    if (!row.fixed) line.append(this.acts(row));
     host.append(line);
     return host;
   }
@@ -167,18 +157,16 @@ class ProfileMenu {
     return pick;
   }
 
-  /** What may be done to a profile: its own definition, its name, and letting it go. */
+  /**
+   * What may be done to a profile from here: open it, and let it go. Its **name** is not set
+   * here — that is the profile's own dialog, where everything about it is.
+   */
   private acts(row: ProfileRow): HTMLElement {
     const acts = document.createElement('div');
     acts.className = 'profile-acts';
     acts.append(
-      this.icon('define', `Define what ${row.name} controls`, SLIDERS, row.manageable, () => {
+      this.icon('define', `Open ${row.name}`, SLIDERS, row.manageable, () => {
         this.handlers.define(row.id);
-      }),
-      this.icon('rename', `Rename ${row.name}`, PENCIL, row.manageable, () => {
-        this.renaming = row.id;
-        this.creating = false;
-        this.render();
       }),
       this.icon('remove', `Remove ${row.name}`, BIN, row.manageable, () => {
         this.handlers.remove(row.id);
@@ -201,33 +189,6 @@ class ProfileMenu {
     return button;
   }
 
-  private renameInput(row: ProfileRow): HTMLElement {
-    const input = document.createElement('input');
-    input.type = 'text';
-    input.className = 'profile-rename-input';
-    input.value = row.name;
-    input.setAttribute('aria-label', `Rename ${row.name}`);
-    const commit = (): void => this.commitRename(row.id, input.value);
-    input.addEventListener('keydown', event => {
-      if (event.key === 'Enter') commit();
-      else if (event.key === 'Escape') {
-        event.stopPropagation();      // cancel the edit, not the whole panel
-        this.renaming = null;
-        this.render();
-      }
-    });
-    input.addEventListener('blur', commit);
-    queueMicrotask(() => { input.focus(); input.select(); });
-    return input;
-  }
-
-  private commitRename(id: string, name: string): void {
-    if (this.renaming !== id) return;      // already committed by the Enter, or cancelled
-    this.renaming = null;
-    this.handlers.rename(id, name);
-    this.render();
-  }
-
   /** The foot: the New Profile button, and the name field it turns into when pressed. */
   private foot(): HTMLElement {
     const foot = document.createElement('div');
@@ -240,7 +201,6 @@ class ProfileMenu {
       add.textContent = '+ New Profile';
       add.addEventListener('click', () => {
         this.creating = true;
-        this.renaming = null;
         this.render();
       });
       foot.append(add);

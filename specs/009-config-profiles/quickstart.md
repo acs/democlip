@@ -66,15 +66,17 @@ The check boots the app and drives the toolbar:
    `ok: false` naming the profile.
 4. **A free item is the person's** — under the built-in **Default** the switch is there, and moving
    it works.
-5. **The selector shows no config** — `#profile-menu` holds no config rows at all; a profile's row
-   carries the sliders mark, the pencil and the bin, and the sliders mark opens `#profile-def-bd`.
-   There, **Logo** is a list of the marks the app serves — **Not fixed**, **None**, **DemoClip**,
-   **Graditone** — rather than a field to type a name into.
+5. **The selector shows nothing about a profile** — `#profile-menu` holds no config rows at all; a
+   profile's row carries **two** marks, the sliders and the bin, and **no** rename control, because
+   its name is set where everything about it is. The sliders mark opens `#profile-def-bd`, whose
+   first field is the profile's **name**, and whose **Logo** row is a list of the marks the app
+   serves — **Not fixed**, **None**, **DemoClip**, **Graditone** — rather than a field to type into.
 6. **Fixed off is not free** — a profile fixing the switch **off** still locks it.
 7. **Refused once capturing** — with a take in the session the other rows are disabled, the reason
    is shown, and the active profile is unchanged.
 8. **It comes back** — after a reload the profile, what it controls and the active choice are all
-   there; letting it go falls back to **Default** and the item is the person's again.
+   there; a rename made in its own dialog is shown in the list behind it; letting it go falls back
+   to **Default** and the item is the person's again.
 
 And the use case the feature is for, in `e2e/checks/profile-logo.spec.ts`:
 
@@ -111,14 +113,16 @@ npm run dev
    `Def` for **Default**); the selector shows **Default**, active, offering no config.
 2. Press **+ New Profile**, name it **DemoClipTV**, then press the **sliders** mark on its row. Fix
    **Add to export** to **On** and press Done.
-3. Press its row to choose it. The pill now reads `Dem`.
+3. Press its row to choose it. The pill now reads `Dem`. To rename it, open it again with the
+   sliders mark and change its **Name** — the list behind follows.
 4. Share a screen and record a take. Open the **settings** control in the corner of the preview:
    **Add to export** reads as a value with `set by DemoClipTV` and nothing to press.
 5. Export: the file opens with the title card.
 6. Open the selector again: the other rows are out (the reason says a profile is fixed once
    recording has started), and **DemoClipTV** stays active.
-7. Press **New**; the selector is usable again. Rename the profile with the pencil, or remove it
-   with the bin — the app falls back to **Default**, and the item is yours again.
+7. Press **New**; the selector is usable again. Rename the profile in its own dialog (the sliders
+   mark), or remove it with the bin — the app falls back to **Default**, and the item is yours
+   again.
 8. Pick **Graditone** from the **Logo** list in the same sheet, and export: the file opens with the
    clef on the card, above the clip's words.
 9. Reload the page: the profile is still there, with what it controls, and still the active one.
