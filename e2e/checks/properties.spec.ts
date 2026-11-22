@@ -43,15 +43,16 @@ test('a clip is given a title and a description, and they come back after a relo
   await app.seed(takes);
   await app.review();
 
-  // The Properties control is offered in the review, and opens the app's own panel.
+  // The settings control is offered in the review, beside the clip's length, and opens
+  // the app's own popover — the annotation inspector's shape, one level up.
   await expect(page.locator('#props-btn')).toBeVisible();
   await page.locator('#props-btn').click();
-  await expect(page.locator('#props-bd')).toHaveClass(/on/);
+  await expect(page.locator('#clip-prop-menu')).toHaveClass(/on/);
 
-  await page.locator('#props-fields input').fill('A short demo');
-  await page.locator('#props-fields textarea').fill('What the clip shows');
-  await page.locator('#props-done').click();
-  await expect(page.locator('#props-bd')).not.toHaveClass(/on/);
+  await page.locator('#clip-prop-menu input').fill('A short demo');
+  await page.locator('#clip-prop-menu textarea').fill('What the clip shows');
+  await page.locator('#props-btn').click();
+  await expect(page.locator('#clip-prop-menu')).not.toHaveClass(/on/);
 
   await expect.poll(() => properties(page)).toEqual({ title: 'A short demo', description: 'What the clip shows' });
 
@@ -61,8 +62,8 @@ test('a clip is given a title and a description, and they come back after a relo
   await page.reload();
   await expect.poll(() => properties(page)).toEqual({ title: 'A short demo', description: 'What the clip shows' });
   await page.locator('#props-btn').click();
-  await expect(page.locator('#props-fields input')).toHaveValue('A short demo');
-  await expect(page.locator('#props-fields textarea')).toHaveValue('What the clip shows');
+  await expect(page.locator('#clip-prop-menu input')).toHaveValue('A short demo');
+  await expect(page.locator('#clip-prop-menu textarea')).toHaveValue('What the clip shows');
 });
 
 test('the one undo takes a clip property back', async ({ page }) => {
@@ -73,8 +74,8 @@ test('the one undo takes a clip property back', async ({ page }) => {
   await app.review();
 
   await page.locator('#props-btn').click();
-  await page.locator('#props-fields input').fill('A short demo');
-  await page.locator('#props-done').click();
+  await page.locator('#clip-prop-menu input').fill('A short demo');
+  await page.locator('#props-btn').click();
   await expect.poll(() => properties(page)).toEqual({ title: 'A short demo' });
 
   // The header's one undo, which takes back whatever was last done — and says what it was.

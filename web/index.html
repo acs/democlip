@@ -162,7 +162,6 @@
         <span class="act-lbl">Import</span>
       </button>
       <button class="act-btn" id="btn-new" style="display:none">New</button>
-      <button class="act-btn" id="props-btn" style="display:none" aria-label="Clip properties" title="What the clip says about itself — its title and description, used when publishing">Properties</button>
       <button class="act-btn export" id="btn-exp" style="display:none" aria-haspopup="menu" aria-expanded="false" aria-label="Export">
         <svg class="act-ico" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 8l5-5 5 5"/><path d="M12 15V3"/></svg>
         <span class="act-lbl">Export ▾</span>
@@ -188,6 +187,11 @@
           <span class="tl-dur">·</span>
           <span class="tl-dur"><span id="t-clip">0.00s</span></span>
         </div>
+        <!-- The clip's own settings: the same three-sliders mark a picked annotation's
+             settings control wears, opening a popover of what the clip says about itself. -->
+        <button class="tl-act" id="props-btn" type="button" style="display:none" aria-haspopup="dialog" aria-expanded="false" aria-label="Clip properties" title="What the clip says about itself — its title and description, used when publishing">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><line x1="3" y1="7" x2="21" y2="7"/><circle cx="9" cy="7" r="2.4" fill="currentColor" stroke="none"/><line x1="3" y1="12" x2="21" y2="12"/><circle cx="15" cy="12" r="2.4" fill="currentColor" stroke="none"/><line x1="3" y1="17" x2="21" y2="17"/><circle cx="8" cy="17" r="2.4" fill="currentColor" stroke="none"/></svg>
+        </button>
       </div>
       <span class="tl-est"><span class="tl-est-lbl">Est. </span><span id="t-size">—</span></span>
     </div>
@@ -237,7 +241,7 @@
         <div class="help-num">4</div>
         <div class="help-step-body">
           <div class="help-step-title">Export and publish</div>
-          <div class="help-step-desc">Give the clip a <strong>title</strong> and a <strong>description</strong> with <strong>Properties</strong> — what it says about itself, and what publishing fills its fields from. Then hit Export to choose where the clip goes: a <strong>WebM</strong> or <strong>MP4</strong> file to download, <strong>Bluesky</strong> to publish it as a video post (sign in with your handle first), or <strong>YouTube</strong> to upload it to your own channel (sign in with Google). Either file is encoded faster than real time — the timeline counts down how much is left, and the preview shows the frames as they are written, so you can watch it happen without waiting for it.</div>
+          <div class="help-step-desc">Give the clip a <strong>title</strong> and a <strong>description</strong> from the <strong>settings control</strong> in the timeline header (the three sliders beside the clip's length) — what it says about itself, and what publishing fills its fields from. Then hit Export to choose where the clip goes: a <strong>WebM</strong> or <strong>MP4</strong> file to download, <strong>Bluesky</strong> to publish it as a video post (sign in with your handle first), or <strong>YouTube</strong> to upload it to your own channel (sign in with Google). Either file is encoded faster than real time — the timeline counts down how much is left, and the preview shows the frames as they are written, so you can watch it happen without waiting for it.</div>
         </div>
       </div>
       <div class="help-step">
@@ -261,6 +265,9 @@
 <!-- PROPERTIES INSPECTOR — at the body, beside the picked annotation, so the preview cannot clip it -->
 <div class="prop-menu" id="prop-menu" role="dialog" aria-label="Annotation properties"></div>
 
+<!-- CLIP PROPERTIES — at the body, beside the settings control in the timeline header -->
+<div class="prop-menu clip" id="clip-prop-menu" role="dialog" aria-label="Clip properties"></div>
+
 <!-- TEXT ENTRY — the app's own dialog for typing a line, used to enter a text and to edit its words -->
 <div class="te-bd" id="text-entry" role="dialog" aria-modal="true" aria-label="Text to show">
   <div class="te-panel">
@@ -280,19 +287,6 @@
   <button class="export-item" id="exp-editing" role="menuitem"><span class="export-item-name">WebM for editing</span><span class="export-item-note">Picture alone — annotations travel beside it</span></button>
   <button class="export-item" id="exp-bluesky" role="menuitem"><span class="export-item-name">Bluesky</span><span class="export-item-note">Publish as a video post</span></button>
   <button class="export-item" id="exp-youtube" role="menuitem"><span class="export-item-name">YouTube</span><span class="export-item-note">Upload to your own channel</span></button>
-</div>
-
-<!-- CLIP PROPERTIES — the app's own dialog for what a clip says about itself, used when publishing -->
-<div class="pub-bd" id="props-bd">
-  <div class="pub-panel" role="dialog" aria-modal="true" aria-label="Clip properties">
-    <button class="pub-close" id="props-close" aria-label="Close">×</button>
-    <h2 class="pub-title">Clip properties</h2>
-    <p class="pub-note" style="margin:0">What the clip says about itself. Publishing to YouTube or Bluesky fills its fields from these — a video's title and description, a post's text and its alt — and you can still change them there for one publish.</p>
-    <div id="props-fields"></div>
-    <div class="pub-actions">
-      <button class="pub-btn" id="props-done">Done</button>
-    </div>
-  </div>
 </div>
 
 <!-- PUBLISH DIALOG -->

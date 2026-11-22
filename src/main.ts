@@ -105,10 +105,9 @@ function init(): void {
   inspector.init();       // and a picked annotation's settings open its properties
   textEntry.init();       // the one dialog for typing a line, for entering and editing
 
-  // What the clip says about itself — its title and its description — edited in the
-  // app's own panel and used when the clip is published.
+  // What the clip says about itself — its title and its description — edited from a
+  // settings control in the timeline header, and used when the clip is published.
   clipPropertiesPanel.init();
-  el.propsBtn.addEventListener('click', () => clipPropertiesPanel.open());
 
   // Every view resets itself when the clip is cleared. The session names no view.
   initViewLifetime();
