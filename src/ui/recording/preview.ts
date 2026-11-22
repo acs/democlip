@@ -75,8 +75,8 @@ export function seekWithin(vid: HTMLVideoElement, t: number, ms = 2500): Promise
 }
 
 // Live mirror: show the source that is live on the preview canvas. The screen
-// carries the crop box and the webcam bubble; with the screen off the camera is
-// the whole picture, so nothing is drawn over it.
+// carries the crop box and the webcam bubble; with the screen off the camera is the
+// whole picture, and the crop box is over it too — the camera is croppable as well.
 let mirroring = false;
 let frameId: number | null = null;
 
@@ -98,8 +98,10 @@ export function startMirror(): void {
                                region.w * el.cv.width, region.h * el.cv.height);
       } catch { /* the next frame will try again */ }
     } else if (capture.sources.webcam && el.wcv.readyState >= 2) {
-      ctx.drawImage(el.wcv, 0, 0, el.cv.width, el.cv.height);
-      el.cv.style.cursor = '';
+      try {
+        ctx.drawImage(el.wcv, 0, 0, el.cv.width, el.cv.height);
+        drawRegion();           // the camera is croppable too, so the box is drawn over it
+      } catch { /* the next frame will try again */ }
     }
     frameId = requestAnimationFrame(loop);
   })();

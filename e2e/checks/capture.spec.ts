@@ -7,6 +7,9 @@ import { expect, test } from '@playwright/test';
 import { boot } from '../helpers/app.js';
 import { makeTakes } from '../fixtures/takes.js';
 import { askedFor, installStandInShare } from '../helpers/stand-ins.js';
+import { pageModule } from '../helpers/page-module.js';
+
+const HOOKS = pageModule('e2e/support/app-hooks.ts');
 
 test('the capture asks for the cursor and the frame rate, and forces no pane', async ({ page }) => {
   await installStandInShare(page);
@@ -141,4 +144,56 @@ test('a take recorded after a larger clip keeps the webcam’s own size on the p
     return preview.width === webcam.videoWidth && preview.height === webcam.videoHeight;
   })).toBe(true);
   await page.locator('#rec-btn').click();
+});
+
+test('the camera is croppable, and the take is the cropped picture', async ({ page }) => {
+  const app = boot(page);
+  await app.goto();
+
+  // The camera alone is the whole picture, and the crop box is over it.
+  await page.locator('#webcam-btn').click();
+  await expect(page.locator('#s-text')).toContainText('Live');
+  await expect.poll(async () => page.evaluate(() => {
+    const wcv = document.getElementById('wcv') as HTMLVideoElement;
+    return wcv.videoWidth > 0 ? wcv.videoWidth : null;
+  })).not.toBeNull();
+  const camera = await page.evaluate(() => {
+    const wcv = document.getElementById('wcv') as HTMLVideoElement;
+    return { width: wcv.videoWidth, height: wcv.videoHeight };
+  });
+
+  // Drag a region over the camera: three tenths of its width, four of its height.
+  const rect = await page.locator('#preview').boundingBox();
+  if (!rect) throw new Error('the preview has no box to drag on');
+  await page.mouse.move(rect.x + rect.width * 0.25, rect.y + rect.height * 0.25);
+  await page.mouse.down();
+  await page.mouse.move(rect.x + rect.width * 0.55, rect.y + rect.height * 0.65, { steps: 8 });
+  await page.mouse.up();
+
+  // Record the take, and read the picture it holds.
+  await page.locator('#rec-btn').click();
+  await expect(page.locator('#s-text')).toContainText('Recording');
+  await expect(page.locator('#t-live-time')).not.toHaveText('00:00');
+  await page.locator('#rec-btn').click();
+  await expect.poll(() => app.clipLength(), { timeout: 10_000 }).toBeGreaterThan(0.2);
+
+  const take = await page.evaluate(async (url) => {
+    const { session } = await import(/* @vite-ignore */ url);
+    const first = session.clip.takes.at(0);
+    if (!first) return null;
+    const video = document.createElement('video');
+    video.muted = true;
+    video.src = first.url;
+    await new Promise<void>(resolve => {
+      video.addEventListener('loadedmetadata', () => resolve(), { once: true });
+      setTimeout(resolve, 3000);
+    });
+    return { width: video.videoWidth, height: video.videoHeight };
+  }, HOOKS);
+
+  // The take is the cropped camera frame, at the region's own size.
+  expect(take).toEqual({
+    width: Math.round(camera.width * 0.3),
+    height: Math.round(camera.height * 0.4),
+  });
 });

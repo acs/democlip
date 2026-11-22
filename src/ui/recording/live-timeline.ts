@@ -113,8 +113,9 @@ export class LiveTimeline {
   }
 
   // The picture going into the recording right now: the share, cropped to the
-  // region, with the webcam bubble on it — or the camera alone when the screen
-  // is off. What the recorder is being fed, at the shape it is being fed at.
+  // region, with the webcam bubble on it — or the camera alone, cropped to the
+  // region too, when the screen is off. What the recorder is being fed, at the
+  // shape it is being fed at.
   private grab(): HTMLCanvasElement {
     const c = document.createElement('canvas');
     try {
@@ -127,7 +128,10 @@ export class LiveTimeline {
         const ctx = c.getContext('2d');
         if (ctx) drawWebcamOverlay(ctx, 0, 0, c.width, c.height);
       } else if (capture.sources.webcam && el.wcv.readyState >= 2) {
-        drawThumb(c, el.wcv, 0, 0, el.wcv.videoWidth, el.wcv.videoHeight);
+        const r = capture.region;
+        const vw = el.wcv.videoWidth, vh = el.wcv.videoHeight;
+        drawThumb(c, el.wcv, Math.round(r.x * vw), Math.round(r.y * vh),
+                  Math.max(1, Math.round(r.w * vw)), Math.max(1, Math.round(r.h * vh)));
       }
     } catch { /* a frame that is not ready — the next tick will have it */ }
     return c;
