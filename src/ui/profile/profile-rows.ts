@@ -5,7 +5,7 @@
 // profile is **defined** in (which items it controls, and at what). What the app draws and
 // what a check reads are the same answer, so a row that is refused is refused in both.
 
-import { seedableClipProperties } from '../clip/clip-properties.js';
+import { seedableClipProperties, type PropertyChoice } from '../clip/clip-properties.js';
 import { Profile } from '../../domain/profile/Profile.js';
 import { Profiles } from '../../domain/profile/Profiles.js';
 
@@ -37,6 +37,8 @@ export interface DefineRow {
   readonly free: boolean;
   /** The value it is fixed at. May be empty: fixed off, for a boolean. */
   readonly value: string;
+  /** The values a `choice` item offers, when it is one. */
+  readonly choices: readonly PropertyChoice[];
   /** False when the profile is the active one and the session has begun to capture. */
   readonly editable: boolean;
 }
@@ -102,6 +104,7 @@ export function defineRows(profile: Profile, options: { active: boolean; locked:
       control: property.control,
       free: value === null,
       value: value ?? '',
+      choices: property.choices ?? [],
       editable,
     };
   });

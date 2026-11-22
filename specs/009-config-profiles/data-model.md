@@ -69,7 +69,8 @@ it declares is locked.
 | Piece | Where | Contract |
 |---|---|---|
 | the app's logos | `src/ui/logos.ts` | `LOGOS` (name → file) and `logoFile(name)`; the files are the app's own, in `web/public/logos/`. DOM-free, so a clip property can refuse an unknown name and a node test can read the list |
-| the clip property | `src/ui/clip/clip-properties.ts` | `id: 'logo'`, `control: 'text'`, `seedable: true`. Its value is a **name**, and `''` means none |
+| the clip property | `src/ui/clip/clip-properties.ts` | `id: 'logo'`, `control: 'choice'`, `seedable: true`, with its `choices` — so the two surfaces that set it draw the same list. Its value is a **name**, and `''` means none |
+| the list, drawn | `src/ui/clip/properties-panel.ts`, `src/ui/profile/profile-def.ts`, `src/ui/agent/describe.ts` | the panel offers the choices; a profile's sheet offers **Not fixed** above them (which is `declare(item, null)`, and not the same as fixing it at `None`); the automation surface is told the choices as well as the value |
 | the card's value | `src/domain/clip/IntroCard.ts` | `logo: string` — the name, not a picture: the plan carries *which* mark, and the view turns it into an image |
 | what asks for a card | `src/ui/exporting/intro.ts` | **add to export** *or* a logo: a logo lives on the card, so a clip that wears one always opens with it |
 | the file the encoder gets | `src/application/ports/EncoderPort.ts` | `IntroFrame.logo`, built by `src/infra/offline-encoder.ts` from the plan |
@@ -141,9 +142,10 @@ applyProperty(id: string, value: string): boolean;
 
 - `seedable?: boolean` marks an item a profile **may control**. `addToExport` and `logo` carry
   it; `title`, `description` and the read-only `size` do not.
-- `logo` is the **value** item: `control: 'text'`, and `with` refuses a name the app does not
-  serve (`ui/logos.ts`), so neither a person nor a written profile can leave a clip waiting on a
-  file that will never draw. `''` is the ordinary case — no logo.
+- `logo` is the **list** item: `control: 'choice'`, with `choices` — `None` first, then every
+  mark the app serves (`ui/logos.ts`) — so the panel and a profile's sheet draw the list without
+  naming the property, and a person chooses rather than types. `with` still refuses a name the
+  app does not serve, because a value also arrives from a written profile or an agent.
 - `seedableClipProperties()` is the whole of what a config sheet offers and what applying
   walks, so a declaration for an item this build does not know is ignored.
 

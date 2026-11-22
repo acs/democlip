@@ -29,7 +29,7 @@ const EDGE = 8;     // the least the panel may sit from a viewport edge
 
 interface Field {
   property: ClipProperty;
-  input: HTMLInputElement | HTMLTextAreaElement;
+  input: HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
 }
 
 class ClipPropertiesPanel {
@@ -133,9 +133,7 @@ class ClipPropertiesPanel {
     if (property.readOnly || fixedBy) {
       const value = document.createElement('span');
       value.className = 'prop-value';
-      // A switch is shown as what it means rather than as the string it is kept as.
-      const shown = property.value(session.clip.properties, session.clip);
-      value.textContent = property.control === 'toggle' ? (shown === 'true' ? 'On' : 'Off') : (shown || '—');
+      value.textContent = this.shown(property);
       host.append(name, value);
       if (fixedBy) {
         const note = document.createElement('span');
@@ -161,6 +159,24 @@ class ClipPropertiesPanel {
       return host;
     }
 
+    // A list: one of the values the property itself declares, so the panel names no property
+    // and a person chooses rather than types.
+    if (property.control === 'choice') {
+      const select = document.createElement('select');
+      select.className = 'prop-input prop-select';
+      for (const choice of property.choices ?? []) {
+        const option = document.createElement('option');
+        option.value = choice.value;
+        option.textContent = choice.label;
+        select.append(option);
+      }
+      select.value = property.value(session.clip.properties, session.clip);
+      select.addEventListener('change', () => this.applyOne({ property, input: select }));
+      host.append(name, select);
+      this.fields.push({ property, input: select });
+      return host;
+    }
+
     const input = property.control === 'text'
       ? document.createElement('input')
       : document.createElement('textarea');
@@ -172,6 +188,19 @@ class ClipPropertiesPanel {
     host.append(name, input);
     this.fields.push({ property, input });
     return host;
+  }
+
+  /**
+   * What a value reads as where it is shown and not edited: a switch as what it means rather
+   * than the string it is kept as, and a list as the label of the choice it holds.
+   */
+  private shown(property: ClipProperty): string {
+    const value = property.value(session.clip.properties, session.clip);
+    if (property.control === 'toggle') return value === 'true' ? 'On' : 'Off';
+    if (property.control === 'choice') {
+      return property.choices?.find(choice => choice.value === value)?.label ?? '—';
+    }
+    return value || '—';
   }
 
   /** Apply one field through the clip: it announces, the one undo holds it, and it is kept. */

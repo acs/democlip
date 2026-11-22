@@ -52,8 +52,10 @@ describe('defineRows', () => {
     const rows = defineRows(book().get('tv')!, { active: true, locked: false });
     expect(rows.map(row => row.id)).toEqual(['addToExport', 'logo']);
     expect(rows[0]).toMatchObject({ label: 'Add to export', control: 'toggle', free: false, value: 'true', editable: true });
-    // A value item rather than a switch, and free when the profile says nothing about it.
-    expect(rows[1]).toMatchObject({ label: 'Logo', control: 'text', free: true, value: '', editable: true });
+    // A list rather than a switch, and free when the profile says nothing about it. The choices
+    // are the property's own, so the sheet draws them without knowing what they are.
+    expect(rows[1]).toMatchObject({ label: 'Logo', control: 'choice', free: true, value: '', editable: true });
+    expect(rows[1].choices.map(choice => choice.value)).toEqual(['', 'democlip', 'graditone']);
   });
 
   it('says an item is free when the profile does not control it', () => {

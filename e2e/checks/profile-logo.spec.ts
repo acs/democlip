@@ -144,10 +144,11 @@ test('the logo a profile fixes is not the person’s to change, and names the pr
 
   await page.locator('#props-btn').click();
   const row = page.locator('#clip-prop-menu .prop-row[data-id="logo"]');
-  await expect(row.locator('.prop-value')).toHaveText('democlip');
+  // Shown as the mark is called, not as the name it is kept as, and naming the profile.
+  await expect(row.locator('.prop-value')).toHaveText('DemoClip');
   await expect(row.locator('.prop-note')).toHaveText('set by DemoClipTV');
-  // No field to type a different mark into.
-  await expect(row.locator('input')).toHaveCount(0);
+  // No control to pick a different mark from.
+  await expect(row.locator('input, select')).toHaveCount(0);
 });
 
 test('a logo is defined in the profile’s own sheet, and reaches the export from there', async ({ page }) => {
@@ -163,12 +164,14 @@ test('a logo is defined in the profile’s own sheet, and reaches the export fro
   await row.locator('.profile-ico[data-act="define"]').click();
   await expect(page.locator('#profile-def-bd')).toHaveClass(/on/);
 
-  // A switch is three ways — Free, On, Off — and a value is a field, empty for nothing.
+  // A switch is three ways — Free, On, Off — and an item the app has a list for is that list,
+  // with **Not fixed** above it, which is where a profile starts.
   await expect(page.locator('.pdef-row[data-id="addToExport"] .pdef-opt')).toHaveCount(3);
-  const field = page.locator('.pdef-row[data-id="logo"] input');
-  await expect(field).toHaveValue('');
-  await field.fill('democlip');
-  await field.press('Tab');
+  const list = page.locator('.pdef-row[data-id="logo"] select');
+  await expect(list.locator('option')).toHaveText(['Not fixed', 'None', 'DemoClip', 'Graditone']);
+  await expect(list.locator('option:checked')).toHaveText('Not fixed');
+  await list.selectOption('democlip');
+  await expect(list.locator('option:checked')).toHaveText('DemoClip');
   await page.locator('#profile-def-done').click();
   await expect(page.locator('#profile-def-bd')).not.toHaveClass(/on/);
 

@@ -66,17 +66,31 @@ describe('the clip property register', () => {
     expect(seedableClipProperties().map(property => property.id)).toEqual(['addToExport', 'logo']);
   });
 
+  it('offers the marks the app ships as a list, with None above them', () => {
+    const logo = clipProperty('logo')!;
+    expect(logo.control).toBe('choice');
+    // The list is the property's own, so neither surface has to name it: **None** first, then
+    // every mark the app serves, in the order it serves them.
+    expect(logo.choices).toEqual([
+      { value: '', label: 'None' },
+      { value: 'democlip', label: 'DemoClip' },
+      { value: 'graditone', label: 'Graditone' },
+    ]);
+    // A property that is not a list offers none.
+    expect(clipProperty('title')?.choices).toBeUndefined();
+  });
+
   it('takes the name of a logo the app ships, and nothing else, or nothing at all', () => {
     const logo = clipProperty('logo')!;
-    expect(logo.control).toBe('text');
     expect(logo.value(ClipProperties.EMPTY)).toBe('');
 
     const worn = logo.with(ClipProperties.EMPTY, 'democlip')!;
     expect(logo.value(worn)).toBe('democlip');
     // A clip with no logo is the ordinary case, and an empty value clears it.
     expect(logo.value(logo.with(worn, '')!)).toBe('');
-    // A name the app does not ship is refused rather than kept: a typo must not leave an
-    // export waiting for a file that will never draw.
+    // A name the app does not ship is refused rather than kept — the list is not the only way a
+    // value arrives (a profile written elsewhere, an agent), and none of them may leave an export
+    // waiting for a file that will never draw.
     expect(logo.with(ClipProperties.EMPTY, 'nope')).toBeNull();
     // Surrounding space is the person's typing, not part of the name.
     expect(logo.value(logo.with(ClipProperties.EMPTY, '  democlip  ')!)).toBe('democlip');

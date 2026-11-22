@@ -20,6 +20,9 @@ export interface ProfileDefHandlers {
   declare(id: string, property: string, value: string | null): void;
 }
 
+/** What the first choice of a list is called and carries: nothing the app fixes. */
+const NOT_FIXED = 'not-fixed';
+
 const NO_HANDLERS: ProfileDefHandlers = {
   list: () => Profiles.starting(),
   locked: () => false,
@@ -109,6 +112,34 @@ class ProfileDef {
         seg.append(button);
       }
       host.append(seg);
+      return host;
+    }
+
+    // A list: the same choices the panel offers, with **Not fixed** above them — a profile that
+    // says nothing about an item leaves it the person's, which the list's own empty value
+    // ("None") does not mean.
+    if (row.control === 'choice') {
+      const choices = row.choices;
+      const select = document.createElement('select');
+      select.className = 'pdef-input pdef-select';
+      select.setAttribute('aria-label', row.label);
+      select.disabled = !row.editable;
+      // The first is not one of the items: it says the profile fixes nothing here. Its own
+      // value is a word no mark is called, and what the change handler reads is the *index* —
+      // because the empty value is a choice of its own ("None").
+      const options = ['Not fixed', ...choices.map(choice => choice.label)].map((label, at) => {
+        const option = document.createElement('option');
+        option.value = at === 0 ? NOT_FIXED : choices[at - 1].value;
+        option.textContent = label;
+        return option;
+      });
+      select.append(...options);
+      select.selectedIndex = row.free ? 0 : 1 + choices.findIndex(choice => choice.value === row.value);
+      select.addEventListener('change', () => {
+        const picked = select.selectedIndex - 1;      // 0 is "not fixed"
+        this.declare(profileId, row.id, picked < 0 ? null : choices[picked]?.value ?? null);
+      });
+      host.append(select);
       return host;
     }
 

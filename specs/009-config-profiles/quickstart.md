@@ -39,9 +39,12 @@ Expected:
 - `Clip.applyProperty` announces the change, is no change at all when the value is already held,
   and is **not** what the one undo takes back — the person's own last change still is.
 - `seedableClipProperties()` is exactly `['addToExport', 'logo']`.
-- The `logo` clip property takes the name of a mark the app serves (`'democlip'`) and nothing
-  else: a name it does not serve is `null` from `with`, so a typo cannot reach a clip; `''` is
-  no logo, which is the ordinary case.
+- The `logo` clip property is a **list**: `control` is `'choice'` and its `choices` are `None`
+  first and then every mark the app serves, so the panel and a profile's sheet draw the same list
+  without naming the property. `with` still refuses a name the app does not serve — a value can
+  also arrive from a written profile or an agent — and `''` is no logo, the ordinary case.
+- A profile's sheet offers **Not fixed** above those choices: that is `declare(item, null)` — the
+  item is the person's — and it is not the same as fixing it at **None**.
 - `introFor` is a card for **add to export** *or* a logo, carries the logo's name, and is `null`
   for a clip with neither.
 - The localStorage adapter writes and reads the shape unchanged, and answers `null` for an empty,
@@ -65,6 +68,8 @@ The check boots the app and drives the toolbar:
    it works.
 5. **The selector shows no config** — `#profile-menu` holds no config rows at all; a profile's row
    carries the sliders mark, the pencil and the bin, and the sliders mark opens `#profile-def-bd`.
+   There, **Logo** is a list of the marks the app serves — **Not fixed**, **None**, **DemoClip**,
+   **Graditone** — rather than a field to type a name into.
 6. **Fixed off is not free** — a profile fixing the switch **off** still locks it.
 7. **Refused once capturing** — with a take in the session the other rows are disabled, the reason
    is shown, and the active profile is unchanged.
@@ -114,6 +119,6 @@ npm run dev
    recording has started), and **DemoClipTV** stays active.
 7. Press **New**; the selector is usable again. Rename the profile with the pencil, or remove it
    with the bin — the app falls back to **Default**, and the item is yours again.
-8. Fix **Logo** to `democlip` in the same sheet, and export: the file opens with the DemoClip mark
-   on the card, above the clip's words.
+8. Pick **Graditone** from the **Logo** list in the same sheet, and export: the file opens with the
+   clef on the card, above the clip's words.
 9. Reload the page: the profile is still there, with what it controls, and still the active one.

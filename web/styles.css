@@ -352,6 +352,11 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 .prop-input{width:100%;padding:7px 9px;border-radius:7px;border:1px solid var(--glass-b);background:var(--glass);color:var(--text);font-family:var(--font-ui);font-size:13px;outline:none;transition:border-color .15s;}
 .prop-input:focus{border-color:var(--glass-b2);}
 .prop-textarea{resize:vertical;min-height:56px;line-height:1.4;}
+/* A list — the app's own control for a property whose values it knows, so a person chooses
+   rather than types. The select wears the field's own look (`.prop-input` / `.pdef-input`);
+   only its options have to be said, and the arrow is the platform's. */
+select.prop-input,select.pdef-select{cursor:pointer;}
+select.prop-input option,select.pdef-select option{background:var(--bg);color:var(--text);}
 .prop-value{font-family:var(--font-mono);font-size:13px;color:var(--text);}
 .prop-toggle{display:flex;align-items:center;gap:9px;cursor:pointer;}
 .prop-check{width:15px;height:15px;flex-shrink:0;accent-color:var(--brand-orange);cursor:pointer;}
