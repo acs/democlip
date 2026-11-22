@@ -145,7 +145,7 @@ remove it, and confirm the app falls back to **Default** and the item is the per
 
 ### Key Entities
 
-- **Profile**: a named set of the app's configuration a person works under — for example **DemoClipTV** or **GraditoneTV**. It holds **declarations**: which items it controls, and the value each is fixed at. It is kept outside any clip, so it outlives the clip, the page and the session. A profile that declares nothing is a **free** profile.
+- **Profile**: a named set of the app's configuration a person works under — for example **DemoClipTV** or **GraditoneTV** — and a **consistent production environment** for that way of working: the configuration it needs, applied every time a clip is made under it. It holds **declarations**: which items it controls, and the value each is fixed at. It is kept outside any clip, so it outlives the clip, the page and the session. A profile that declares nothing is a **free** profile.
 - **Active profile**: the one profile the app is working under. There is exactly one at any time, and what it declares is in force while it is active.
 - **Controlled item**: an item the active profile declares. It is applied to the clip and is not the person's to change: the clip's settings show its value and name the profile, and the app's other surfaces refuse it. An item no profile declares is the person's, exactly as before profiles existed.
 - **Declaration**: what a profile says about one item — that it controls it, and the value it is fixed at. An item may legitimately be fixed at an empty value (a switch fixed **off**), which is why "declared" and "empty" are told apart here and not in the clip's own properties.
