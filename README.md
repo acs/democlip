@@ -1,5 +1,5 @@
 <h1>
-  <img src="public/branding/logo.png" alt="DemoClip" width="420">
+  <img src="web/public/branding/logo.png" alt="DemoClip" width="420">
 </h1>
 
 **🚀 Live App**: [https://acs.github.io/democlip/](https://acs.github.io/democlip/)
@@ -115,7 +115,12 @@ democlip/
 │   ├── index.html        # The page — links the stylesheet and the entry below
 │   ├── main.ts           # The page's entry — imports src/main.ts, one level up
 │   ├── styles.css        # All styling (theme variables, layout, components)
-│   └── public/           # Served as-is: branding, manifest.json, sw.js, oauth metadata
+│   └── public/           # Copied verbatim into the build
+│       ├── manifest.json # PWA manifest
+│       ├── sw.js         # Service worker — cache-first offline support
+│       ├── oauth-client-metadata.json # the Bluesky OAuth client_id document
+│       ├── youtube-client.json # the app's own Google client ID, so a fork sets its own
+│       └── branding/     # Logo (with background, transparent, dark), icon-only mark, app icons
 ├── src/                  # TypeScript source
 │   ├── main.ts           # Composition root — the only module importing all four layers
 │   ├── session.ts        # The single Session: the clip and the audio, and the one place that ends it
@@ -267,12 +272,6 @@ democlip/
 │   │   ├── downloads.ts    # Taking the exported file from the browser
 │   │   └── version.ts      # The version the server was built with, and the check
 │   └── scripts/          # sync-version.mjs (keep the two versions equal), bundle-app.mjs
-├── web/public/           # Copied verbatim into the build
-│   ├── manifest.json       # PWA manifest
-│   ├── sw.js               # Service worker — cache-first offline support
-│   ├── oauth-client-metadata.json # the Bluesky OAuth client_id document
-│   ├── youtube-client.json # the app's own Google client ID, so a fork sets its own
-│   └── branding/           # Logo (with background, transparent, dark), icon-only mark, app icons
 ├── vite.config.ts        # Dev server + build config
 ├── tsconfig.json         # TypeScript config (type-check / editor)
 ├── eslint.config.js      # ESLint (flat config)

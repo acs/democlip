@@ -6,12 +6,12 @@ description: How DemoClip's mark and name are used — the mark-only images, the
 # Branding
 
 **The mark is an image. The name is text.** The header shows
-`public/branding/logo-small-dark.png` — or its light twin — and writes `DemoClip`
+`/branding/logo-small-dark.png` — or its light twin — and writes `DemoClip`
 beside it in HTML, so the wordmark wears the app's own Syne, at the app's own size,
 and follows the theme with the rest of the interface. A logo-with-text image cannot
 do that: its font, spacing and colour are frozen into the file.
 
-So `public/branding/` holds two families:
+So `web/public/branding/` holds two families:
 
 - **the mark alone** — `logo-small.png`, `logo-small-dark.png`: the clapperboard,
   its red dot and its play triangle, in the ink that reads on the background.
@@ -42,7 +42,7 @@ The mark carries `alt=""`: the name is text right beside it, and a second
 
 ## The colours
 
-`public/branding/logo.svg` is the source of truth — read the hex from the vector,
+`web/public/branding/logo.svg` is the source of truth — read the hex from the vector,
 not from a PNG. The PNGs have been through a resize and their inks are a few digits
 off: sampling `logo.png` gives `#F96B04` for an orange that is `#FF6C23`.
 
@@ -74,15 +74,15 @@ light-theme value rather than a colour to the component.
 | `icon-192.png`, `icon-512.png` | the square mark on the app background `#060710` | the manifest, the favicon, `apple-touch-icon` |
 | `og-image.png` | the 1200×630 card | `og:image`, `twitter:image` |
 
-`public/` is served verbatim by Vite, so in the app a path is `/branding/…` — the
-`public/` left out — while the README names `public/branding/…`, resolved against
-the repository root.
+`web/public/` is served verbatim by Vite, so in the app a path is `/branding/…` —
+the `public/` left out — while the README names `web/public/branding/…`, resolved
+against the repository root.
 
 ## Which theme gets which mark
 
 Both marks are in the DOM and CSS shows one: the default theme is **dark** and gets
 `logo-small-dark.png`; `[data-theme="light"]` on the root gets `logo-small.png`.
-Both files are in the service worker's `CORE` list in `public/sw.js`, so the header
+Both files are in the service worker's `CORE` list in `web/public/sw.js`, so the header
 is painted offline on the first load. A new branding asset the app shell needs goes
 there too.
 
