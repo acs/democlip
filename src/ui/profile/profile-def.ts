@@ -1,15 +1,16 @@
 // The profile config sheet: what a profile fixes.
 //
-// Opened from a profile's sliders mark — never from the selector itself, and never shown
-// there, because the selector only selects. It names no item of its own: it walks the items a
-// profile may control and draws one row per item, saying whether this profile controls it and
-// at what. What it writes is a **declaration**: a controlled item is applied to the app and is
+// Opened from a profile's sliders mark — never from the selector itself, and never shown there,
+// because the selector only selects. Everything about a profile is here: its **name**, and one
+// row per item it may control, saying whether it controls it and at what. It names no item of its
+// own: it walks the items a profile may control. What it writes is a **declaration**: a controlled item is applied to the app and is
 // not the person's to change, while a free one is theirs exactly as it always was.
 //
 // The built-in default is never offered one. Its whole point is that it controls nothing —
 // it is the free profile, and the one the app falls back to.
 
 import { el } from '../dom.js';
+import { Profile } from '../../domain/profile/Profile.js';
 import { Profiles } from '../../domain/profile/Profiles.js';
 import { defineRows, type DefineRow } from './profile-rows.js';
 
@@ -18,12 +19,18 @@ export interface ProfileDefHandlers {
   locked(): boolean;
   /** Fix an item at a value, or hand it back with null. */
   declare(id: string, property: string, value: string | null): void;
+  /** Give a profile another name. */
+  rename(id: string, name: string): void;
 }
+
+/** What the first choice of a list is called and carries: nothing the app fixes. */
+const NOT_FIXED = 'not-fixed';
 
 const NO_HANDLERS: ProfileDefHandlers = {
   list: () => Profiles.starting(),
   locked: () => false,
   declare: () => {},
+  rename: () => {},
 };
 
 class ProfileDef {
@@ -64,15 +71,43 @@ class ProfileDef {
     const book = this.handlers.list();
     const profile = this.id ? book.get(this.id) : null;
     if (!profile) {
-      el.profileDefTitle.textContent = 'Profile';
       el.profileDefRows.replaceChildren();
       return;
     }
-    el.profileDefTitle.textContent = profile.name;
+    const active = profile.id === book.activeId;
+    const locked = this.handlers.locked();
     el.profileDefRows.replaceChildren(
-      ...defineRows(profile, { active: profile.id === book.activeId, locked: this.handlers.locked() })
-        .map(row => this.row(profile.id, row)),
+      this.nameRow(profile, !(active && locked)),
+      ...defineRows(profile, { active, locked }).map(row => this.row(profile.id, row)),
     );
+  }
+
+  /**
+   * The profile's own **name** — set here rather than in the list, which is for choosing one and
+   * nothing else. It is applied when the field is left, like every other field in the app, and
+   * refused while the active profile is fixed by a session that has begun to capture.
+   */
+  private nameRow(profile: Profile, editable: boolean): HTMLElement {
+    const host = document.createElement('div');
+    host.className = 'pdef-row pdef-who';
+
+    const label = document.createElement('span');
+    label.className = 'pdef-name';
+    label.textContent = 'Name';
+
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'pdef-input';
+    input.value = profile.name;
+    input.disabled = !editable;
+    input.setAttribute('aria-label', 'Profile name');
+    input.addEventListener('change', () => {
+      this.handlers.rename(profile.id, input.value);
+      this.render();
+    });
+
+    host.append(label, input);
+    return host;
   }
 
   private row(profileId: string, row: DefineRow): HTMLElement {
@@ -112,27 +147,49 @@ class ProfileDef {
       return host;
     }
 
-    // Anything else takes a value, and a Free switch to hand the item back.
-    const free = document.createElement('label');
-    free.className = 'pdef-free';
-    const check = document.createElement('input');
-    check.type = 'checkbox';
-    check.checked = row.free;
-    check.disabled = !row.editable;
-    check.addEventListener('change', () => this.declare(profileId, row.id, check.checked ? null : row.value));
-    const freeText = document.createElement('span');
-    freeText.textContent = 'Free';
-    free.append(check, freeText);
+    // A list: the same choices the panel offers, with **Not fixed** above them — a profile that
+    // says nothing about an item leaves it the person's, which the list's own empty value
+    // ("None") does not mean.
+    if (row.control === 'choice') {
+      const choices = row.choices;
+      const select = document.createElement('select');
+      select.className = 'pdef-input pdef-select';
+      select.setAttribute('aria-label', row.label);
+      select.disabled = !row.editable;
+      // The first is not one of the items: it says the profile fixes nothing here. Its own
+      // value is a word no mark is called, and what the change handler reads is the *index* —
+      // because the empty value is a choice of its own ("None").
+      const options = ['Not fixed', ...choices.map(choice => choice.label)].map((label, at) => {
+        const option = document.createElement('option');
+        option.value = at === 0 ? NOT_FIXED : choices[at - 1].value;
+        option.textContent = label;
+        return option;
+      });
+      select.append(...options);
+      select.selectedIndex = row.free ? 0 : 1 + choices.findIndex(choice => choice.value === row.value);
+      select.addEventListener('change', () => {
+        const picked = select.selectedIndex - 1;      // 0 is "not fixed"
+        this.declare(profileId, row.id, picked < 0 ? null : choices[picked]?.value ?? null);
+      });
+      host.append(select);
+      return host;
+    }
 
+    // Anything else is a value with a field: what the person types is what the profile fixes,
+    // and an empty field means it fixes nothing — the item is the person's, as always.
     const input = document.createElement('input');
     input.type = 'text';
     input.className = 'pdef-input';
     input.value = row.value;
-    input.disabled = row.free || !row.editable;
+    input.placeholder = 'none';
+    input.disabled = !row.editable;
     input.setAttribute('aria-label', row.label);
-    input.addEventListener('change', () => this.declare(profileId, row.id, input.value));
+    input.addEventListener('change', () => {
+      const value = input.value.trim();
+      this.declare(profileId, row.id, value === '' ? null : value);
+    });
 
-    host.append(free, input);
+    host.append(input);
     return host;
   }
 

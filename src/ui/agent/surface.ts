@@ -37,6 +37,11 @@ export interface ClipPropertySummary {
   readonly label: string;
   readonly control: string;
   readonly value: string;
+  /**
+   * The values a list property (`control: "choice"`) may take, so an agent is offered what a
+   * person is offered. Absent for every other kind.
+   */
+  readonly choices?: readonly string[];
   /** True for a property the app shows but the person does not set — the clip size. */
   readonly readOnly: boolean;
 }

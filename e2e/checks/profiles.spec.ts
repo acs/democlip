@@ -158,8 +158,10 @@ test('a profile is defined in its own sheet, and the selector shows no config', 
   await expect(page.locator('#profile-menu .pdef-row')).toHaveCount(0);
   await expect(page.locator('#profile-menu .profile-setting')).toHaveCount(0);
 
-  // The sliders mark, not the pencil, opens the sheet.
-  await expect(row.locator('.profile-ico')).toHaveCount(3);
+  // Two marks on a profile of the person's own: the sliders, which open it, and the bin. Its
+  // **name** is set in the profile's own dialog, so nothing here renames it.
+  await expect(row.locator('.profile-ico')).toHaveCount(2);
+  await expect(row.locator('.profile-ico[data-act="rename"]')).toHaveCount(0);
   await defineIn(page, 'DemoClipTV', 'addToExport', 'on');
 
   // Choose it: the clip is made under it and the item is fixed.
@@ -233,14 +235,20 @@ test('a profile and what it controls come back after a reload, and it can be let
   expect(book?.activeId).not.toBe('default');
   expect(book?.profiles.find(profile => profile.name === 'DemoClipTV')?.controls).toEqual({ addToExport: 'true' });
 
-  // The built-in default offers no define, no pencil and no bin.
+  // The built-in default offers no sliders mark and no bin.
   await page.locator('#profile-btn').click();
   await expect(page.locator('.profile-row[data-id="default"] .profile-ico')).toHaveCount(0);
 
-  // Rename it, then let it go: the app falls back to the default.
-  await page.locator('.profile-row.active .profile-ico[data-act="rename"]').click();
-  await page.locator('.profile-rename-input').fill('GraditoneTV');
-  await page.locator('.profile-rename-input').press('Enter');
+  // Its name is set in its own dialog — the same dialog that holds what it controls — and the
+  // list behind it follows.
+  await page.locator('.profile-row.active .profile-ico[data-act="define"]').click();
+  await expect(page.locator('#profile-def-bd')).toHaveClass(/on/);
+  const name = page.locator('.pdef-who input');
+  await expect(name).toHaveValue('DemoClipTV');
+  await name.fill('GraditoneTV');
+  await name.press('Tab');
+  await page.locator('#profile-def-done').click();
+  await expect(page.locator('#profile-def-bd')).not.toHaveClass(/on/);
   await expect(page.locator('.profile-row.active .profile-name')).toHaveText('GraditoneTV');
 
   await page.locator('.profile-row.active .profile-ico[data-act="remove"]').click();

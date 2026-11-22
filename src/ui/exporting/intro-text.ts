@@ -22,6 +22,10 @@ const GAP = 0.045;       // between the title and the description, as a fraction
 const STAMP_GAP = 0.05;  // between the description and the day line
 const LINE = 1.4;        // a line's advance, in its own font sizes
 
+// Where the card's **logo** goes is `LOGO_ROW` and `logoRect` in `logo-rect.ts` — how tall a mark
+// is drawn, how wide it may be, and the rectangle that keeps its proportions. All this needs from
+// it is how much room the words leave above them, which the caller hands in as `top`.
+
 /** One line of the card: its words, its size, and the space above it. */
 interface CardLine {
   text: string;
@@ -32,12 +36,15 @@ interface CardLine {
 /**
  * The title, the description and the day line as text annotations over the whole card —
  * each in fractions of the picture, the edges of the text exactly where they will be drawn.
+ * `top` is what above them belongs to something else (the logo), so the words are stacked in
+ * what is left rather than on the whole card.
  */
 export function introText(
   title: string,
   description: string,
   stamp: string,
   picture: { w: number; h: number },
+  top = 0,
 ): TextAnnotation[] {
   const lines = cardLines(title, description, stamp, picture);
   if (!lines.length) return [];
@@ -50,11 +57,11 @@ export function introText(
     return { text: line.text, height: line.size * k, width: width * k, spaceBefore: line.spaceBefore };
   });
 
-  // Stack them, the whole block centred on the picture.
+  // Stack them, the whole block centred in what the logo leaves.
   let blockHeight = 0;
   for (const line of measured) blockHeight += line.spaceBefore + line.height * LINE;
 
-  let y = (1 - blockHeight) / 2;
+  let y = top + ((1 - top) - blockHeight) / 2;
   const made: TextAnnotation[] = [];
   for (const line of measured) {
     y += line.spaceBefore;

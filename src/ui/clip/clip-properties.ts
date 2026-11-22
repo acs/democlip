@@ -13,9 +13,18 @@
 
 import type { ClipProperties } from '../../domain/clip/ClipProperties.js';
 import type { Clip } from '../../domain/clip/Clip.js';
+import { LOGOS, logoFile } from '../logos.js';
 
 /** Which shared control edits a clip property. */
-export type ClipPropertyControl = 'text' | 'long-text' | 'toggle';
+export type ClipPropertyControl = 'text' | 'long-text' | 'toggle' | 'choice';
+
+/** One of the values a property whose control is a list offers. */
+export interface PropertyChoice {
+  /** What the clip holds when it is chosen. */
+  readonly value: string;
+  /** What the choice is called where a person reads it. */
+  readonly label: string;
+}
 
 /**
  * Something about the clip the user can change after it is made. The app declares it;
@@ -27,8 +36,13 @@ export interface ClipProperty {
   readonly id: string;
   /** What the control is called: 'Title', 'Description'. */
   readonly label: string;
-  /** Which shared control renders it: one line, or a paragraph. */
+  /** Which shared control renders it: one line, a paragraph, a switch, or a list. */
   readonly control: ClipPropertyControl;
+  /**
+   * The values a **list** control offers, in order, and nothing for any other kind. The panel
+   * and a profile's sheet both draw them without naming the property they belong to.
+   */
+  readonly choices?: readonly PropertyChoice[];
   /**
    * True for a property the app shows but the person does not set — the **clip size**,
    * which is derived from the takes. The panel draws its value and offers no control,
@@ -108,6 +122,29 @@ registerClipProperty({
   seedable: true,
   value: properties => (properties.get('addToExport') === 'true' ? 'true' : ''),
   with: (properties, value) => properties.with('addToExport', value === 'true' ? 'true' : ''),
+});
+
+// And the mark a clip wears at the head of its export: one of the logos the app ships
+// (`ui/logos.ts`), or **None** at all — which is the ordinary case. It is a *list*, not a field:
+// the app knows which marks it serves, so a person chooses one rather than typing a name that
+// might not be there. The property still refuses a name it does not serve, because a value can
+// also arrive from a profile written elsewhere. And a **profile** may fix it, so every clip made
+// under that profile opens with the same mark.
+registerClipProperty({
+  id: 'logo',
+  label: 'Logo',
+  control: 'choice',
+  seedable: true,
+  choices: [
+    { value: '', label: 'None' },
+    ...LOGOS.map(logo => ({ value: logo.name, label: logo.label })),
+  ],
+  value: properties => properties.get('logo'),
+  with: (properties, value) => {
+    const name = value.trim();
+    if (name !== '' && !logoFile(name)) return null;
+    return properties.with('logo', name);
+  },
 });
 
 // And the clip's own size: the picture the review shows and every export writes — the

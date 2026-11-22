@@ -22,6 +22,8 @@ export interface IntroFrame {
   readonly description: string;
   /** The line under the words: the day the card was made, and the app's name. */
   readonly stamp: string;
+  /** The name of the logo the clip wears on the card, or '' for none. */
+  readonly logo: string;
 }
 
 export interface Frame {

@@ -29,6 +29,12 @@ describe('IntroCard', () => {
     expect(card?.stamp).toBe('2026-11-22 - DemoClip');
   });
 
+  it('carries the logo the clip wears, and none at all by default', () => {
+    expect(IntroCard.of('A demo', '', DAY, 2, 'democlip')?.logo).toBe('democlip');
+    expect(IntroCard.of('A demo', '', DAY, 2)?.logo).toBe('');
+    expect(IntroCard.of('A demo', '', DAY, 2, '  democlip  ')?.logo).toBe('democlip');
+  });
+
   it('is no card with no time to show it in', () => {
     expect(IntroCard.of('A demo', 'What it shows', DAY, 0)).toBeNull();
     expect(IntroCard.of('A demo', 'What it shows', DAY, -2)).toBeNull();

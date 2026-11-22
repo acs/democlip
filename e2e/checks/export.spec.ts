@@ -140,7 +140,7 @@ test('a clip that asks for the card gets two seconds of it at the head of the fi
   // Give the clip its words, and turn the card on — through the panel, as a person would.
   await page.locator('#props-btn').click();
   await expect(page.locator('#clip-prop-menu')).toHaveClass(/on/);
-  await page.locator('#clip-prop-menu input.prop-input').fill('A short demo');
+  await page.locator('#clip-prop-menu .prop-row[data-id="title"] input').fill('A short demo');
   await page.locator('#clip-prop-menu textarea').fill('What the clip shows');
   await page.locator('#clip-prop-menu input[type="checkbox"]').check();
   await page.locator('#props-btn').click();
@@ -201,7 +201,7 @@ test('the card’s words are on its first frame, not just later in it', async ({
   // the picture is lit. The take's own frame is the card's background, so the words are
   // the only difference between the two.
   await page.locator('#props-btn').click();
-  await page.locator('#clip-prop-menu input.prop-input').fill('A short demo');
+  await page.locator('#clip-prop-menu .prop-row[data-id="title"] input').fill('A short demo');
   await page.locator('#clip-prop-menu textarea').fill('What the clip shows in this recording');
   await page.locator('#clip-prop-menu input[type="checkbox"]').check();
   await page.locator('#props-btn').click();

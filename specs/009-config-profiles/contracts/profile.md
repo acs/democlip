@@ -158,8 +158,10 @@ export function applyActiveProfile(clip: Clip, profiles: Profiles): void;
 
 **Guarantees**
 
-- it walks `seedableClipProperties()` and nothing else, so a declaration for an item this build
-  does not know is **ignored** rather than applied;
+- it walks `seedableClipProperties()` — **Add to export** and **Logo** — and nothing else, so a
+  declaration for an item this build does not know is **ignored** rather than applied;
+- a declaration whose value the clip property refuses (a logo the app does not serve) changes
+  nothing at all, because applying goes through the property's own `with`;
 - it applies to an **empty** clip only, and a controlled value **wins** over what the clip held —
   that is what *fixing* means;
 - an item the active profile does not declare is left exactly as it is: the person's;
@@ -194,9 +196,12 @@ export function controllingIn(book: () => Profiles): Controlling;
 | the pill | `#profile-btn` · `#profile-initials` | `class="icon-btn profile-pill"`, holding the active profile's first letters; `aria-haspopup`, `aria-expanded`, an `aria-label` naming the active profile. **Last** child of `.hdr-actions`, so the right-most control in the header |
 | the selector | `#profile-menu` | a body-level popover built on each open: a `.profile-title`, a row per profile, the lock line, and the foot. Closes on an outside click (read from `event.composedPath()`, since a handler re-renders the panel), Escape or resize |
 | a row | `.profile-row[data-id]` · `.profile-pick` · `.profile-avatar` · `.profile-check` | `role="menuitemradio"`, `aria-checked` for the active one; a pill of the profile's first letters in one of the tones, the name, a tick when active; disabled while the session is locked and it is not the active one |
-| the person's own row | `.profile-ico[data-act="define"|"rename"|"remove"]` | the sliders mark (the config sheet), the pencil and the bin. The built-in default has none: it controls nothing and cannot be renamed or removed |
+| the person's own row | `.profile-ico[data-act="define"|"remove"]` | the sliders mark, which opens the profile's own dialog, and the bin, which lets it go. **No rename**: a profile's name is set in the dialog, not in the list. The built-in default has neither mark |
 | a new profile | `.profile-new-btn` → `.profile-new-input` + `.profile-new-add` | the foot's **+ New Profile** turns into a name field; allowed while locked, and never moves the active profile then |
-| the config sheet | `#profile-def-bd` · `.pdef-row[data-id]` · `.pdef-opt[data-value]` | a modal titled with the profile's name, one row per item it may control; a toggle is a segmented **Free / On / Off** (`data-value` `free` / `true` / ``), anything else a **Free** switch and a field. `data-value` is what a check presses |
+| the profile's dialog | `#profile-def-bd` · `.pdef-who input` · `.pdef-row[data-id]` · `.pdef-opt[data-value]` | a modal titled **Profile**: a **name** field first (`.pdef-who`, applied when it is left), then one row per item it may control; a **toggle** is a segmented **Free / On / Off** (`data-value` `free` / `true` / ``), a **choice** is a list of the property's own `choices` with **Not fixed** above them, and any other value is a field whose empty state fixes nothing. `data-value` is what a check presses |
+| the logo's mark | `web/public/logos/*.png` · `src/ui/logos.ts` | the marks the app serves itself, with the label a person chooses by; a clip's value is a **name** from the list, and a name it does not hold is refused by the clip property |
+| where a mark is drawn | `LOGO_ROW`, `LOGO_SPACE`, `logoRect` (`src/ui/exporting/logo-rect.ts`) | the rectangle in pixels: as tall as the row, as wide as the mark's own proportions make it, bounded by the picture's width only when it is very wide, and centred. **Scaled, never stretched** — a mark's proportions come out exactly as they went in |
+| the list control | `ClipProperty.choices` · `select.prop-input` / `select.pdef-select` | a property whose values the app knows declares them, and both surfaces draw them — so neither names the property, and a person choosing a mark cannot pick one that is not there |
 
 **Guarantees**
 
@@ -216,5 +221,7 @@ export function controllingIn(book: () => Profiles): Controlling;
 - no profile in an exported file, a sidecar or a publish;
 - no profile change taken back by the clip's one undo (a profile is app configuration, not clip
   state; applying one is deliberately not undoable);
-- the profile controls only **Add to export**; later items are carried by flagging them
-  `seedable`, with no change to the classes above.
+- the profile controls **Add to export** and **Logo**; later items are carried by flagging them
+  `seedable`, with no change to the classes above;
+- the logo is drawn **on the card**, not over every frame: a clip that wears one asks for a card,
+  and the mark is not a watermark.

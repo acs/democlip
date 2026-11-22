@@ -64,6 +64,19 @@ it declares is locked.
 - `all` is never empty and `activeId` always names one of `all`;
 - every transition answers a **new** book and leaves the receiver unchanged.
 
+## 2b. The logo — a value item, and the card that carries it
+
+| Piece | Where | Contract |
+|---|---|---|
+| the app's logos | `src/ui/logos.ts` | `LOGOS` (name → file) and `logoFile(name)`; the files are the app's own, in `web/public/logos/`. DOM-free, so a clip property can refuse an unknown name and a node test can read the list |
+| the clip property | `src/ui/clip/clip-properties.ts` | `id: 'logo'`, `control: 'choice'`, `seedable: true`, with its `choices` — so the two surfaces that set it draw the same list. Its value is a **name**, and `''` means none |
+| the list, drawn | `src/ui/clip/properties-panel.ts`, `src/ui/profile/profile-def.ts`, `src/ui/agent/describe.ts` | the panel offers the choices; a profile's sheet offers **Not fixed** above them (which is `declare(item, null)`, and not the same as fixing it at `None`); the automation surface is told the choices as well as the value |
+| the card's value | `src/domain/clip/IntroCard.ts` | `logo: string` — the name, not a picture: the plan carries *which* mark, and the view turns it into an image |
+| what asks for a card | `src/ui/exporting/intro.ts` | **add to export** *or* a logo: a logo lives on the card, so a clip that wears one always opens with it |
+| the file the encoder gets | `src/application/ports/EncoderPort.ts` | `IntroFrame.logo`, built by `src/infra/offline-encoder.ts` from the plan |
+| the picture | `src/ui/exporting/logo-image.ts` | `loadLogo(name)` / `logoImage(name)`: decoded **once**, before the first frame (`FrameRenderer.prepare`); a logo that will not load draws nothing and the export goes on |
+| where it is drawn | `src/ui/exporting/logo-rect.ts` + `frame-renderer.ts` | `LOGO_ROW` (how tall a mark is, the widest it may be, where the row starts), `LOGO_SPACE` (what the words keep clear) and `logoRect(picture, mark)`, which works the rectangle out **in pixels** — the mistake it exists to prevent is comparing a fraction of the picture's width with one of its height and stretching the mark to fit. The mark is drawn there with a dark shadow, so a pale mark reads over a pale picture |
+
 ## 3. The stored shape (the port's data)
 
 `src/domain/profile/Profiles.ts` (the types) · `src/application/ports/ProfileStorePort.ts` (the port)
@@ -127,8 +140,12 @@ applyProperty(id: string, value: string): boolean;
 
 `src/ui/clip/clip-properties.ts`
 
-- `seedable?: boolean` marks an item a profile **may control**. `addToExport` carries it;
-  `title`, `description` and the read-only `size` do not.
+- `seedable?: boolean` marks an item a profile **may control**. `addToExport` and `logo` carry
+  it; `title`, `description` and the read-only `size` do not.
+- `logo` is the **list** item: `control: 'choice'`, with `choices` — `None` first, then every
+  mark the app serves (`ui/logos.ts`) — so the panel and a profile's sheet draw the list without
+  naming the property, and a person chooses rather than types. `with` still refuses a name the
+  app does not serve, because a value also arrives from a written profile or an agent.
 - `seedableClipProperties()` is the whole of what a config sheet offers and what applying
   walks, so a declaration for an item this build does not know is ignored.
 

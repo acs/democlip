@@ -145,6 +145,28 @@ is its own surface, never the selector. Every task below was done in the rework.
 
 ---
 
+## Phase 8: A profile that needs a logo (the use case the feature is for)
+
+**Purpose**: the second item a profile may control, and the one that proves the machinery over a
+**value** rather than a switch: a name that may be empty, refused when the app does not serve it,
+fixed by a profile, locked, and **drawn** into the encoded file.
+
+- [x] T048 Ship the app's own marks: `web/public/logos/democlip.png`, and the list that names them (`src/ui/logos.ts`, `logoFile`), with a node test.
+- [x] T049 Register the **logo** clip property in `src/ui/clip/clip-properties.ts`: a value, `seedable`, refusing a name the app does not serve, `''` for none (data-model.md §2b, §7).
+- [x] T050 Carry the logo on the card: `IntroCard.logo`, and `introFor` asking for a card for **add to export** *or* a logo (data-model.md §2b).
+- [x] T051 Put it through to the encoder: `IntroFrame.logo` in `src/application/ports/EncoderPort.ts` and `src/infra/offline-encoder.ts`.
+- [x] T052 Draw it: the box above the card's words (`LOGO_BOX`, `LOGO_SPACE` in `intro-text.ts`, and `introText`'s `top`), the fitted mark with a dark shadow, and `FrameRenderer.prepare` decoding it before the first frame (`src/ui/exporting/{frame-renderer,logo-image}.ts`).
+- [x] T053 Load it before encoding in all three paths that write a file: `export-flow.ts`, `publish-flow.ts`, `youtube-flow.ts`.
+- [x] T054 Give the panel's rows their `data-id`, so a check can point at one property's row now that there is more than one field.
+- [x] T055 Tests: `logos.test.ts`, the logo rules in `clip-properties.test.ts`, the card in `IntroCard.test.ts` and `intro.test.ts`, and the surface's property list.
+- [x] T056 The browser check, `e2e/checks/profile-logo.spec.ts`: the mark in the file (pixels counted, with the picture there in both runs), the value naming the profile with no field, the sheet defining it, and a name the app does not serve refused.
+- [x] T060 Move renaming into the profile's own dialog, and take the pencil off the list: a **Name** field at the top of `#profile-def-bd` (`ProfileDefHandlers.rename`, wired to `ManageProfiles.rename`), the listing left with the sliders mark and the bin alone, and the selector behind the dialog redrawn when a change is made there (`profileMenu.refresh()` in the flow's `report`).
+- [x] T059 Draw a mark **at its own proportions**: the fit is a rule of its own in `src/ui/exporting/logo-rect.ts` (`LOGO_ROW`, `LOGO_SPACE`, `logoRect`), worked out in pixels so a fraction of the picture's width is never compared with one of its height — the mistake that stretched the mark — and proved in node for marks of every shape, with the row read back from an encoded frame.
+- [x] T058 Make the logo a **list** rather than a field: `ClipPropertyControl` gains `choice` and a property declares its own `choices` (`src/ui/clip/clip-properties.ts`), the panel draws a `select` from them and shows a choice by its label, a profile's sheet draws the same list with **Not fixed** above it, and the automation surface is told the choices too.
+- [x] T057 Correct the documents for the new item: `spec.md` (US4, FR-024–FR-027, SC-014), `GLOSSARY.md`, `FEATURES.md`, the help panel, `data-model.md`, `contracts/profile.md` and `research.md` R12.
+
+---
+
 ## Dependencies & Execution Order
 
 ### Phase Dependencies

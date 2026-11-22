@@ -285,3 +285,50 @@ therefore pointless for the thing it exists to prevent.
   guaranteed fallback, and defining it would leave the app with no profile that controls nothing.
 - *Expose choosing and defining to an agent.* Out of scope, as the spec says; the agent is only
   told the truth about a controlled item.
+
+## R12 — The logo: a value item, and where it is drawn *(2026-11-22, the use case the feature is for)*
+
+**Decision**: the clip gains a **logo** clip property — a **value**, not a switch — and it is
+**seedable**, so a profile may fix it. Its value is the **name** of one of the marks the app
+serves itself from `web/public/logos/`, and `''` is the ordinary case: no logo. The clip
+property refuses a name the app does not serve. A clip that wears a logo opens **every** export
+with a **card** carrying it — so a logo asks for a card on its own, whether or not **add to
+export** is on. The mark is drawn in a fixed box above the card's words, fitted inside it with
+its own proportions and a dark shadow under it, and it is decoded **before the file's first
+frame** rather than during it.
+
+**Rationale**: the user asked for "a use case based on profiles that will check all fits… A
+profile needs a logo. The logo … will be in the repository, in a place DemoClip can load it…
+The value can be empty (no logo for the profile)… The best place is to add it to the Clip
+config, like the 'Add to the export' for title and description. It is a clip property." A value
+item is exactly the thing the machinery had not yet been proved over: a declaration that may be
+empty, a control that is not a switch, and a profile that fixes something that is then *drawn*.
+Choosing a **name** rather than a path is what makes a typo a refusal instead of an export that
+waits for a file which will never draw. Having a logo ask for a card is what makes "a profile
+needs a logo" actually hold: the mark is on the head of every file the profile's clips make,
+with nothing for the person to remember — and the card's words are whatever the clip has, the
+day line always among them.
+
+**Alternatives considered**
+
+- *A path or URL as the value.* Rejected: it puts file layout in a person's hands and a typo
+  silently becomes a blank space in an exported file. A name from the app's own list can be
+  refused, and adding a mark stays a change to the app.
+- *Ship the mark as bytes the person picks (like an image annotation's picture).* Rejected: the
+  user asked for a logo **in the repository** — that is, the app's own, not something uploaded —
+  and an uploaded picture belongs to one clip, where a logo belongs to a way of working.
+- *Draw the logo over every frame, as a watermark.* Rejected for this iteration: the app's one
+  place for a clip's branding is the card, and a watermark is a different feature (and a
+  different cost — a decode and a draw on every frame, and a decision about where it sits over
+  every take's picture). Flagged to the user as the obvious next step if that is what is wanted.
+- *The logo only when **add to export** is on.* Rejected: then a profile could fix a logo and
+  nothing would show, which is exactly the kind of quietly-ignored configuration a profile exists
+  to prevent.
+- *Carry the logo into the file as an `ImageAnnotation`.* Rejected: the annotation kinds are the
+  person's drawing, saved with the clip and listed on the timeline lane; the card is not an
+  annotation and is not in the review. The card's words set the precedent — they are drawn
+  through the annotation layer but are not the clip's annotations.
+- *Decode the logo lazily on the card's first frame.* Rejected: a card is read the moment it
+  appears, and its first frame is the poster a file listing shows — `FrameRenderer.prepare`
+  loads it before the encoder starts, and a logo that will not load leaves the card without it
+  rather than failing the export.
