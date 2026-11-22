@@ -146,6 +146,7 @@ function undoLabel(): string {
   const change = session.clip.pendingUndo();
   if (!change) return '';
   if (change.type === 'cut-approved') return `CUT ${change.removed.toFixed(2)}s`;
+  if (change.type === 'property-changed') return change.id.toUpperCase();
   return (pluginOf(change.annotation.kind)?.action.label ?? 'ANNOTATION').toUpperCase();
 }
 

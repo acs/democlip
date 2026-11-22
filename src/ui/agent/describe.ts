@@ -1,15 +1,17 @@
 // The clip, described as data.
 //
 // The read side of the automation surface: what an agent can see before it decides
-// what to do. It reads the clip and the kinds' own property descriptors, so the
-// agent is offered exactly what a person would be offered in the properties
-// inspector — the same list, from the same place, so the two cannot disagree.
+// what to do. It reads the clip and the kinds' own property descriptors — and the
+// clip's own, from the same register the properties panel reads — so the agent is
+// offered exactly what a person would be offered, the same list from the same place,
+// so the two cannot disagree.
 //
 // It takes the clip as an argument rather than reaching for the session, so it is
 // free of the DOM and can be proved in node. It changes nothing.
 
 import type { Clip } from '../../domain/clip/Clip.js';
 import { propertiesOf } from '../annotating/annotation-plugin.js';
+import { clipProperties } from '../clip/clip-properties.js';
 import type { AnnotationSummary, ClipDescription, TakeSummary } from './surface.js';
 
 export function describeClip(clip: Clip): ClipDescription {
@@ -37,5 +39,11 @@ export function describeClip(clip: Clip): ClipDescription {
     takes,
     cuts: clip.cuts.spans.map(span => ({ s: span.s, e: span.e })),
     annotations,
+    properties: clipProperties().map(property => ({
+      id: property.id,
+      label: property.label,
+      control: property.control,
+      value: property.value(clip.properties),
+    })),
   };
 }

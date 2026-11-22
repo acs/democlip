@@ -163,6 +163,29 @@ describe('setProperty', () => {
   });
 });
 
+describe('setClipProperty', () => {
+  it('changes what the clip says about itself, through the clip register', () => {
+    const clip = clipOf(10);
+    const result = editorOf(clip).setClipProperty('title', 'A demo');
+    expect(result).toEqual({ ok: true, value: 'A demo' });
+    expect(clip.properties.get('title')).toBe('A demo');
+  });
+
+  it('refuses a property the clip does not have, and leaves the clip alone', () => {
+    const clip = clipOf(10);
+    expect(editorOf(clip).setClipProperty('subtitle', 'x')).toMatchObject({ ok: false });
+    expect(clip.properties.toRecord()).toEqual({});
+  });
+
+  it('is the change the one undo takes back', () => {
+    const clip = clipOf(10);
+    const editor = editorOf(clip);
+    editor.setClipProperty('description', 'What it shows');
+    expect(editor.undo()).toEqual({ ok: true, change: 'property-changed' });
+    expect(clip.properties.get('description')).toBe('');
+  });
+});
+
 describe('remove and undo', () => {
   it('removes one and says what kind it was', () => {
     registerPlugin(stubKind);

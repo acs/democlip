@@ -56,11 +56,11 @@ const fraction = (description: string): unknown => ({
   description,
 });
 
-/** What the clip is: the length, the takes, the cuts, the annotations and their properties. */
+/** What the clip is: the length, the takes, the cuts, the annotations and the properties. */
 const describeClip: Tool = {
   name: 'describe_clip',
   description:
-    'Read the clip: its length in seconds, how much is left after the cuts, the takes, the cuts as fractions of the clip, and every annotation with its kind, its stretch and the properties it holds. Read-only; call it before deciding what to change.',
+    'Read the clip: its length in seconds, how much is left after the cuts, the takes, the cuts as fractions of the clip, every annotation with its kind, its stretch and the properties it holds, and what the clip says about itself — its title and its description. Read-only; call it before deciding what to change.',
   inputSchema: objectSchema(),
   run: session => callSurface(session, 'describe'),
 };
@@ -139,6 +139,18 @@ const setProperty: Tool = {
     value: { type: 'string', description: 'The new value' },
   }, ['id', 'property', 'value']),
   run: (session, args) => callSurface(session, 'edit.setProperty', args.id, args.property, args.value),
+};
+
+/** Change what the clip says about itself. */
+const setClipProperty: Tool = {
+  name: 'set_clip_property',
+  description:
+    'Change what the clip says about itself: `property` is "title" or "description", and `value` is the text. These are the clip\u2019s own properties, and publishing fills its fields from them — a YouTube video\u2019s title and description, a Bluesky post\u2019s text and its alt — so a clip is branded once and the branding goes out with it. One undo takes it back.',
+  inputSchema: objectSchema({
+    property: { type: 'string', enum: ['title', 'description'], description: 'Which of the clip\u2019s own properties' },
+    value: { type: 'string', description: 'The new text' },
+  }, ['property', 'value']),
+  run: (session, args) => callSurface(session, 'edit.setClipProperty', args.property, args.value),
 };
 
 /** Take a placed annotation away. */
@@ -305,6 +317,7 @@ export function toolList(): readonly Tool[] {
     annotate,
     addImage,
     setProperty,
+    setClipProperty,
     removeAnnotation,
     undo,
     seek,

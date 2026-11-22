@@ -10,6 +10,7 @@
 // client, which is the only place that knows what the destination said.
 
 import { el } from '../dom.js';
+import { session } from '../../session.js';
 import {
   signInToYouTube, signOutOfYouTube, uploadClip, youTubeAccount, youtubeConfigured,
   type YouTubeAccount, type YouTubeProgress, type YouTubeVideoLink,
@@ -75,6 +76,15 @@ class YouTubeDialog {
         ? 'Signed in as ' + account.channel
         : 'Signed in with Google — the clip goes to that account\'s channel';
     }
+    if (view === 'compose') this.prefill();
+  }
+
+  // The clip's own title and description — set once in the properties panel — fill the
+  // fields, so the branding goes out with the upload. Either may still be changed here,
+  // for this upload alone.
+  private prefill(): void {
+    el.ytTitle.value = session.clip.properties.get('title');
+    el.ytDescription.value = session.clip.properties.get('description');
   }
 
   private async signIn(): Promise<void> {

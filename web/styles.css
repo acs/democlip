@@ -128,6 +128,17 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 .rec-badge.on{opacity:1;}
 .rec-badge-dot{width:5px;height:5px;border-radius:50%;background:var(--crimson);animation:blink 1s infinite;}
 
+/* The clip's own settings, in the corner of the picture the clip is seen on — beside
+   the thing, as a picked annotation's settings control is drawn on it. In the
+   wordmark's orange, the app's own accent for the clip itself. Shown only in the
+   review, where nothing is recording and the REC badge's corner is free. */
+.clip-props{position:absolute;top:12px;right:12px;z-index:4;width:26px;height:26px;padding:0;border-radius:50%;border:1px solid rgba(255,108,35,.45);background:rgba(0,0,0,.5);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);color:var(--brand-orange);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:color .18s,background .18s,border-color .18s,transform .18s;}
+.clip-props:hover{background:rgba(255,108,35,.18);border-color:rgba(255,108,35,.7);transform:scale(1.06);}
+.clip-props:active{transform:scale(.94);}
+.clip-props svg{pointer-events:none;}
+[data-theme="light"] .clip-props{background:rgba(255,255,255,.72);}
+[data-theme="light"] .clip-props:hover{background:rgba(255,108,35,.16);}
+
 /* ── TIMELINE ── */
 .timeline{width:100%;max-width:1160px;flex-shrink:0;background:var(--surface-2);backdrop-filter:blur(20px);border:1px solid var(--glass-b);border-radius:12px;padding:11px 16px;margin-bottom:9px;opacity:0;transform:translateY(8px);transition:opacity .35s,transform .35s;pointer-events:none;}
 .timeline.on{opacity:1;transform:translateY(0);pointer-events:all;}
@@ -269,6 +280,12 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 .prop-swatch[aria-pressed="true"]{border-color:var(--text);}
 .prop-words{display:flex;align-items:center;gap:8px;}
 .prop-words-text{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:13px;color:var(--text);}
+/* The clip's own properties: a little wider than an annotation's panel, and its values
+   are typed rather than picked. */
+.prop-menu.clip{min-width:240px;max-width:320px;}
+.prop-input{width:100%;padding:7px 9px;border-radius:7px;border:1px solid var(--glass-b);background:var(--glass);color:var(--text);font-family:var(--font-ui);font-size:13px;outline:none;transition:border-color .15s;}
+.prop-input:focus{border-color:var(--glass-b2);}
+.prop-textarea{resize:vertical;min-height:56px;line-height:1.4;}
 .prop-edit{padding:5px 10px;border-radius:7px;border:1px solid var(--glass-b2);background:var(--glass);color:var(--text);font-family:var(--font-ui);font-size:12px;cursor:pointer;transition:background .15s;}
 .prop-edit:hover{background:var(--glass-b);}
 

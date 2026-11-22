@@ -35,4 +35,5 @@ export async function openReview(loadIndex: number, park: number): Promise<void>
   void strip.build().then(() => playback.seek(park));
   el.timeline.classList.add('on');
   el.btnExp.style.display = '';
+  el.propsBtn.style.display = '';
 }

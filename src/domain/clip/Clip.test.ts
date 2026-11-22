@@ -289,6 +289,66 @@ describe('Clip, annotations', () => {
   });
 });
 
+describe('Clip, what it says about itself', () => {
+  it('sets a property and reads it back, and says nothing changed for the same value again', () => {
+    const clip = clipOf(4);
+    const seen: ClipEvent[] = [];
+    clip.onChange(event => seen.push(event));
+
+    expect(clip.setProperty('title', 'A demo')).toBe(true);
+    expect(clip.properties.get('title')).toBe('A demo');
+    expect(clip.setProperty('title', 'A demo')).toBe(false);   // not a change
+
+    expect(seen).toEqual([
+      { type: 'property-changed', id: 'title', value: 'A demo', previous: '' },
+    ]);
+  });
+
+  it('takes a property change back with the one undo', () => {
+    const clip = clipOf(4);
+    clip.setProperty('title', 'A demo');
+    expect(clip.canUndo()).toBe(true);
+    expect(clip.pendingUndo()?.type).toBe('property-changed');
+    clip.undo();
+    expect(clip.properties.get('title')).toBe('');
+    expect(clip.canUndo()).toBe(false);
+  });
+
+  it('writes its properties down and reads them back', () => {
+    const clip = clipOf(4);
+    clip.setProperty('title', 'A demo');
+    clip.setProperty('description', 'What it shows');
+    const snap = clip.snapshot();
+    expect(snap.properties).toEqual({ title: 'A demo', description: 'What it shows' });
+
+    const back = Clip.empty(new FakeTakes());
+    back.restore(snap);
+    expect(back.properties.get('title')).toBe('A demo');
+    expect(back.snapshot()).toEqual(snap);
+  });
+
+  it('opens a clip written before properties existed, with none', () => {
+    const clip = Clip.empty(new FakeTakes());
+    clip.restore({ takes: [{ blob: new Blob(['x']), duration: 4 }], cuts: [] });
+    expect(clip.properties.toRecord()).toEqual({});
+  });
+
+  it('keeps a property across a new take: it is not a fraction of the clip', () => {
+    const clip = clipOf(10);
+    clip.setProperty('title', 'A demo');
+    clip.addTake(new Blob(['x']), 10);
+    expect(clip.properties.get('title')).toBe('A demo');
+  });
+
+  it('lets the properties go with the session', () => {
+    const clip = clipOf(4);
+    clip.setProperty('title', 'A demo');
+    clip.clear();
+    expect(clip.properties.toRecord()).toEqual({});
+    expect(clip.canUndo()).toBe(false);
+  });
+});
+
 describe('Clip, leaving as a file and coming back', () => {
   it('writes its annotations as a file of the kept stretches holds them', () => {
     const clip = clipOf(4, 4);                     // 8s

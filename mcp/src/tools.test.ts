@@ -15,6 +15,7 @@ describe('the tool list', () => {
       'annotate',
       'add_image',
       'set_property',
+      'set_clip_property',
       'remove_annotation',
       'undo',
       'seek',
@@ -66,6 +67,11 @@ describe('the tool list', () => {
     expect(byName.get('cut')!.inputSchema.required).toEqual(['from', 'to']);
     expect(byName.get('add_image')!.inputSchema.required).toEqual(['span']);
     expect(byName.get('set_property')!.inputSchema.required).toEqual(['id', 'property', 'value']);
+    // The clip's own properties are its own two, and no id: there is one clip.
+    expect(byName.get('set_clip_property')!.inputSchema).toMatchObject({
+      required: ['property', 'value'],
+      properties: { property: { enum: ['title', 'description'] } },
+    });
     expect(byName.get('seek')!.inputSchema.required).toEqual(['seconds']);
     for (const name of ['turn_source_on', 'turn_source_off']) {
       expect(byName.get(name)!.inputSchema.required).toEqual(['source']);

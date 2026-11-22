@@ -91,6 +91,8 @@ export const el = {
   fileInput: byId<HTMLInputElement>('file-input'),
   camMenu:   byId<HTMLElement>('cam-menu'),
   propMenu:  byId<HTMLElement>('prop-menu'),
+  propsBtn:  byId<HTMLButtonElement>('props-btn'),
+  clipPropMenu: byId<HTMLElement>('clip-prop-menu'),
   textEntry: byId<HTMLElement>('text-entry'),
   textEntryInput: byId<HTMLInputElement>('text-entry-input'),
   textEntryCancel: byId<HTMLButtonElement>('text-entry-cancel'),

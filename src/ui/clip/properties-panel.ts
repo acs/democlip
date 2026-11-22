@@ -1,0 +1,146 @@
+// The clip properties panel: the one surface that shows and edits what a clip says
+// about itself — its title, its description.
+//
+// It is the clip's answer to the annotation properties inspector, one level up, and it
+// opens the same way: a small **settings** control in the corner of the preview — the
+// picture the clip is seen on, so it sits beside the clip as an annotation's settings
+// control sits on the annotation, wearing the same three sliders — opens a popover
+// beside it. The panel names no property; it asks `clipProperties()` for the list and
+// draws one field per descriptor — a line for a title, a paragraph for a description —
+// and writes a change through `clip.setProperty`, so announcing, the one undo and
+// keeping the clip are the clip's and not this module's.
+//
+// It is a body-level popover placed beside the control, the way the annotation
+// inspector is placed beside its annotation. It owns its open state and its listeners;
+// nothing else calls into it but the control, which toggles it.
+//
+// A field is applied when it is left (or Enter is pressed), so a whole edit is one
+// change the undo takes back, and nothing is written while the words are still being
+// typed.
+
+import { session } from '../../session.js';
+import { el, toast } from '../dom.js';
+import { clipProperties, type ClipProperty } from './clip-properties.js';
+
+const GAP = 8;      // between the control and the panel
+const EDGE = 8;     // the least the panel may sit from a viewport edge
+
+interface Field {
+  property: ClipProperty;
+  input: HTMLInputElement | HTMLTextAreaElement;
+}
+
+class ClipPropertiesPanel {
+  private fields: Field[] = [];
+
+  get isOpen(): boolean {
+    return el.clipPropMenu.classList.contains('on');
+  }
+
+  /** Wire the control and the panel's own listeners. Called once, by the composition root. */
+  init(): void {
+    el.propsBtn.addEventListener('click', () => this.toggle());
+    document.addEventListener('click', this.onDocumentClick);
+    document.addEventListener('keydown', this.onKeyDown);
+    window.addEventListener('resize', () => this.close());
+  }
+
+  /** The settings control: open when closed, close when open. */
+  toggle(): void {
+    if (this.isOpen) this.close();
+    else this.open();
+  }
+
+  open(): void {
+    this.render();
+    el.clipPropMenu.classList.add('on');
+    el.propsBtn.setAttribute('aria-expanded', 'true');
+    this.place();
+    this.fields[0]?.input.focus();
+  }
+
+  /** Write whatever was typed but not yet left, and hide. */
+  close(): void {
+    if (!this.isOpen) return;
+    this.apply();
+    this.dismiss();
+  }
+
+  /**
+   * Hide without writing anything back — when the clip itself is gone, so the fields
+   * cannot put their old words onto a new, empty clip.
+   */
+  dismiss(): void {
+    el.clipPropMenu.classList.remove('on');
+    el.propsBtn.setAttribute('aria-expanded', 'false');
+    this.fields = [];
+  }
+
+  private readonly onDocumentClick = (event: MouseEvent): void => {
+    if (!this.isOpen) return;
+    // The event's own path, not `contains`: applying a change re-renders the panel, so a
+    // field's click can reach here after the element it started on is gone. A press on
+    // the control is the toggle's own business, and a press inside stays open.
+    const path = event.composedPath();
+    if (path.includes(el.propsBtn) || path.includes(el.clipPropMenu)) return;
+    this.close();
+  };
+
+  private readonly onKeyDown = (event: KeyboardEvent): void => {
+    if (event.key !== 'Escape' || !this.isOpen) return;
+    // Close the panel and nothing behind it: the picture's Escape (letting go of a pick)
+    // must not also fire for a key meant for this popover.
+    event.stopPropagation();
+    this.close();
+  };
+
+  /** Put the panel beside the control, above it when there is no room below. */
+  private place(): void {
+    const rect = el.propsBtn.getBoundingClientRect();
+    const width = el.clipPropMenu.offsetWidth;
+    const height = el.clipPropMenu.offsetHeight;
+    const x = Math.max(EDGE, Math.min(rect.left, window.innerWidth - width - EDGE));
+    const below = rect.bottom + GAP;
+    const y = below + height > window.innerHeight - EDGE ? Math.max(EDGE, rect.top - height - GAP) : below;
+    el.clipPropMenu.style.left = `${Math.round(x)}px`;
+    el.clipPropMenu.style.top = `${Math.round(y)}px`;
+  }
+
+  private render(): void {
+    this.fields = [];
+    el.clipPropMenu.replaceChildren(...clipProperties().map(property => this.row(property)));
+  }
+
+  private row(property: ClipProperty): HTMLElement {
+    const host = document.createElement('div');
+    host.className = 'prop-row';
+    const name = document.createElement('span');
+    name.className = 'prop-name';
+    name.textContent = property.label;
+
+    const input = property.control === 'text'
+      ? document.createElement('input')
+      : document.createElement('textarea');
+    input.className = property.control === 'text' ? 'prop-input' : 'prop-input prop-textarea';
+    input.value = property.value(session.clip.properties);
+    if (input instanceof HTMLTextAreaElement) input.rows = 3;
+    input.addEventListener('change', () => this.applyOne(property, input));
+
+    host.append(name, input);
+    this.fields.push({ property, input });
+    return host;
+  }
+
+  /** Apply one field through the clip: it announces, the one undo holds it, and it is kept. */
+  private applyOne(property: ClipProperty, input: HTMLInputElement | HTMLTextAreaElement): void {
+    const next = property.with(session.clip.properties, input.value);
+    if (!next) { toast(`${property.label} not changed — that value is not allowed`); return; }
+    session.clip.setProperty(property.id, next.get(property.id));
+  }
+
+  private apply(): void {
+    for (const { property, input } of this.fields) this.applyOne(property, input);
+  }
+}
+
+export const clipPropertiesPanel = new ClipPropertiesPanel();
