@@ -47,7 +47,7 @@ jobs:
       # screenshots and traces appear in it exactly when a check fails (the config
       # keeps them only on failure). The retention cap keeps a long-lived branch
       # from piling runs up.
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: playwright-artifacts
