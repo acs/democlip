@@ -2,12 +2,13 @@
 // about itself — its title, its description.
 //
 // It is the clip's answer to the annotation properties inspector, one level up, and it
-// opens the same way: a small **settings** control in the timeline header — the three
-// sliders a picked annotation's settings control wears — opens a popover beside it. The
-// panel names no property; it asks `clipProperties()` for the list and draws one field
-// per descriptor — a line for a title, a paragraph for a description — and writes a
-// change through `clip.setProperty`, so announcing, the one undo and keeping the clip
-// are the clip's and not this module's.
+// opens the same way: a small **settings** control in the corner of the preview — the
+// picture the clip is seen on, so it sits beside the clip as an annotation's settings
+// control sits on the annotation, wearing the same three sliders — opens a popover
+// beside it. The panel names no property; it asks `clipProperties()` for the list and
+// draws one field per descriptor — a line for a title, a paragraph for a description —
+// and writes a change through `clip.setProperty`, so announcing, the one undo and
+// keeping the clip are the clip's and not this module's.
 //
 // It is a body-level popover placed beside the control, the way the annotation
 // inspector is placed beside its annotation. It owns its open state and its listeners;

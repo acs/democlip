@@ -104,6 +104,13 @@
     <div class="corner tl"></div><div class="corner tr"></div>
     <div class="corner bl"></div><div class="corner br"></div>
 
+    <!-- The clip's own settings, in the corner of the picture the clip is seen on — the
+         clip's answer to the settings control a picked annotation wears, in the same
+         place beside the same slide mark. -->
+    <button class="clip-props" id="props-btn" type="button" style="display:none" aria-haspopup="dialog" aria-expanded="false" aria-label="Clip properties" title="What the clip says about itself — its title and description, used when publishing">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><line x1="3" y1="7" x2="21" y2="7"/><circle cx="9" cy="7" r="2.4" fill="currentColor" stroke="none"/><line x1="3" y1="12" x2="21" y2="12"/><circle cx="15" cy="12" r="2.4" fill="currentColor" stroke="none"/><line x1="3" y1="17" x2="21" y2="17"/><circle cx="8" cy="17" r="2.4" fill="currentColor" stroke="none"/></svg>
+    </button>
+
     <div class="rec-badge" id="rec-badge">
       <div class="rec-badge-dot"></div>
       <span>REC</span>
@@ -187,11 +194,6 @@
           <span class="tl-dur">·</span>
           <span class="tl-dur"><span id="t-clip">0.00s</span></span>
         </div>
-        <!-- The clip's own settings: the same three-sliders mark a picked annotation's
-             settings control wears, opening a popover of what the clip says about itself. -->
-        <button class="tl-act" id="props-btn" type="button" style="display:none" aria-haspopup="dialog" aria-expanded="false" aria-label="Clip properties" title="What the clip says about itself — its title and description, used when publishing">
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><line x1="3" y1="7" x2="21" y2="7"/><circle cx="9" cy="7" r="2.4" fill="currentColor" stroke="none"/><line x1="3" y1="12" x2="21" y2="12"/><circle cx="15" cy="12" r="2.4" fill="currentColor" stroke="none"/><line x1="3" y1="17" x2="21" y2="17"/><circle cx="8" cy="17" r="2.4" fill="currentColor" stroke="none"/></svg>
-        </button>
       </div>
       <span class="tl-est"><span class="tl-est-lbl">Est. </span><span id="t-size">—</span></span>
     </div>
@@ -241,7 +243,7 @@
         <div class="help-num">4</div>
         <div class="help-step-body">
           <div class="help-step-title">Export and publish</div>
-          <div class="help-step-desc">Give the clip a <strong>title</strong> and a <strong>description</strong> from the <strong>settings control</strong> in the timeline header (the three sliders beside the clip's length) — what it says about itself, and what publishing fills its fields from. Then hit Export to choose where the clip goes: a <strong>WebM</strong> or <strong>MP4</strong> file to download, <strong>Bluesky</strong> to publish it as a video post (sign in with your handle first), or <strong>YouTube</strong> to upload it to your own channel (sign in with Google). Either file is encoded faster than real time — the timeline counts down how much is left, and the preview shows the frames as they are written, so you can watch it happen without waiting for it.</div>
+          <div class="help-step-desc">Give the clip a <strong>title</strong> and a <strong>description</strong> from the <strong>settings control</strong> in the corner of the preview (the three sliders over the picture) — what it says about itself, and what publishing fills its fields from. Then hit Export to choose where the clip goes: a <strong>WebM</strong> or <strong>MP4</strong> file to download, <strong>Bluesky</strong> to publish it as a video post (sign in with your handle first), or <strong>YouTube</strong> to upload it to your own channel (sign in with Google). Either file is encoded faster than real time — the timeline counts down how much is left, and the preview shows the frames as they are written, so you can watch it happen without waiting for it.</div>
         </div>
       </div>
       <div class="help-step">

@@ -119,7 +119,7 @@ dialog, for that one publish.
 | word | what it is | in the code |
 |---|---|---|
 | **clip property** | something about the clip the user can change after it is made — its title, its description. The app declares it: a label, which shared control edits it, and how to read and write the value on the clip. The value lives with the clip | `ClipProperty`, `registerClipProperty()` (`ui/clip/clip-properties.ts`); the value in `ClipProperties` (`src/domain/clip/ClipProperties.ts`) |
-| **clip properties panel** | the one shared surface that shows and edits the clip's properties — a field per property, whatever it is. Opened from a **settings** control in the timeline header (the same three-sliders mark a picked annotation's settings control wears); it names no property, it asks the register. The clip's answer to the **properties inspector**, one level up | `ui/clip/properties-panel.ts` |
+| **clip properties panel** | the one shared surface that shows and edits the clip's properties — a field per property, whatever it is. Opened from a **settings** control in the corner of the preview (the picture the clip is seen on, so it sits beside the clip as an annotation's settings control sits on it — the same three-sliders mark); it names no property, it asks the register. The clip's answer to the **properties inspector**, one level up | `ui/clip/properties-panel.ts` |
 
 A clip property is **not a fraction of the clip and is not scaled when the clip grows**,
 where a cut and an annotation are. It changes through the clip, is announced like every
