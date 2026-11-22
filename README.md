@@ -53,7 +53,7 @@ The headline capabilities; the **[full list is in FEATURES.md](FEATURES.md)**.
 4. Press Record again to add another take to the end of the clip — the timeline then holds every take, and the cuts you already made are kept — or press **Import** to bring a **WebM or MP4** file already on your machine in as a take beside them
 5. The timeline holds a playback control and an audio track
 6. Play it back (**P** or ▶), or click anywhere on the timeline to bring the playhead there — it holds the frame rather than playing, so you can find the exact moment. To cut a section out, click where it starts and where it ends, then press the **scissors** (or click inside the shaded section): it leaves the timeline and the rest closes up. To point at a detail instead, press the **arrow** on the section and drag across the preview — the arrow is shown over that stretch in playback and in the export — or press the **image** beside it to put a picture over the stretch (choose a file, paste one, or drop one on the preview) and drag its corners to resize it (hold **Shift** to stretch it freely), or press the **text** button to type a line, which grows and shrinks as you drag a corner. Click an annotation on the picture to move, aim or resize it, click its mark on the timeline lane to jump to it, copy it and paste a new one at the playhead (**⌘/Ctrl+C**, **⌘/Ctrl+V**), or delete it by pressing **Delete** with it picked, or by tapping the **×** that appears on it (and the **copy** beside it puts another like it on the picture). The **undo** on the section drops the selection, and the **undo** in the header brings back whatever you last did, a cut or an annotation. Marks and the selected section can be dragged to reposition them, with the frame under them following, or nudged a frame at a time with **←** / **→** (hold **Shift** for a second)
-7. Press **Export ▾** and pick where the clip goes — a **WebM** file (small and sharp), an **MP4** file (plays anywhere), **Bluesky** to publish it as a video post, or **YouTube** to upload it to your own channel. The encode runs offline, over the clip with its cuts taken out, roughly ten times faster than the clip, and the timeline counts down how much is left to write. **WebM for editing** is the one for a clip that is coming back: it writes the picture **alone**, with a `.json` **sidecar** beside it holding the annotations, and **Import** takes the video and the sidecar together, so the clip returns from whatever worked on it with its annotations whole
+7. Give the clip a **title** and a **description** with **Properties** — what it says about itself, kept with the clip and read back after a reload — then press **Export ▾** and pick where the clip goes — a **WebM** file (small and sharp), an **MP4** file (plays anywhere), **Bluesky** to publish it as a video post, or **YouTube** to upload it to your own channel. Publishing fills its fields from those properties — a video's title and description, a post's text and its alt — and you can still change them for one publish. The encode runs offline, over the clip with its cuts taken out, roughly ten times faster than the clip, and the timeline counts down how much is left to write. **WebM for editing** is the one for a clip that is coming back: it writes the picture **alone**, with a `.json` **sidecar** beside it holding the annotations, and **Import** takes the video and the sidecar together, so the clip returns from whatever worked on it with its annotations whole
 
 ---
 
@@ -124,7 +124,8 @@ democlip/
 │   ├── globals.d.ts      # Ambient types (prefixed AudioContext, captureStream)
 │   ├── vite-env.d.ts     # Vite client types
 │   ├── domain/clip/      # Pure logic — no DOM, no browser APIs; a test beside every rule
-│   │   ├── Clip.ts         # The aggregate: the takes, the cuts, the annotations
+│   │   ├── Clip.ts         # The aggregate: the takes, the cuts, the annotations, what it says
+│   │   ├── ClipProperties.ts # What a clip says about itself: its title, its description
 │   │   ├── Take.ts         # One press of Record: id, blob, url, duration
 │   │   ├── TakeRepository.ts # The port the clip takes its takes from
 │   │   ├── TakeFile.ts     # Which files may be imported: WebM or MP4, what the export reads back
@@ -199,6 +200,8 @@ democlip/
 │       │   └── live-timeline.ts # The strip and the levels while a take records (LiveTimeline)
 │       ├── clip/           # The clip and its review
 │       │   ├── clip.ts       # The joined clip, played as one timeline (Player)
+│       │   ├── properties-panel.ts # What the clip says about itself, shown and edited
+│       │   ├── clip-properties.ts  # The register: which clip properties the app offers
 │       │   ├── playback.ts   # Playback on the preview, skipping the cuts (Playback)
 │       │   ├── timeline-ui.ts # Time labels, size estimate, the thumbnail strip (Strip)
 │       │   ├── thumbnail.ts  # The shape of a strip cell: a frame at the picture's own aspect
@@ -240,8 +243,8 @@ democlip/
 │       │   └── view-lifetime.ts # The view's answer to clip.cleared: every view resets itself
 │       └── agent/          # The automation surface an agent drives — published only when asked
 │           ├── surface.ts    # The operations, the gate, and the clip as data
-│           ├── describe.ts   # The clip described: length, takes, cuts, annotations, properties
-│           ├── edit.ts       # cut, annotate, set a property, remove, undo — each the app's own
+│           ├── describe.ts   # The clip described: length, takes, cuts, annotations, its properties
+│           ├── edit.ts       # cut, annotate, set a property — on an annotation or the clip — remove, undo
 │           ├── make.ts       # Making an annotation of a kind from data: an arrow, a text, an image's rect and picture
 │           ├── view.ts       # The transport: seek, play, pause
 │           ├── takes.ts      # The sources and the takes, through the app's own flow
