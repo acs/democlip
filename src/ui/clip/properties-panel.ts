@@ -22,6 +22,7 @@
 import { session } from '../../session.js';
 import { el, toast } from '../dom.js';
 import { clipProperties, type ClipProperty } from './clip-properties.js';
+import type { Controlling } from '../profile/control.js';
 
 const GAP = 8;      // between the control and the panel
 const EDGE = 8;     // the least the panel may sit from a viewport edge
@@ -33,13 +34,15 @@ interface Field {
 
 class ClipPropertiesPanel {
   private fields: Field[] = [];
+  private controlling: Controlling = () => null;
 
   get isOpen(): boolean {
     return el.clipPropMenu.classList.contains('on');
   }
 
   /** Wire the control and the panel's own listeners. Called once, by the composition root. */
-  init(): void {
+  init(controlling: Controlling = () => null): void {
+    this.controlling = controlling;
     el.propsBtn.addEventListener('click', () => this.toggle());
     document.addEventListener('click', this.onDocumentClick);
     document.addEventListener('keydown', this.onKeyDown);
@@ -120,13 +123,23 @@ class ClipPropertiesPanel {
     name.className = 'prop-name';
     name.textContent = property.label;
 
-    // A property the app shows but the person does not set — the clip size — is its
-    // value and nothing to type into.
-    if (property.readOnly) {
+    // A property the app shows but the person does not set — the clip size — is its value and
+    // nothing to type into. So is one a **profile** fixes: its value, and whose it is, so the
+    // row says why it will not move.
+    const fixedBy = this.controlling(property.id);
+    if (property.readOnly || fixedBy) {
       const value = document.createElement('span');
       value.className = 'prop-value';
-      value.textContent = property.value(session.clip.properties, session.clip) || '—';
+      // A switch is shown as what it means rather than as the string it is kept as.
+      const shown = property.value(session.clip.properties, session.clip);
+      value.textContent = property.control === 'toggle' ? (shown === 'true' ? 'On' : 'Off') : (shown || '—');
       host.append(name, value);
+      if (fixedBy) {
+        const note = document.createElement('span');
+        note.className = 'prop-note';
+        note.textContent = `set by ${fixedBy}`;
+        host.append(note);
+      }
       return host;
     }
 

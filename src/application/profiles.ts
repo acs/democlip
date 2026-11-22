@@ -72,12 +72,17 @@ export class ManageProfiles {
     return this.commit(next, { id });
   }
 
-  /** Change one of a profile's settings. The active profile is fixed while capturing. */
-  setSetting(id: string, property: string, value: string): ProfileResult<{ value: string }> {
+  /**
+   * Put one item under a profile's control, fixed at `value` — or take it out of the
+   * profile's control with `null`, so the person has it again. The **active** profile is
+   * frozen while the session has begun to capture, so its declarations cannot move under a
+   * clip that is already being made; another profile's can.
+   */
+  declare(id: string, property: string, value: string | null): ProfileResult<{ property: string; value: string | null }> {
     if (this.deps.capturing() && id === this.book.activeId) return { ok: false, reason: LOCKED };
-    const next = this.book.setSetting(id, property, value);
+    const next = this.book.declare(id, property, value);
     if (!next) return { ok: false, reason: `there is no profile called ${id}` };
-    return this.commit(next, { value });
+    return this.commit(next, { property, value });
   }
 
   /** Rename one of the person's own profiles. The active one is fixed while capturing. */

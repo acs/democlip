@@ -1,10 +1,11 @@
 # Phase 1 — Data Model: Configuration Profiles
 
-Two new domain types, one new application use case, one port and its adapter, one field
-added to `Session`, and one flag added to the clip-property descriptor. Nothing about the
-clip's own data changes.
+Two domain types, one use case, one port and its adapter, one field added to `Session`, and
+one method added to `Clip`. Nothing about the clip's own data changes — but the *direction* of
+the feature does: a profile is not a set of defaults, it is the app's configuration, and what
+it declares is locked.
 
-## 1. `Profile` — a named set of settings
+## 1. `Profile` — a named set of declarations
 
 `src/domain/profile/Profile.ts`
 
@@ -12,58 +13,63 @@ clip's own data changes.
 |---|---|---|
 | `id` | `string` | stable identity, handed in by the caller; what a choice and the store key on |
 | `name` | `string` | what the person calls it; **non-empty**, trimmed |
-| `values` | `Readonly<Record<string, string>>` | the settings, keyed by clip-property id; an absent key means **unset** |
+| `controls` | `Readonly<Record<string, string>>` | the declaration: **a key present means the profile controls that item**, and the value is what it is fixed at. A value may be `''` — a switch fixed **off** |
 
 **Rules**
 
-- `Profile.create(id, name, values?)` returns `null` for an id that is not a non-empty
-  string or a name that is empty after trimming; otherwise it returns the profile.
-- `valueFor(id)` answers the setting or `null` (**unset**), which is distinct from `''`.
-- `with(id, value)` sets one setting; `''` clears it. It does not validate the id — the
-  application decides which ids are applied (R1).
-- `renamed(name)` answers a profile with the new name, or `null` for an empty name.
-- `stored()` / `Profile.restore(stored)` write and read the plain shape; `restore` keeps
-  only named string values and drops an empty value, so **`''` and "absent" are one state**
-  (the rule `ClipProperties.of` follows), and answers `null` when the id and name are not
-  valid.
+- `Profile.create(id, name, controls?)` returns `null` for an id that is not a non-empty string
+  or a name that is empty after trimming.
+- `declares(id)` — does the profile control it? `valueFor(id)` — the value, or `null` when it
+  does **not** control it. **`''` and `null` are different states**, which is the one place this
+  type differs from `ClipProperties`: a switch fixed off is declared, and empty is what it is
+  fixed at.
+- `declare(id, value)` puts an item under the profile's control (value may be `''`);
+  `free(id)` lets it go, so it is the person's again. Two methods, not one, because
+  `declare(id, '')` and `free(id)` must not be confusable.
+- `renamed(name)` answers a profile with the new name, or `null` for an empty one.
+- `stored()` / `Profile.restore(stored)` write and read the plain shape; `restore` keeps only
+  named string values — **keeping a declared empty value** — and answers `null` when the id and
+  name are not valid.
 
-**Invariants**: `name.trim() !== ''`; `id !== ''`; `values` holds only `string → string`.
+**Invariants**: `name.trim() !== ''`; `id !== ''`; a value is a string, possibly empty.
 
-## 2. `Profiles` — the book: the list and the one active
+## 2. `Profiles` — the book: the list, the one active, and what is controlled
 
 `src/domain/profile/Profiles.ts`
 
 | Field | Type | Meaning |
 |---|---|---|
-| `all` | `readonly Profile[]` | every profile, in a stable order (the built-in default first) |
-| `activeId` | `string` | the id of the one active profile; always names a profile in `all` |
+| `all` | `readonly Profile[]` | every profile, the built-in default first |
+| `activeId` | `string` | the one active profile; always names a profile in `all` |
 
-**Rules (each a method returning a new `Profiles` or `null`)**
+**Rules (each a method answering a new `Profiles`, or `null`)**
 
-| Method | Rule | On refusal |
-|---|---|---|
-| `starting()` | the built-in default alone, active | — |
-| `of(stored)` | read back untrusted state: drop invalid entries, ensure the built-in default, move `activeId` to a profile that exists (the default when none does) | returns `starting()` for a record it cannot use |
-| `get(id)` / `has(id)` | look one up | `null` / `false` |
-| `choose(id)` | the active profile becomes `id` | `null` when no such profile |
-| `add(profile)` | append a profile (id unique) | `null` when the id is already present |
-| `rename(id, name)` | the profile's name changes | `null` when no such profile, an empty name, or the id is the built-in default |
-| `remove(id)` | the profile goes; if it was active, the active moves to **the built-in default** | `null` when no such profile or the id is the built-in default |
-| `stored()` | the plain shape for the store | — |
+| Method | Rule |
+|---|---|
+| `starting()` | the built-in default alone, active, controlling nothing |
+| `of(stored)` | read untrusted state: drop invalid entries, replace any entry claiming the default's id with the app's own default, move a dangling `activeId` to the default; `starting()` for a record it cannot use |
+| `active()` | the profile in force |
+| `controlling(id)` | **the rule the whole feature turns on**: the active profile when it declares `id`, else `null` — the single answer the properties panel and the automation surface both read |
+| `choose(id)` | the active profile becomes `id`; `null` when no such profile |
+| `add(profile)` | append; `null` when the id is taken |
+| `declare(id, property, value \| null)` | put an item under a profile's control at `value`, or hand it back with `null`; `null` for an unknown profile |
+| `rename(id, name)` | `null` for no such profile, an empty name, or the built-in default |
+| `remove(id)` | drops it; the active moves to the built-in default; `null` for no such profile or the default |
+| `stored()` | the plain shape |
 
 **Invariants**
 
-- the built-in default profile (`id = 'default'`, name `Default`, no settings) is always in
+- the built-in default (`id = 'default'`, name `Default`, **controls nothing**) is always in
   `all`, and is never renamed or removed;
-- `all` is never empty, and `activeId` always names one of `all` (FR-002, FR-010, FR-017);
-- `add`, `choose`, `rename`, `remove` never mutate the receiver — they answer a new book.
+- `all` is never empty and `activeId` always names one of `all`;
+- every transition answers a **new** book and leaves the receiver unchanged.
 
 ## 3. The stored shape (the port's data)
 
-`src/domain/profile/Profiles.ts` (the types), `src/application/ports/ProfileStorePort.ts` (the port)
+`src/domain/profile/Profiles.ts` (the types) · `src/application/ports/ProfileStorePort.ts` (the port)
 
 ```ts
-export interface StoredProfile { id: string; name: string; values: Record<string, string>; }
+export interface StoredProfile { id: string; name: string; controls: Record<string, string>; }
 export interface StoredProfiles { version: number; activeId: string; profiles: StoredProfile[]; }
 
 export interface ProfileStorePort {
@@ -72,109 +78,126 @@ export interface ProfileStorePort {
 }
 ```
 
-- `version` lets a later shape be told apart; this build writes `1` and reads `1`, and any
-  other version reads as unusable state (`null`) rather than a guess.
+- `version` is **2** in this build (`controls` replaced an earlier `values`, whose shape meant
+  defaults rather than declarations); any other version reads as unusable state, so a record
+  from the earlier shape cannot be taken for this one.
 - The port names no storage; `src/infra/profile-store.ts` implements it on `localStorage`.
 
 ## 4. `ManageProfiles` — the use case
 
 `src/application/profiles.ts`
 
-```ts
-export interface ProfileDeps {
-  readonly store: ProfileStorePort;
-  /** Has the session begun to capture? The app hands in the session's own answer. */
-  readonly capturing: () => boolean;
-  /** A fresh id for a new profile: the caller's random source, not the domain's. */
-  readonly newId: () => string;
-  readonly warn?: (error: unknown) => void;
-}
-```
-
 | Operation | Rule | Outcome |
 |---|---|---|
-| `load()` | read the store, `Profiles.of` it (or `starting()`); keep it as the current book | the current `Profiles` |
-| `choose(id)` | refused while `capturing()`; otherwise `Profiles.choose` | `Result` — `{ ok: true, active }` or `{ ok: false, reason }` |
+| `load()` | read the store, `Profiles.of` it (or `starting()`) | the current `Profiles` |
+| `choose(id)` | refused while `capturing()`; otherwise `Profiles.choose` | `Result` |
 | `create(name)` | allowed while capturing, but the active profile does **not** move | `Result<{ id }>` |
-| `rename(id, name)` | refused while capturing **and** `id` is the active profile; otherwise delegated | `Result` |
-| `remove(id)` | refused while capturing **and** `id` is the active profile; otherwise delegated | `Result<{ activeId }>` |
+| `declare(id, property, value \| null)` | refused while capturing **and** `id` is the active profile — a profile must not move under a clip being made; otherwise delegated | `Result<{ property, value }>` |
+| `rename(id, name)` | refused while capturing **and** `id` is the active profile | `Result` |
+| `remove(id)` | refused while capturing **and** `id` is the active profile | `Result<{ activeId }>` |
 
-**Rules**
+- every successful change is written through the port; a failed write is reported through
+  `warn` and does not undo the in-memory change;
+- the reasons are plain sentences, e.g. `A profile is fixed once recording has started — press
+  New to start another session.`;
+- the use case imports no view, DOM or `session`: `capturing`, `newId` and the store are handed
+  in by the composition root.
 
-- every successful change is written through the port (`save`); a failed write is reported
-  through `warn` and does not undo the in-memory change (the person sees their change, as
-  they do for a clip that failed to keep);
-- the reasons are plain sentences in the app's words, e.g. `A profile is fixed once
-  recording has started.` and `The default profile cannot be removed.`;
-- the use case never imports the view, the DOM or `session` — `capturing` and `newId` are
-  handed in (the composition root passes `() => session.hasCaptured || !session.clip.takes.isEmpty()`
-  and `() => crypto.randomUUID()`).
+## 5. `Session` — the capture latch (unchanged)
 
-## 5. `Session` — the capture latch
+`hasCaptured` / `beginCapture()` / `end()` clears it. The lock the use case reads is
+`session.hasCaptured || !session.clip.takes.isEmpty()`, handed in as `capturing`.
 
-`src/domain/session/Session.ts` (one field and three members added)
+## 6. `Clip` — one method, for applying what a profile fixes
 
-| Member | Meaning |
-|---|---|
-| `hasCaptured` | `true` once a take has actually begun in this session, and false again after `end()` |
-| `beginCapture()` | marks the session as having begun to capture; idempotent |
-| `end()` | clears the clip **and** clears `hasCaptured` (the existing end-of-session event) |
+`src/domain/clip/Clip.ts`
 
-**Invariant**: `hasCaptured` is set by a *started* take, so a recording begun and then
-discarded still counts (spec edge case); it is never set by a restored clip, which the
-lock's second term (`!clip.takes.isEmpty()`) covers instead.
+```ts
+/** Fix a property to a value a profile controls: announced, and not what the one undo takes back. */
+applyProperty(id: string, value: string): boolean;
+```
 
-## 6. `ClipProperty` — the one flag
+- **announced**, so every view follows it — the pattern the clip already uses for a load
+  (`addTake` and `carry` announce and are not undoable);
+- **not recorded as the last change**, so the one undo still takes back the person's own last
+  change and can never put back a value the profile is holding;
+- answers `false` when the clip already holds the value.
+
+## 7. `ClipProperty` — the item seam
 
 `src/ui/clip/clip-properties.ts`
 
-- `ClipProperty` gains `readonly seedable?: boolean` — *this clip property is one a profile
-  may preload*.
-- `addToExport` sets `seedable: true`; `title`, `description` and the read-only `size` do
-  not.
-- A helper `seedableClipProperties(): readonly ClipProperty[]` returns the flagged ones,
-  which is the whole of what seeding walks. A later iteration flags `title`/`description`
-  to carry them with no change to `Profile`, `Profiles` or the use case.
+- `seedable?: boolean` marks an item a profile **may control**. `addToExport` carries it;
+  `title`, `description` and the read-only `size` do not.
+- `seedableClipProperties()` is the whole of what a config sheet offers and what applying
+  walks, so a declaration for an item this build does not know is ignored.
 
-## 7. How the pieces relate
+## 8. The `Controlling` seam — the one rule, asked once
 
-```text
-localStorage ──(ProfileStorePort)──> ManageProfiles ──owns──> Profiles ──has──> Profile*  (one active)
-                                          │
-                     capturing() ─────────┤  (the session's latch + the clip's takes)
-                                          │
-      active().valueFor(id) ──(seedableClipProperties)──> Clip.setProperty ──> clip.properties
-                                                                                    │
-                                          the panel, the timeline and the export read it, as today
+`src/ui/profile/control.ts` (DOM-free, proved in node)
+
+```ts
+export type Controlling = (propertyId: string) => string | null;   // the profile's name, or null
+export function controllingIn(book: () => Profiles): Controlling;
 ```
 
-- **A profile never reads or writes a `Clip`.** The use case holds `Profiles`; the view's
-  `seed.ts` reads the active profile and writes the clip through the clip's own
-  `setProperty` (R5).
-- **A clip never names a profile.** Once seeded, the value lives with the clip; the profile
-  is not stored in the clip, the snapshot or an export.
+Handed to `clipPropertiesPanel.init(controlling)` and `createEditor(clip, make, controlling)`.
+`describeClip(clip, controlling)` uses it too, so an agent is told the same thing the person
+sees: a controlled item is **read-only**.
+
+## 9. The two surfaces (the view)
+
+| Surface | Where | What it does |
+|---|---|---|
+| the selector | `src/ui/profile/profile-menu.ts` · `#profile-menu` | rows of avatar/name/tick, and — on the person's own profiles — the sliders mark, the pencil and the bin. **Never** shows or sets configuration |
+| the config sheet | `src/ui/profile/profile-def.ts` · `#profile-def-bd` | one row per item a profile may control: a segmented **Free / On / Off** for a switch, or a **Free** switch and a field for anything else. A modal, in the family of the text-entry dialog |
+
+`profileRows(book, locked)` and `defineRows(profile, { active, locked })` in
+`src/ui/profile/profile-rows.ts` are the DOM-free row models both draw from, so what a check
+reads is what the app draws.
+
+## 10. How the pieces relate
+
+```text
+localStorage ─(ProfileStorePort)─> ManageProfiles ─owns─> Profiles ─has─> Profile*  (one active)
+                                        │                                └─ controls: { item → value }
+                    capturing() ────────┤
+                                        │
+   active().valueFor(item) ──(seedableClipProperties)──> Clip.applyProperty ──> clip.properties
+                                                                                   │
+                          Profiles.controlling(item) ──(Controlling)──> the panel shows it as a value
+                                                                      the surface refuses it, naming the profile
+```
+
+- **A profile never reads a `Clip`**; the view's `applyActiveProfile` reads the active profile and
+  writes the clip. **A clip never names a profile**: once applied, the value lives with the clip
+  and the panel's *reason* comes from the `Controlling` seam.
+- A declaration for an item this build does not know lives in the profile, is never applied, and
+  is never offered in a sheet.
 
 ## State transitions
 
-**The active profile** (`Profiles.choose`, when the session is unlocked)
+**What a profile controls** (`ManageProfiles.declare`)
 
 ```text
-DemoClipTV (active) ──choose(GraditoneTV)──> GraditoneTV (active)     allowed: not capturing
-DemoClipTV (active) ──choose(GraditoneTV)──> refused (unchanged)       capturing: hasCaptured or the clip holds a take
+Free ──declare(item, 'true')──> controlled: on ──declare(item, '')──> controlled: off ──declare(item, null)──> Free
 ```
 
-**A session's lock** (`Session`)
+**A session's lock** (`Session` + the clip)
 
 ```text
-new session          locked = false            choose/create-as-active allowed; seed runs
-beginCapture()       locked = true             choose refused; create does not switch; active rename/remove refused
-end() (New)          locked = false            seed runs again for the fresh clip
-restored at load     locked = true             the clip's takes are there; active is the same profile
+new session        locked = false   choose/create allowed; the active profile's sheet is editable
+beginCapture()     locked = true    choose refused; create does not switch; the *active* profile is frozen
+                                    (another profile may still be defined, renamed, removed)
+end() (New)        locked = false   what the active profile declares is applied to the fresh clip
+restored at load   locked = true    the clip's takes are there; the same profile is still active
 ```
 
-**Removing the active profile** (`Profiles.remove`, unlocked)
+**Applying what a profile declares** (`applyActiveProfile`, on an empty clip)
 
 ```text
-remove(activeId) ──> the built-in default becomes active     the app is never left with none
-remove(default)  ──> refused
+choose / New / define-while-unlocked
+        └─> for each item the active profile declares and this build knows:
+                 clip.applyProperty(item, value)      announced, not undoable
+            an item it does not declare: left exactly as it is — the person's
 ```

@@ -123,6 +123,28 @@ under `e2e/`.
 
 ---
 
+## Phase 7: Rework — a profile fixes, it does not default (after the clarification)
+
+**Purpose**: the user corrected the model after looking at the first cut (research.md R11): a
+DemoClip profile is the app's configuration, not a user profile, so what it declares is applied
+**and not the person's to change**; a profile that declares nothing is free; and its definition
+is its own surface, never the selector. Every task below was done in the rework.
+
+- [x] T036 Turn `Profile` from defaults into **declarations**: `controls` (a key present is a declaration), `declares`, `valueFor` returning `''` for a fixed-off item, and `declare`/`free` as two methods (data-model.md `Profile.controls`).
+- [x] T037 Bump the stored shape to `version: 2` and read any other version as unusable, so the earlier `values` shape cannot be taken for this one (data-model.md `StoredProfiles.version`).
+- [x] T038 Add `Profiles.controlling(id)` — the active profile when it declares an item — and `Profiles.declare(id, property, value | null)` (data-model.md §2).
+- [x] T039 Add `Clip.applyProperty(id, value)`: announced, so every view follows, and deliberately **not** what the one undo takes back (data-model.md §6).
+- [x] T040 Rename the seeding to `applyActiveProfile` in `src/ui/profile/apply.ts` and have a controlled value **win** over what the clip held, on an empty clip only (data-model.md §5).
+- [x] T041 Add the `Controlling` seam in `src/ui/profile/control.ts`, and draw a controlled row in `src/ui/clip/properties-panel.ts` as a value plus the profile's name, with no control (contracts/profile.md §6).
+- [x] T042 Refuse a controlled item in `src/ui/agent/edit.ts` naming the profile, and report it `readOnly` in `src/ui/agent/describe.ts` (contracts/profile.md §6).
+- [x] T043 Take the configuration out of the selector and add the sliders mark that opens a profile's own sheet: `src/ui/profile/profile-menu.ts`, `src/ui/profile/profile-def.ts`, `web/index.html`, `web/styles.css` (contracts/profile.md §7).
+- [x] T044 Replace `ManageProfiles.setSetting` with `declare(id, property, value | null)`, refusing the **active** profile while capturing and reporting a failed save (data-model.md §4).
+- [x] T045 Rewrite the tests: `Profile.test.ts`, `Profiles.test.ts`, `profiles.test.ts`, `profile-store.test.ts`, `apply.test.ts`, `profile-menu.test.ts`, and a `Clip.applyProperty` block in `Clip.test.ts`.
+- [x] T046 Rewrite `e2e/checks/profiles.spec.ts`: a controlled item applied and shown as fixed, an agent refused with the reason, a free item the person's, the sheet defining a profile, a switch fixed off, the refusal once capturing, and the reload and fallback.
+- [x] T047 Correct the documents that describe the old direction: `spec.md`, `data-model.md`, `contracts/profile.md`, `research.md` R11, `GLOSSARY.md`, `FEATURES.md` and the help panel.
+
+---
+
 ## Dependencies & Execution Order
 
 ### Phase Dependencies

@@ -13,7 +13,7 @@
 import { Profile, type StoredProfile } from './Profile.js';
 
 /** The shape this build writes and reads; another version is not guessed at. */
-export const PROFILES_FORMAT = 1;
+export const PROFILES_FORMAT = 2;
 
 export interface StoredProfiles {
   version: number;
@@ -67,6 +67,16 @@ export class Profiles {
     return this.get(this.activeId) ?? this.all[0]!;
   }
 
+  /**
+   * The active profile when it controls this item, or null when the item is the person's —
+   * which is what makes an item the person cannot change, in the one place both the panel
+   * and the automation surface ask.
+   */
+  controlling(id: string): Profile | null {
+    const active = this.active();
+    return active.declares(id) ? active : null;
+  }
+
   has(id: string): boolean {
     return this.all.some(profile => profile.id === id);
   }
@@ -96,11 +106,15 @@ export class Profiles {
     return new Profiles(this.all.map(profile => (profile.id === id ? renamed : profile)), this.activeId);
   }
 
-  /** Change one of a profile's settings, or null when there is no such profile. */
-  setSetting(id: string, property: string, value: string): Profiles | null {
+  /**
+   * Put one item under this profile's control, fixed at `value` — or take it out of the
+   * profile's control with `null`, so the person has it again. null also answers an unknown
+   * profile.
+   */
+  declare(id: string, property: string, value: string | null): Profiles | null {
     const current = this.get(id);
     if (!current) return null;
-    const changed = current.with(property, value);
+    const changed = value === null ? current.free(property) : current.declare(property, value);
     return new Profiles(this.all.map(profile => (profile.id === id ? changed : profile)), this.activeId);
   }
 

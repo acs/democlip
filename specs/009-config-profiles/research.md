@@ -1,6 +1,13 @@
 # Phase 0 — Research: Configuration Profiles
 
-Every decision below is settled; there are no open `NEEDS CLARIFICATION` items. Each one
+Every decision below is settled; there are no open `NEEDS CLARIFICATION` items.
+
+> **The model was corrected after the first cut — read R11 first.** R1, R3, R5 and R8 describe
+> the first design, in which a profile was a set of *defaults* it preloaded onto a clip, edited
+> through a switch inside the selector. The user's correction replaced that: a profile **fixes**
+> what it declares and the person cannot change it, a profile that declares nothing is free, and
+> its definition is its own surface. R11 says what changed and why; where the two disagree, R11
+> is the design. Each one
 names what was chosen, why, and what else was considered.
 
 ## R1 — What a profile carries, and the seam for more later
@@ -233,3 +240,48 @@ older version" edge case) and must never end up with no profile or no active one
 
 **Alternatives considered**: *throw and reset everything* — rejected, it would discard a
 person's profiles for one bad entry; the app repairs what it can instead.
+
+## R11 — The model, corrected: a profile fixes, it does not default *(2026-11-22, after the first cut)*
+
+**Decision**: a profile holds **declarations**, not defaults. It says which items it **controls**,
+and the value each is fixed at; while it is active those items are applied to the clip and are
+**not the person's to change**. An item no profile controls is the person's exactly as before, so a
+profile that declares nothing is a **free** profile — and the built-in **Default** is that profile.
+A profile's configuration is set in **its own sheet** (the sliders mark on its row), never in the
+selector; a controlled item reads in the clip's settings as **a value naming the profile**, with
+no control; and applying it is a **load**, announced but not what the one undo takes back.
+
+**Rationale** (the user's own words): *"In a Profile … it is defined the config that is defined at
+Profile level, and that will be applied to DemoClip. And this config can not be changed by the
+user. So if `add_to_export` is under profile control, the user can not change it. If you want a
+free profile in which you can change anything, you don't define in the profile any config. If you
+define a config (a property for example) in the profile, it can not be changed!"* Their Graditone
+profiles are **user** profiles, where changing things while in one stores them there; this app's
+profiles are **DemoClip config**, where what a profile declares is a guardrail. The earlier
+"preload a default" design let the clip's own value win, which made the profile advisory and
+therefore pointless for the thing it exists to prevent.
+
+**What this changed, in one place each**
+
+| The first design | Now |
+|---|---|
+| a profile's `values` were defaults; `''` meant unset | `controls`: **a key present is a declaration**, and `''` is a legitimate value — a switch fixed **off**. Told apart in `Profile`, which is the one type where that matters |
+| the profile seeded a new clip; the clip's value then won | `applyActiveProfile` **fixes** an item onto an empty clip and the controlled value wins |
+| a change went through `Clip.setProperty` (undoable) | `Clip.applyProperty`: announced, **not** the undo's business — otherwise undo could put back a value the profile holds |
+| the selector carried a switch per profile | the selector carries **no** configuration; a profile's own sheet does |
+| the properties panel drew a normal control | a controlled item is drawn as **a value naming the profile**, and the panel and the automation surface refuse it through one shared `Controlling` seam |
+| `Profile.with(id, '')` cleared | `declare(id, value)` and `free(id)`, two methods, so "fixed off" cannot be mistaken for "let go" |
+| stored shape version 1 (`values`) | version **2** (`controls`), so a record in the old shape cannot be read as this one |
+
+**Alternatives considered**
+
+- *Read the profile's value through, without writing it on the clip.* Rejected: the export, the
+  snapshot and the publish all read the clip's own properties, so every one of them would have had
+  to learn about profiles. Writing it on the clip keeps one value in one place.
+- *Keep the value *and* the reason on the clip.* Rejected: the clip would then name a profile,
+  which is exactly the coupling `Clip` is kept clear of; the reason comes from the `Controlling`
+  seam instead.
+- *Let the person define the built-in default.* Rejected: it is the app's free profile and the
+  guaranteed fallback, and defining it would leave the app with no profile that controls nothing.
+- *Expose choosing and defining to an agent.* Out of scope, as the spec says; the agent is only
+  told the truth about a controlled item.

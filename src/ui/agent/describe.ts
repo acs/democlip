@@ -12,9 +12,10 @@
 import type { Clip } from '../../domain/clip/Clip.js';
 import { propertiesOf } from '../annotating/annotation-plugin.js';
 import { clipProperties } from '../clip/clip-properties.js';
+import type { Controlling } from '../profile/control.js';
 import type { AnnotationSummary, ClipDescription, TakeSummary } from './surface.js';
 
-export function describeClip(clip: Clip): ClipDescription {
+export function describeClip(clip: Clip, controlling: Controlling = () => null): ClipDescription {
   const takes: TakeSummary[] = [];
   for (let index = 0; index < clip.takes.count(); index++) {
     const take = clip.takes.at(index);
@@ -44,7 +45,9 @@ export function describeClip(clip: Clip): ClipDescription {
       label: property.label,
       control: property.control,
       value: property.value(clip.properties, clip),
-      readOnly: !!property.readOnly,
+      // Read-only for a derived property, and for one a profile fixes: either way it is not
+      // the person's to set, which is what an agent is told here.
+      readOnly: !!property.readOnly || controlling(property.id) !== null,
     })),
   };
 }

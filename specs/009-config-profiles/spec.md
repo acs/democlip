@@ -12,172 +12,174 @@
 
 ### Session 2026-11-22
 
-- Q: Does a profile **preload** the value of a clip property, or **fix** it while that profile is active? → A: **Preload.** The profile supplies the value a new clip starts with, and the person may still change it on the clip; changing the clip does not change the profile.
-- Q: When may the profile be changed, and what happens to a session already underway? → A: **The profile is fixed once the session has begun to capture.** Before a session has taken or begun to take a recording, the person may switch profiles freely, and the chosen one governs the clip about to be made. From the moment capture begins in the session, the active profile is fixed: choosing another is refused, plainly said, until the session ends — at **New**, when the clip is exported, or when the share ends. A session restored after a reload comes back fixed to the same profile.
-- Q: Is there always at least one profile, and does this iteration include renaming and deleting the profiles the person made? → A: **A built-in default that always exists, and yes to renaming and removing.** The app ships a default profile that cannot be removed and falls back to it when the active profile is removed; the person's own profiles can be renamed and removed.
+- Q: Does a profile **preload** the value of a clip property, or **fix** it while that profile is active? → A: **Fix it.** A profile is not a set of defaults; it is the app's configuration, and what it fixes is **not the person's to change** while it is active.
+- Q: When may the profile be changed, and what happens to a session already underway? → A: **The profile is fixed once the session has begun to capture.** Before that, the person may switch freely, and the chosen one is applied. From the moment capture begins, another cannot be chosen, plainly said, until the session ends — at **New**, when the clip is exported, or when the share ends. A session restored after a reload comes back fixed to the same profile.
+- Q: Is there always at least one profile, and does this iteration include renaming and removing the profiles the person made? → A: **A built-in default that always exists, and yes to renaming and removing.** It falls back to the default when the active profile is removed; the person's own profiles can be renamed and removed.
+- Q: Is a profile a set of *defaults* the person can then override, and is that how a profile is defined? → A: **Neither.** The user's own words: "In a Profile … it is defined the config that is defined at Profile level, and that will be applied to DemoClip. And this config can not be changed by the user. So if `add_to_export` is under profile control, the user can not change it. If you want a free profile in which you can change anything, you don't define in the profile any config. If you define a config (a property for example) in the profile, it can not be changed!" A profile **declares which items it controls** and at what; an item it declares is applied and locked, an item it does not declare is free.
+- Q: Where is a profile's config defined, and how does a controlled item read? → A: **In the profile's own surface**, opened from the profile's row — never on the selector itself, which only lists, selects, creates, renames and removes. And a controlled item is **shown as a value, naming the profile** ("set by DemoClipTV"), with no control to change it.
 
 ## User Scenarios & Testing *(mandatory)*
 
-### User Story 1 - A new clip already carries the profile's settings (Priority: P1)
+### User Story 1 - A profile fixes what it controls, and the person cannot change it (Priority: P1)
 
-A person works under a named profile — say **DemoClipTV** — that carries a preset
-for a clip property: **Add to export** is on. When they start a new clip, that
-property is already on, so a clip made under DemoClipTV opens every export with its
-title card without anyone remembering to switch it on. They can still change the
-property on the clip itself, and doing so does not change the profile.
+A person works under **DemoClipTV**, a profile that declares one thing: **Add to export** is
+on. Every clip made under it opens its export with the title card — and the setting is not
+theirs to move while that profile is active: the clip's settings show it as a value with the
+profile's name beside it, and nothing to press. A profile that declares nothing is a **free**
+profile: everything is the person's, exactly as it was before there were profiles at all. The
+app's own **Default** is that profile, and it is always there.
 
-**Why this priority**: This is the whole point of a profile — the settings a person
-always wants, applied without being set every time. Without it, a profile is only a
-name in a list.
+**Why this priority**: This is the whole point of a profile here — a guardrail, not a
+default. A setting the person can override is a setting they must remember to set; a setting
+a profile fixes is one they cannot get wrong.
 
-**Independent Test**: Create a profile that turns **Add to export** on, make it the
-active profile, and start a new clip. The clip's **Add to export** is already on, and
-exporting the clip writes the title card without the person touching the setting.
+**Independent Test**: Store a profile that controls **Add to export** on, load the app, and
+open the clip's settings: the row shows the value and the profile's name, with no control.
+Export the clip: the file opens with the title card. With the built-in **Default** active,
+the same row is an ordinary switch that the person can move.
 
 **Acceptance Scenarios**:
 
-1. **Given** a profile whose **Add to export** is on, **When** the person starts a new clip while that profile is active, **Then** the new clip's **Add to export** is on.
-2. **Given** a clip started under that profile, **When** the person exports it, **Then** the export opens with the title card without the setting being switched on by hand.
-3. **Given** a clip started under that profile, **When** the person turns **Add to export** off on the clip, **Then** the clip exports without the card and the profile is unchanged.
-4. **Given** a profile whose **Add to export** is off (or a clip started with no profile), **When** the person starts a new clip, **Then** **Add to export** is off, as the app behaves today.
+1. **Given** a profile that controls **Add to export** as on, **When** a clip is made under it, **Then** the clip's settings show the row as a value naming the profile, with no control.
+2. **Given** the same clip, **When** the person exports it, **Then** the file opens with the title card.
+3. **Given** the built-in **Default** active, **When** the person opens the clip's settings, **Then** **Add to export** is an ordinary switch, and moving it works exactly as it always did.
+4. **Given** a profile that controls **Add to export** as **off**, **When** a clip is made under it, **Then** the row is a value naming the profile and fixed off — which is not the same as leaving it free, where the person could turn it on.
+5. **Given** any clip whose setting is controlled, **When** an agent asks the app to change it, **Then** the app refuses and says which profile fixes it.
 
 ---
 
-### User Story 2 - Choose a profile, or make a new one, from the toolbar (Priority: P2)
+### User Story 2 - Choose a profile, and define what it controls (Priority: P2)
 
-A person has more than one way of working — DemoClipTV for one channel, GraditoneTV
-for another — and each carries its own settings. A pill at the right-hand end of the
+A person has more than one way of working — DemoClipTV for one channel, GraditoneTV for
+another — and each carries its own configuration. A pill at the right-hand end of the
 toolbar, wearing the active profile's first letters, opens the list of profiles with the
-active one marked; while the session has yet to take a recording, choosing another makes
-it the active profile at once. From the same place the person creates a new profile by
-giving it a name, sets up what it carries, renames it or removes it. Once capture has
-begun in that session the profile is fixed, and another cannot be chosen until the
-session ends.
+active one marked; choosing another applies it at once. A profile's own configuration is
+**not** shown or set in that list: the person's own profiles carry a sliders mark that opens
+the profile's config sheet, where each item it may control is set to **Free**, **On** or
+**Off** — or, for an item with a value, to Free or a value.
 
-**Why this priority**: Choosing and creating profiles is how a person moves between
-the ways of working. It is what makes the profiles in the first story reachable.
+**Why this priority**: Choosing profiles and saying what each fixes is how the guardrails in
+the first story are set up and used.
 
-**Independent Test**: Press the profile icon in the toolbar, choose a different
-profile, and start a clip — the clip carries the newly chosen profile's settings.
-Then create a new profile and confirm it appears in the list and can be made active.
-Begin recording and confirm the profile can no longer be changed until the session
-ends.
+**Independent Test**: Press the pill, create **DemoClipTV**, open its sliders mark, fix **Add
+to export** to **On**, choose the profile, and make a clip — the clip shows the item as fixed
+by DemoClipTV. The list itself shows no configuration at any point.
 
 **Acceptance Scenarios**:
 
-1. **Given** the app is open, **When** the person looks at the toolbar, **Then** a profile icon sits at the right-most position of the toolbar.
-2. **Given** the profile icon is pressed, **When** the list opens, **Then** every profile is shown, and the active one is marked.
-3. **Given** a session that has not yet begun to capture, **When** the person chooses another profile, **Then** it becomes the active profile and the list shows it marked.
-4. **Given** the list is open, **When** the person creates a profile with a name, **Then** the new profile joins the list and can be made active.
+1. **Given** the app is open, **When** the person looks at the toolbar, **Then** a pill sits at the right-most position, wearing the active profile's first letters.
+2. **Given** the pill is pressed, **When** the list opens, **Then** every profile is shown with the active one marked, and nothing about what any profile controls.
+3. **Given** a profile the person made, **When** its sliders mark is pressed, **Then** its config sheet opens, with one row per item a profile may control, each set Free, On or Off.
+4. **Given** the config sheet, **When** the person sets an item and closes it, **Then** the profile controls that item, and a clip made under it shows the value as fixed.
 5. **Given** a session that has begun to capture, **When** the person opens the list and tries to choose another profile, **Then** the choice is refused, plainly said, and the active profile is unchanged.
-6. **Given** a profile is created, **When** the person presses elsewhere or chooses Done, **Then** the list closes and the app is usable as before.
 
 ---
 
 ### User Story 3 - Profiles outlive the app and are the person's to keep (Priority: P3)
 
-The profiles a person makes are kept: a reload, an update or reopening the app finds
-them again, with the active one still active and its settings whole. The app ships
-with a default profile so there is always one to work under; the profiles the person
-made can be renamed and removed, and the built-in default cannot.
+The profiles a person makes are kept: a reload, an update or reopening the app finds them
+again, with what each controls whole and the active one still active. The app ships a default
+that controls nothing and cannot be renamed or removed; the profiles the person made can be
+renamed and removed, and removing the active one falls back to the default — where every item
+is theirs again.
 
-**Why this priority**: A profile a person has to recreate after every reload is not
-worth setting up. Keeping them, and being able to tidy them up, is what makes them
-usable over time — but it comes after the profiles are reachable at all.
+**Why this priority**: A profile that has to be redefined after every reload is not worth
+setting up; and the app must never be left without a profile to work under.
 
-**Independent Test**: Create a profile, set its **Add to export**, close and reopen
-the app, and confirm the profile is there, is active, and its setting is whole.
-Rename it, then remove it, and confirm the app still has a profile to fall back on.
+**Independent Test**: Create a profile, fix **Add to export** on, choose it, close and reopen
+the app, and confirm the profile is there, active, and still fixing the item. Rename it, then
+remove it, and confirm the app falls back to **Default** and the item is the person's again.
 
 **Acceptance Scenarios**:
 
-1. **Given** a profile the person made, **When** the page is reloaded or the app is reopened, **Then** the profile is there with the same name and settings, and the active profile is the same one.
-2. **Given** the app is opened for the first time, **When** the person looks for a profile, **Then** a built-in default profile is active, so the app works as it does today with no profile set up.
-3. **Given** a profile the person made, **When** they rename it, **Then** the new name is shown wherever the profile is and the settings are unchanged.
-4. **Given** a profile the person made, **When** they remove it and it was the active one, **Then** the app falls back to a profile that still exists, and the app is usable as before.
-5. **Given** the built-in default profile, **When** the person tries to remove it, **Then** the app refuses, so no state is reached with no profile at all.
+1. **Given** a profile the person made, **When** the page is reloaded, **Then** the profile, what it controls and the active choice all come back.
+2. **Given** the app opened for the first time, **When** the person looks for a profile, **Then** a built-in **Default** is active, it controls nothing, and the app behaves exactly as it does today.
+3. **Given** a profile the person made, **When** they rename it, **Then** the new name is shown wherever the profile is, and what it controls is unchanged.
+4. **Given** a profile the person made, **When** they remove it and it was the active one, **Then** the app falls back to **Default** and stays usable.
+5. **Given** the built-in **Default**, **When** the person tries to rename or remove it, **Then** the app refuses, so no state is reached with no profile at all — and it offers no config sheet, because its whole point is that it controls nothing.
+6. **Given** a profile whose item was applied to an empty clip, **When** the profile is removed, **Then** the value it applied stays on the clip and is the person's to change from then on.
 
 ---
 
 ### Edge Cases
 
-- **A first run, before any profile has been made**: the built-in default profile is active, so a clip behaves exactly as it does today.
-- **Creating a profile with a blank name**: refused; a profile must have a name, said plainly, and nothing is added.
-- **Two profiles with the same name**: allowed — each profile is its own entry, and the active one is marked — but the name alone does not tell them apart, so each entry shows its own settings.
-- **A profile whose setting is not set at all**: the app's own default for that property stands; a profile only ever says what it means to say.
-- **Switching profile before a session has captured**: allowed; the chosen profile governs the clip about to be made.
-- **Choosing another profile once capture has begun in the session**: refused, plainly said; the active profile is unchanged and stays fixed for the rest of the session.
-- **A recording begun and then stopped with nothing kept**: the session has begun to capture, so the profile stays fixed until the session ends.
-- **The session ends (New, an export, or the share ending)**: the head is lifted — a profile may be chosen again for the next session.
-- **A session restored after a reload**: it comes back fixed to the profile it was under, and the list shows it active.
-- **Switching profile while an export is running**: an export only happens after capture, so the profile is already fixed; the export uses the values it started with.
-- **Removing the profile that is active**: the app moves to another profile that exists (the built-in default), rather than being left with none.
-- **The kept profiles cannot be read back** (storage refused or full): the app still opens, using the built-in default, and says the profiles could not be kept rather than losing the clip in front of the person.
-- **The person never opens the profile list**: the app behaves as it always has, under the built-in default.
-- **A profile made in a newer version, read by an older one**: a setting the older version does not know is ignored, and the rest of the profile still applies.
-- **An agent driving the app**: profiles are not offered to an agent in this iteration, so an agent's clip is made under whatever profile is active, exactly as a person's would be.
+- **A first run, before any profile has been made**: the built-in **Default** is active, controls nothing, so a clip behaves exactly as it does today.
+- **Creating a profile with a blank name**: refused; nothing is added.
+- **Two profiles with the same name**: allowed — each is its own entry — but a name alone does not tell them apart, so each shows its own pill.
+- **An item a profile controls is applied to a clip that already holds a different value**: the profile's value wins, which is what applying means.
+- **A clip that already holds a take**: its items are not re-applied — it is a clip being made, and a profile may not be chosen once capture has begun anyway.
+- **A declaration for an item this build does not know**: kept in the profile and never applied, so a profile written by a later version still reads.
+- **Switching profile while a clip is in the middle of being edited**: cannot happen — choosing is refused once the session has begun to capture; before that the clip is empty.
+- **Removing the profile that is active**: the app moves to the built-in **Default**, and the items it had applied stay on the clip as the person's own.
+- **The kept profiles cannot be read back** (storage refused, full, or a record from another version): the app still opens, under the built-in **Default**, and says the profiles could not be kept.
+- **The person never opens the profile list**: the app behaves as it always has.
+- **An agent driving the app**: it is offered the same answer as the person — a controlled item is reported read-only and refused with the profile's name — and it has no way to define or choose a profile in this iteration.
 
 ## Requirements *(mandatory)*
 
 ### Functional Requirements
 
-- **FR-001**: A **profile** MUST be a named set of DemoClip configuration values that the person can work under; it MUST be persisted so that it outlives a page reload and the closing and reopening of the app.
+- **FR-001**: A **profile** MUST be a named set of the app's configuration — which items it controls, and the value each is fixed at — persisted so that it outlives a page reload and the closing and reopening of the app.
 - **FR-002**: The app MUST have exactly one **active profile** at any time, and MUST work under it.
-- **FR-003**: The active profile MUST **preload** the value of the clip property **Add to export** for a clip started while it is active: the clip starts with that value and the person may still change it on the clip.
-- **FR-004**: Changing a clip property on a clip MUST NOT change any profile.
-- **FR-005**: A profile control MUST be shown in the toolbar, at its right-most position, wearing the active profile's first letters (Dem for DemoClipTV), so what the clip is about to be made under is readable without opening anything.
-- **FR-006**: Pressing the profile icon MUST open the list of profiles, showing every profile and marking the active one.
-- **FR-007**: While the session has not begun to capture, choosing a profile from the list MUST make it the active profile at once.
-- **FR-008**: The person MUST be able to create a new profile by giving it a name; the new profile MUST join the list and be selectable as the active profile.
+- **FR-003**: An item the active profile **declares** MUST be applied to the clip and MUST **not be the person's to change** while that profile is active: it is shown as a value naming the profile, with no control, and the app's other surfaces refuse to change it.
+- **FR-004**: An item the active profile does **not** declare MUST be left entirely to the person: nothing about its behaviour changes from an app with no profiles.
+- **FR-005**: A profile control MUST be shown in the toolbar, at its right-most position, wearing the active profile's first letters (Dem for DemoClipTV), so what a clip is about to be made under is readable without opening anything.
+- **FR-006**: Pressing the profile control MUST open the list of profiles, showing every profile and marking the active one, and showing **nothing** about what any profile controls.
+- **FR-007**: While the session has not begun to capture, choosing a profile from the list MUST make it the active profile at once, and MUST apply what it declares.
+- **FR-008**: The person MUST be able to create a new profile by giving it a name; the new profile MUST join the list, MUST control nothing at first, and MUST be selectable as the active profile.
 - **FR-009**: A profile MUST have a non-empty name; creating one with a blank name MUST be refused and said plainly.
-- **FR-010**: At least one profile MUST always exist: the app MUST ship a built-in default profile that cannot be removed, so no state is reached in which the app has no profile to work under.
-- **FR-011**: The active profile and every profile's settings MUST survive a reload and reopening the app.
-- **FR-012**: Switching profile MUST NOT change the profile's settings, and MUST NOT change any profile but the active one.
-- **FR-013**: From the moment a session begins to capture, its active profile MUST be fixed: choosing another profile MUST be refused, plainly said, until the session ends. The session ends at **New**, when the clip is exported, or when the share ends.
-- **FR-014**: A profile that does not set a value for a clip property MUST leave the app's own default for it standing.
-- **FR-015**: The settings a profile carries in this iteration are limited to the clip property **Add to export**; the app MUST be able to carry further settings in a later iteration without a person's existing profiles being lost.
-- **FR-016**: The profiles the person made MUST be renameable and removable; the built-in default profile MUST NOT be removable.
+- **FR-010**: At least one profile MUST always exist: the app MUST ship a built-in **Default** that controls nothing and cannot be renamed or removed, so no state is reached in which the app has no profile, or in which an item is controlled that the person cannot undo by letting the profile go.
+- **FR-011**: The active profile, every profile's declarations and the active choice MUST survive a reload and reopening the app.
+- **FR-012**: A profile's configuration MUST be defined in the **profile's own surface**, opened from that profile's row, and MUST NOT be defined or shown in the list of profiles.
+- **FR-013**: From the moment a session begins to capture, its active profile MUST be fixed: choosing another MUST be refused, plainly said, until the session ends. The session ends at **New**, when the clip is exported, or when the share ends. The active profile's own declarations MUST also be frozen then, so nothing moves under a clip already being made; another profile's MAY still be defined, renamed and removed.
+- **FR-014**: Applying a profile's item to a clip MUST NOT be what the app's one undo takes back: the undo takes back the person's own last change, and never puts back a value a profile is holding.
+- **FR-015**: The items a profile may control in this iteration are limited to the clip property **Add to export**; the app MUST be able to offer further items in a later iteration without a person's existing profiles being lost.
+- **FR-016**: The profiles the person made MUST be renameable and removable; the built-in **Default** MUST NOT be renamed, removed or given a config surface.
 - **FR-017**: Removing the active profile MUST leave the app under another profile that exists, never under none.
-- **FR-018**: When the profiles cannot be read back, the app MUST still open, work under the built-in default, and say that the profiles could not be kept.
+- **FR-018**: When the profiles cannot be read back, the app MUST still open, work under the built-in **Default**, and say that the profiles could not be kept.
 - **FR-019**: Working under a profile MUST leave every other part of the app — recording, cutting, annotating, exporting, publishing — exactly as it is today.
-- **FR-020**: Profiles MUST be the app's own configuration, kept outside the clip: the clip's one undo MUST NOT reach a profile change, and a profile MUST NOT be written into an exported file, a sidecar or a publish. Whether an agent may choose and create profiles is out of scope for this iteration.
-- **FR-021**: A session MUST remember the profile it is under, so a session restored after a reload comes back fixed to the same profile and the list shows it active.
+- **FR-020**: Profiles MUST be the app's own configuration, kept outside the clip: they MUST NOT be written into an exported file, a sidecar or a publish, and the built-in **Default** MUST NOT be definable. Whether an agent may choose or define profiles is out of scope for this iteration.
+- **FR-021**: A session MUST remember the profile it is under, so a session restored after a reload comes back fixed to the same profile and the control shows it active.
 - **FR-022**: Creating a profile while a session has begun to capture MUST NOT change that session's active profile; the new profile joins the list and may be chosen once the session ends.
+- **FR-023**: A profile's declaration for an item this build does not know MUST be kept and MUST NOT be applied, so a profile written by a later version reads and one written earlier still opens.
 
 ### Key Entities
 
-- **Profile**: a named set of DemoClip configuration values the person works under — for example **DemoClipTV** or **GraditoneTV**. Its name is what the person calls it; its settings are what it applies. It is kept outside any clip, so it outlives the clip, the page and the app session.
-- **Active profile**: the one profile the app is working under. There is exactly one at any time; what a new clip is given comes from it.
-- **Clip property "Add to export"**: the clip property, already in the app, that asks the export for a title card. In this iteration it is the one setting a profile carries. It lives with the clip; the profile only says what a new clip should start with.
-- **Session**: one sitting of the app — the clip and the sources. It is bound to the profile it began under, and that binding is fixed from the moment it begins to capture; it is over at **New**, when the clip is exported, or when the share ends, and a profile may then be chosen again.
-- **Built-in default profile**: the profile the app always has, so a person who has set up nothing still works as today. It is the profile the app falls back to when the active one is removed.
+- **Profile**: a named set of the app's configuration a person works under — for example **DemoClipTV** or **GraditoneTV**. It holds **declarations**: which items it controls, and the value each is fixed at. It is kept outside any clip, so it outlives the clip, the page and the session. A profile that declares nothing is a **free** profile.
+- **Active profile**: the one profile the app is working under. There is exactly one at any time, and what it declares is in force while it is active.
+- **Controlled item**: an item the active profile declares. It is applied to the clip and is not the person's to change: the clip's settings show its value and name the profile, and the app's other surfaces refuse it. An item no profile declares is the person's, exactly as before profiles existed.
+- **Declaration**: what a profile says about one item — that it controls it, and the value it is fixed at. An item may legitimately be fixed at an empty value (a switch fixed **off**), which is why "declared" and "empty" are told apart here and not in the clip's own properties.
+- **Built-in default profile**: the profile the app always has and falls back to, so an app with nothing set up behaves as it always did. It declares nothing, is never renamed or removed, and has no config surface.
 
 ## Success Criteria *(mandatory)*
 
 ### Measurable Outcomes
 
-- **SC-001**: A person can go from a clip's title card being off to it being on for every new clip by setting it once in a profile — zero times per clip thereafter.
-- **SC-002**: Choosing a profile takes at most one press of the toolbar icon and one press of the profile — two presses from anywhere in the app.
-- **SC-003**: 100% of the profiles a person created are still present, with their settings whole, after a reload and after closing and reopening the app.
-- **SC-004**: 100% of new clips started under a profile carry that profile's **Add to export** value.
-- **SC-005**: Changing a clip's own settings never changes a profile, in 100% of cases.
-- **SC-006**: The app is usable in 100% of cases with no profile set up by the person — the built-in default stands.
+- **SC-001**: A person can make **Add to export** impossible to get wrong for a way of working by fixing it once in a profile — the setting is applied to every clip made under that profile, with nothing to press.
+- **SC-002**: Choosing a profile takes at most one press of the pill and one press of the profile — two presses from anywhere in the app.
+- **SC-003**: 100% of the profiles a person created, and what each controls, are still present after a reload and after closing and reopening the app.
+- **SC-004**: 100% of clips made under a profile that controls **Add to export** either take the title card or do not, exactly as the profile fixes it, with no input from the person.
+- **SC-005**: An item a profile controls cannot be changed by the person or by an agent, in 100% of cases, and the refusal names the profile.
+- **SC-006**: The app is usable in 100% of cases with no profile set up — the built-in **Default** stands.
 - **SC-007**: No sequence of removing profiles leaves the app without a profile to work under.
 - **SC-008**: A person who never opens the profile list sees the app behave exactly as it does today.
 - **SC-009**: The profile control is at the right-most position of the toolbar, wearing the active profile's first letters, and the list is opened in one press from anywhere in the app.
 - **SC-010**: Once a session has begun to capture, no attempt to change its profile succeeds, in 100% of cases, and the person is told why.
 - **SC-011**: A session restored after a reload comes back under the same profile, in 100% of cases.
+- **SC-012**: The list of profiles never shows or sets what a profile controls, in 100% of cases; a profile's configuration is reachable only from that profile's own sheet.
+- **SC-013**: Letting a profile go leaves the app usable and the item the person's again, in 100% of cases, with whatever value it last applied still on the clip.
 
 ## Assumptions
 
-- Answered in clarification (2026-11-22): a profile **preloads** a clip property's value for a new clip and the person may still change it on the clip; the profile is **fixed for a session from the moment it begins to capture**, and choosing another is refused until the session ends; the app ships a **built-in default profile** that cannot be removed, and the profiles the person made can be renamed and removed.
-- A session "begins to capture" when it starts recording a take or brings a take in by **import** — the moment the session stops being empty. Before that it may be switched freely; after that it is fixed.
-- The session already outlives a reload in the app; the profile it is under is part of what comes back, so a restored session is still fixed to the same profile.
-- Profiles are the person's own machine-wide settings for the app, not a part of a clip: they survive the end of a session and a new clip, and they are not saved into an exported file, a sidecar or a publish.
-- Profiles are local to this browser/app on this machine; syncing a profile between devices or people is out of scope for this iteration.
-- The profile carries exactly one setting in this iteration — the clip property **Add to export** — and is built so later settings (default arrow colours, whether a title and description are required to export, whether a logo must be present) can be added without losing what exists. Those later settings are explicitly out of scope now.
-- The profile applies to what a clip **starts** with; it does not police an export. Whether a profile may one day **require** something (for example, refuse an export with no title) is left to a later iteration.
-- The app already has clip properties with one shared control and one shared panel; the profile reuses those, and the **Add to export** setting needs no new kind of value.
-- The word **profile** is written into `GLOSSARY.md` before it appears in code, as the project's rule requires, since it is a new concept.
-- The profile icon is a toolbar affordance like the theme and help buttons already there, and follows the app's existing toolbar and menu behaviour; it needs no new pattern.
-- An agent is not offered the profiles in this iteration; if they are offered later, they go through the app's own operations like everything else, and no separate automation path is assumed.
+- Answered in clarification (2026-11-22): a profile **fixes** what it declares and the person cannot change it; the profile is **fixed for a session from the moment it begins to capture**; the app ships a **built-in default** that declares nothing and cannot be removed; a profile is **defined in its own surface**, never on the selector; and a controlled item reads as a **value naming the profile**.
+- A session "begins to capture" when it starts recording a take or brings a take in by **import** — the moment the session stops being empty. Before that a profile may be chosen freely; after that it is fixed.
+- The session already outlives a reload in the app; the profile it is under is part of what comes back.
+- Profiles are the person's own settings for the app on this machine, not a part of a clip: they survive the end of a session and a new clip, and they are not saved into an exported file, a sidecar or a publish. Syncing a profile between devices or people is out of scope.
+- A profile carries exactly one configurable item in this iteration — the clip property **Add to export** — and is built so later items (default arrow colours, whether a title and description are required to export, whether a logo must be present) can be added without losing what exists. Those later items are explicitly out of scope now.
+- Applying a profile's item is a **load**, not the person's edit: it is announced so every view follows it, and it is not what the one **undo** takes back.
+- A clip that came back after a reload keeps the values it holds. Because a profile may not be chosen once capture has begun, and its own declarations are frozen then, a controlled item cannot fall out of step with the clip in any ordinary path.
+- The built-in **Default** is the app's free profile, so it has no config surface: a person who wants a freer profile makes a new one and leaves it controlling nothing.
+- The app already has clip properties with one shared control and one shared panel; a controlled item reuses the **read-only** shape the clip's own size already uses, so the panel needs no new kind of row.
+- The word **profile** is written into `GLOSSARY.md` before it appears in code, as the project's rule requires.
+- The profile control is a toolbar pill in the header's icon-button family, and its sheet is a modal in the family of the app's text-entry dialog.
+- An agent is not offered the profiles in this iteration; if they are offered later, they go through the app's own operations like everything else.

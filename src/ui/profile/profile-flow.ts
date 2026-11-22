@@ -1,19 +1,21 @@
 // The profile flow: the profiles use case composed with the app.
 //
-// It is the one place the profiles meet the session, the store and the view. The rules
-// live in `src/domain/profile/` and the use case in `src/application/profiles.ts`; what is
-// here is the wiring — the session's own answer to "has it begun to capture", the browser's
-// id source and store, the seeding that gives a new clip its starting values, and the
-// toolbar icon that opens the menu.
+// It is the one place the profiles meet the session, the store and the view. The rules live
+// in `src/domain/profile/` and the use case in `src/application/profiles.ts`; what is here is
+// the wiring — the session's own answer to "has it begun to capture", the browser's id source
+// and store, the application of what a profile fixes, the toolbar pill, and the two surfaces
+// that show and define profiles.
 
 import { ManageProfiles, type ProfileResult } from '../../application/profiles.js';
 import { session } from '../../session.js';
 import { profileStore } from '../../infra/profile-store.js';
 import { onPhaseChange } from '../../state.js';
 import { el, toast } from '../dom.js';
-import { seedActiveProfile } from './seed.js';
+import { applyActiveProfile } from './apply.js';
+import { controllingIn } from './control.js';
 import { avatarLetters } from './profile-rows.js';
 import { profileMenu } from './profile-menu.js';
+import { profileDef } from './profile-def.js';
 
 export const profiles = new ManageProfiles({
   store: profileStore,
@@ -32,30 +34,38 @@ export function locked(): boolean {
   return session.hasCaptured || !session.clip.takes.isEmpty();
 }
 
+/** Who fixes an item, or null when it is the person's. The one rule, asked by both surfaces. */
+export const controlling = controllingIn(() => profiles.current);
+
 /** Read the profiles in. A failure leaves the app working under its built-in default. */
 export async function loadProfiles(): Promise<void> {
   await profiles.load();
 }
 
-/** Give an empty clip the active profile's settings. Does nothing to a clip that has a take. */
-export function seedClip(): void {
-  seedActiveProfile(session.clip, profiles.current);
+/** Fix onto the clip the items the active profile controls. Does nothing to a clip with a take. */
+export function applyProfile(): void {
+  applyActiveProfile(session.clip, profiles.current);
 }
 
-/** Wire the toolbar pill and the menu: the pill toggles it, and the book's changes redraw both. */
-export function initProfileMenu(): void {
+/** Wire the pill, the selector and the config sheet; redraw the selector when the lock moves. */
+export function initProfiles(): void {
   profileMenu.init({
     list: () => profiles.current,
     locked,
     choose: id => report(profiles.choose(id)),
-    setSetting: (id, property, value) => report(profiles.setSetting(id, property, value)),
     create: name => report(profiles.create(name)),
+    define: id => profileDef.open(id),
     rename: (id, name) => report(profiles.rename(id, name)),
     remove: id => report(profiles.remove(id)),
   });
+  profileDef.init({
+    list: () => profiles.current,
+    locked,
+    declare: (id, property, value) => report(profiles.declare(id, property, value)),
+  });
   el.profileBtn.addEventListener('click', () => profileMenu.toggle());
-  // The rows say what the lock changes — a take starting, a session ending — so redraw
-  // while the menu is open. A change behind a closed menu costs nothing.
+  // The rows say what the lock changes — a take starting, a session ending — so redraw while
+  // the selector is open. A change behind a closed panel costs nothing.
   session.clip.onChange(() => profileMenu.refresh());
   onPhaseChange(() => profileMenu.refresh());
   paintProfileButton();
@@ -74,12 +84,13 @@ export function paintProfileButton(): void {
 }
 
 /**
- * Take a change the use case allowed or refused. A refusal is said out loud; a change
- * re-seeds an empty clip, so what the person set up is what the clip about to be made
- * starts with — and never while the session is capturing, when the active profile is fixed.
+ * Take a change the use case allowed or refused. A refusal is said out loud. A change is
+ * followed by applying what the active profile fixes, so a clip not yet capturing is always
+ * showing the values the profile holds — and never while the session is capturing, when the
+ * active profile cannot move at all.
  */
 function report(outcome: ProfileResult): void {
   if (!outcome.ok) { toast(outcome.reason); return; }
   paintProfileButton();
-  if (!locked()) seedClip();
+  if (!locked()) applyProfile();
 }

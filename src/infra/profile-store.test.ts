@@ -17,11 +17,11 @@ class FakeStorage {
 }
 
 const book = (): StoredProfiles => ({
-  version: 1,
+  version: 2,
   activeId: 'tv',
   profiles: [
-    { id: 'default', name: 'Default', values: {} },
-    { id: 'tv', name: 'DemoClipTV', values: { addToExport: 'true' } },
+    { id: 'default', name: 'Default', controls: {} },
+    { id: 'tv', name: 'DemoClipTV', controls: { addToExport: 'true' } },
   ],
 });
 

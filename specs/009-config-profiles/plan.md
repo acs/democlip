@@ -127,12 +127,16 @@ src/
 ├── ui/
 │   ├── dom.ts                    # profileBtn, profileMenu
 │   ├── profile/
-│   │   ├── profile-menu.ts       # new: the toolbar popover — list, choose, create, rename, remove
-│   │   ├── profile-menu.test.ts  # new (the rows built from the book, the locked row state)
-│   │   ├── seed.ts               # new: preload the active profile onto an empty clip
-│   │   ├── seed.test.ts          # new
-│   │   └── profile-flow.ts       # new: composition — service + menu + seeding, wired by main
-│   ├── clip/clip-properties.ts   # one flag: which clip properties a profile may seed (`addToExport`)
+│   │   ├── profile-menu.ts       # new: the toolbar popover — list, choose, create, define, rename, remove
+│   │   ├── profile-menu.test.ts  # new (the selector's and the config sheet's row models)
+│   │   ├── profile-def.ts        # new: a profile's own sheet — what it controls
+│   │   ├── profile-rows.ts       # new: the DOM-free row models both surfaces draw from
+│   │   ├── control.ts            # new: the Controlling seam the panel and the surface share
+│   │   ├── apply.ts              # new: fix what the active profile declares onto an empty clip
+│   │   ├── apply.test.ts         # new
+│   │   └── profile-flow.ts       # new: composition — service + surfaces + applying, wired by main
+│   ├── clip/clip-properties.ts   # one flag: which items a profile may control (`addToExport`)
+│   ├── clip/properties-panel.ts  # a controlled item: its value, the profile's name, no control
 │   ├── recording/record-flow.ts  # session.beginCapture() when a take actually starts
 │   └── lifecycle/new-session-flow.ts  # seed the fresh clip after session.end()
 ├── main.ts                       # load the profiles, seed at startup, wire the button and the menu

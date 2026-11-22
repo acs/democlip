@@ -107,6 +107,11 @@ export const el = {
   profileBtn:  byId<HTMLButtonElement>('profile-btn'),
   profileInitials: byId<HTMLElement>('profile-initials'),
   profileMenu: byId<HTMLElement>('profile-menu'),
+  profileDefBd:    byId<HTMLElement>('profile-def-bd'),
+  profileDefTitle: byId<HTMLElement>('profile-def-title'),
+  profileDefRows:  byId<HTMLElement>('profile-def-rows'),
+  profileDefClose: byId<HTMLButtonElement>('profile-def-close'),
+  profileDefDone:  byId<HTMLButtonElement>('profile-def-done'),
 };
 
 export const ctx: CanvasRenderingContext2D = (() => {

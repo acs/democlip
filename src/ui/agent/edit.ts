@@ -20,6 +20,7 @@ import type { Annotation } from '../../domain/annotation/Annotation.js';
 import { pluginOf, propertiesOf } from '../annotating/annotation-plugin.js';
 import { clipProperty } from '../clip/clip-properties.js';
 import { MIN_SECTION } from '../cutting/selection.js';
+import type { Controlling } from '../profile/control.js';
 import type { AnnotationParams, Result } from './surface.js';
 
 /** What a kind's maker answered: the annotation, or why it would not make one. */
@@ -41,7 +42,7 @@ export interface Editor {
   undo(): Result<{ change: string }>;
 }
 
-export function createEditor(clip: Clip, make: MakeAnnotation): Editor {
+export function createEditor(clip: Clip, make: MakeAnnotation, controlling: Controlling = () => null): Editor {
   return {
     cut(from, to) {
       const span = Span.between(from, to, MIN_SECTION);
@@ -79,6 +80,10 @@ export function createEditor(clip: Clip, make: MakeAnnotation): Editor {
       const descriptor = clipProperty(property);
       if (!descriptor) return { ok: false, reason: `a clip has no property called ${property}` };
       if (descriptor.readOnly) return { ok: false, reason: `the ${descriptor.label.toLowerCase()} is not the person's to set` };
+      // A property a **profile** fixes is not the person's to change, and not an agent's
+      // either — the same answer the properties panel gives, asked in the same place.
+      const fixedBy = controlling(property);
+      if (fixedBy) return { ok: false, reason: `${fixedBy} fixes ${descriptor.label.toLowerCase()}, so it is not the person's to set` };
       if (typeof value !== 'string') return { ok: false, reason: 'a property value is a string' };
       const next = descriptor.with(clip.properties, value);
       if (!next) return { ok: false, reason: `${property} will not take ${JSON.stringify(value)}` };

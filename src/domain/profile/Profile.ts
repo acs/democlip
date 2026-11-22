@@ -1,78 +1,93 @@
 // A profile: a named set of the app's configuration a person works under.
 //
-// It is a value object rather than a plain interface, because it has rules: a name that
-// cannot be empty, and a setting that may be **unset** as distinct from empty. A profile
-// lives outside any clip, so it outlives the clip, the page and the session — what
-// `Profiles` writes down and the store keeps.
+// It does not hold *defaults*; it holds **declarations**. A profile says which items it
+// controls, and the value each of them is fixed at — and while that profile is active, an
+// item it controls is applied to the app and **cannot be changed by the person**. An item it
+// does not control is free, exactly as it is with no profile at all. A profile that declares
+// nothing is therefore a free profile, and the built-in **Default** is that profile.
 //
-// It holds no rule about *which* settings exist. The app declares those, as it declares
-// the clip properties a profile may preload (`ui/clip/clip-properties.ts`), and a setting
-// for one this build does not know is **kept and never applied**, so a profile written by
-// a later version still reads and one written earlier still opens.
+// A declaration is a named string, and a key present is what makes it a declaration: the
+// value may be empty, because for a boolean item empty *is* the off value. That is the one
+// place where "declared" and "empty" have to be told apart — `ClipProperties` folds an empty
+// value to unset, and this does not.
+//
+// It holds no rule about *which* items exist. The app declares those, as it declares the clip
+// properties a profile may control (`ui/clip/clip-properties.ts`), and a declaration for one
+// this build does not know is **kept and never applied**, so a profile written by a later
+// version still reads.
 
 export interface StoredProfile {
   id: string;
   name: string;
-  values: Record<string, string>;
+  /** The items this profile controls, and the value each is fixed at. A key present is a declaration. */
+  controls: Record<string, string>;
 }
 
 export class Profile {
   private constructor(
     readonly id: string,
     readonly name: string,
-    readonly values: Readonly<Record<string, string>>,
+    readonly controls: Readonly<Record<string, string>>,
   ) {}
 
   /**
    * A profile with this id and name, or null when either is not usable: the id must be a
    * non-empty string, and the name must still have something in it once trimmed.
    */
-  static create(id: string, name: string, values?: Readonly<Record<string, string>> | null): Profile | null {
+  static create(id: string, name: string, controls?: Readonly<Record<string, string>> | null): Profile | null {
     const trimmed = typeof name === 'string' ? name.trim() : '';
     if (typeof id !== 'string' || id === '' || trimmed === '') return null;
-    return new Profile(id, trimmed, clean(values));
+    return new Profile(id, trimmed, clean(controls));
   }
 
   /** Read a profile back, or null when the record cannot name one. */
   static restore(stored: StoredProfile | null | undefined): Profile | null {
     if (!stored || typeof stored !== 'object') return null;
-    return Profile.create(stored.id, stored.name, stored.values);
+    return Profile.create(stored.id, stored.name, stored.controls);
   }
 
-  /** The setting this profile gives a property, or null when it says nothing about it. */
+  /** Does this profile control this item? */
+  declares(id: string): boolean {
+    return Object.prototype.hasOwnProperty.call(this.controls, id);
+  }
+
+  /** What this profile fixes an item at, or null when it does not control it. May be ''. */
   valueFor(id: string): string | null {
-    return this.values[id] ?? null;
+    return this.declares(id) ? this.controls[id]! : null;
   }
 
-  /** The same profile with one setting; an empty value clears it. */
-  with(id: string, value: string): Profile {
-    const next = { ...this.values };
-    if (value === '') delete next[id];
-    else next[id] = value;
+  /** The same profile with one more item under its control, fixed at `value` (which may be ''). */
+  declare(id: string, value: string): Profile {
+    return new Profile(this.id, this.name, { ...this.controls, [id]: value });
+  }
+
+  /** The same profile with one item let go of, so it is the person's again. */
+  free(id: string): Profile {
+    const next = { ...this.controls };
+    delete next[id];
     return new Profile(this.id, this.name, next);
   }
 
   /** The same profile under another name, or null for one with nothing in it. */
   renamed(name: string): Profile | null {
-    return Profile.create(this.id, name, this.values);
+    return Profile.create(this.id, name, this.controls);
   }
 
   /** The profile as it is written down. */
   stored(): StoredProfile {
-    return { id: this.id, name: this.name, values: { ...this.values } };
+    return { id: this.id, name: this.name, controls: { ...this.controls } };
   }
 }
 
 /**
- * Named string values only, with an empty value left out — so "unset" has one
- * representation, which is what a clip property does and what a profile written by hand
- * or by another version reads back as.
+ * Named string values only. A key present is a declaration and is **kept even when its value
+ * is empty**, because empty is what a controlled boolean is fixed at when it is fixed off.
  */
-function clean(values?: Readonly<Record<string, string>> | null): Readonly<Record<string, string>> {
-  if (!values || typeof values !== 'object') return {};
+function clean(controls?: Readonly<Record<string, string>> | null): Readonly<Record<string, string>> {
+  if (!controls || typeof controls !== 'object') return {};
   const kept: Record<string, string> = {};
-  for (const [id, value] of Object.entries(values)) {
-    if (id && typeof value === 'string' && value !== '') kept[id] = value;
+  for (const [id, value] of Object.entries(controls)) {
+    if (id && typeof value === 'string') kept[id] = value;
   }
   return kept;
 }

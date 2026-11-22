@@ -5,30 +5,31 @@
 // itself each time it opens (above the pill when there is no room below, and against the
 // window's right edge, since the pill is there).
 //
-// Each profile is a row: a pill with its first letters, its name, a tick when it is the one
-// in use, a pencil and a bin; and under them the settings it carries, drawn with the same
-// shared control the clip properties declare. A **New Profile** button sits at the foot.
+// The selector only *selects*: a row is a pill with the profile's first letters, its name,
+// a tick when it is the one in use, and — on the person's own profiles — a sliders mark, a
+// pencil and a bin. What a profile **controls** is not shown here and is not set here: it is
+// the profile's own definition, in its own sheet (`profile-def.ts`), which is what the
+// sliders mark opens.
 //
 // It names no rule of its own. It asks for the book and whether the session has begun to
-// capture, draws the rows from the answer, and hands every press to the flow — which is what
-// keeps the person's own profiles creatable, renameable and removable while the active one
-// and the choice are fixed.
+// capture, draws the rows from the answer, and hands every press to the flow.
 
 import { el } from '../dom.js';
 import { Profiles } from '../../domain/profile/Profiles.js';
-import { profileRows, type ProfileRow, type ProfileSettingRow } from './profile-rows.js';
+import { profileRows, type ProfileRow } from './profile-rows.js';
 
 /** The flow's own operations, handed to the menu. Each answers nothing; the menu redraws. */
 export interface ProfileMenuHandlers {
   list(): Profiles;
   locked(): boolean;
   choose(id: string): void;
-  setSetting(id: string, propertyId: string, value: string): void;
   create(name: string): void;
+  define(id: string): void;
   rename(id: string, name: string): void;
   remove(id: string): void;
 }
 
+const SLIDERS = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><line x1="4" y1="8" x2="20" y2="8"/><line x1="4" y1="16" x2="20" y2="16"/><circle cx="10" cy="8" r="2.6"/><circle cx="15" cy="16" r="2.6"/></svg>';
 const PENCIL = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>';
 const BIN = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/></svg>';
 
@@ -39,8 +40,8 @@ const NO_HANDLERS: ProfileMenuHandlers = {
   list: () => Profiles.starting(),
   locked: () => false,
   choose: () => {},
-  setSetting: () => {},
   create: () => {},
+  define: () => {},
   rename: () => {},
   remove: () => {},
 };
@@ -51,12 +52,15 @@ class ProfileMenu {
   private creating = false;
 
   private readonly onDocumentClick = (event: MouseEvent): void => {
-    // The event's own path, not `contains`: a press on a setting re-renders the menu, so by
-    // the time this runs the element it started on is gone — and `contains` would say the
-    // press was outside, closing the menu out from under the person. The properties panel
-    // keeps the same habit for the same reason.
+    // The event's own path, not `contains`: the panel is re-rendered while its own handlers
+    // run, so by the time this does the element the press started on may be gone — and
+    // `contains` would say the press was outside, closing the panel under the person. The
+    // properties panel keeps the same habit for the same reason.
     const path = event.composedPath();
     if (path.includes(el.profileMenu) || path.includes(el.profileBtn)) return;
+    // The config sheet is opened from this panel and sits over it: a press there is still the
+    // panel's business, so the selector is waiting where it was when the sheet closes.
+    if (path.includes(el.profileDefBd)) return;
     this.close();
   };
 
@@ -137,13 +141,6 @@ class ProfileMenu {
       if (!row.fixed) line.append(this.acts(row));
     }
     host.append(line);
-
-    if (row.settings.length) {
-      const settings = document.createElement('div');
-      settings.className = 'profile-settings';
-      for (const setting of row.settings) settings.append(this.setting(row.id, setting));
-      host.append(settings);
-    }
     return host;
   }
 
@@ -170,11 +167,14 @@ class ProfileMenu {
     return pick;
   }
 
-  /** The person's own pencil and bin. The built-in default has neither. */
+  /** What may be done to a profile: its own definition, its name, and letting it go. */
   private acts(row: ProfileRow): HTMLElement {
     const acts = document.createElement('div');
     acts.className = 'profile-acts';
     acts.append(
+      this.icon('define', `Define what ${row.name} controls`, SLIDERS, row.manageable, () => {
+        this.handlers.define(row.id);
+      }),
       this.icon('rename', `Rename ${row.name}`, PENCIL, row.manageable, () => {
         this.renaming = row.id;
         this.creating = false;
@@ -225,31 +225,6 @@ class ProfileMenu {
     if (this.renaming !== id) return;      // already committed by the Enter, or cancelled
     this.renaming = null;
     this.handlers.rename(id, name);
-    this.render();
-  }
-
-  private setting(profileId: string, row: ProfileSettingRow): HTMLElement {
-    const label = document.createElement('label');
-    label.className = 'profile-setting';
-    const input = document.createElement('input');
-    if (row.control === 'toggle') {
-      input.type = 'checkbox';
-      input.checked = row.value === 'true';
-      input.addEventListener('change', () => this.apply(profileId, row.id, input.checked ? 'true' : ''));
-    } else {
-      input.type = 'text';
-      input.value = row.value;
-      input.addEventListener('change', () => this.apply(profileId, row.id, input.value));
-    }
-    input.disabled = !row.editable;
-    const text = document.createElement('span');
-    text.textContent = row.label;
-    label.append(input, text);
-    return label;
-  }
-
-  private apply(profileId: string, propertyId: string, value: string): void {
-    this.handlers.setSetting(profileId, propertyId, value);
     this.render();
   }
 

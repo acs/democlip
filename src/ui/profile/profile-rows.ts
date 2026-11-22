@@ -1,25 +1,15 @@
-// What a profile menu row is, and the rules for drawing them.
+// What a profile panel draws, and the rules for drawing it.
 //
-// Kept apart from the menu itself so the answer can be read in node, with no DOM: what the
-// menu draws and what a check reads are the same rows, so a row that is refused for the
-// person is refused in the test too.
+// Two shapes live here, both free of the DOM so they can be read in node: a **row** of the
+// selector (which profile is in use, and what may be done to each) and a row of the sheet a
+// profile is **defined** in (which items it controls, and at what). What the app draws and
+// what a check reads are the same answer, so a row that is refused is refused in both.
 
 import { seedableClipProperties } from '../clip/clip-properties.js';
+import { Profile } from '../../domain/profile/Profile.js';
 import { Profiles } from '../../domain/profile/Profiles.js';
 
-/** One setting a profile carries, as a row draws it. */
-export interface ProfileSettingRow {
-  /** The clip property's id — 'addToExport'. */
-  readonly id: string;
-  readonly label: string;
-  /** Which shared control edits it — the clip property's own. */
-  readonly control: string;
-  readonly value: string;
-  /** False when the row is fixed for now: the active profile while the session captures, or the default. */
-  readonly editable: boolean;
-}
-
-/** One profile, as a row draws it. */
+/** A profile, as the selector draws it. */
 export interface ProfileRow {
   readonly id: string;
   readonly name: string;
@@ -30,11 +20,25 @@ export interface ProfileRow {
   readonly active: boolean;
   /** May this profile be chosen now? False for the others while the session has begun to capture. */
   readonly selectable: boolean;
-  /** The built-in default: no rename, no remove, no settings. */
+  /** The built-in default: nothing is done to it. It is the app's free profile. */
   readonly fixed: boolean;
-  /** May this profile be renamed or removed now? */
+  /** May this profile be defined, renamed or removed now? */
   readonly manageable: boolean;
-  readonly settings: readonly ProfileSettingRow[];
+}
+
+/** One item a profile may control, as its definition sheet draws it. */
+export interface DefineRow {
+  /** The clip property's id — 'addToExport'. */
+  readonly id: string;
+  readonly label: string;
+  /** Which shared control edits the value — the clip property's own. */
+  readonly control: string;
+  /** True when the profile does not control it, so the person has it as always. */
+  readonly free: boolean;
+  /** The value it is fixed at. May be empty: fixed off, for a boolean. */
+  readonly value: string;
+  /** False when the profile is the active one and the session has begun to capture. */
+  readonly editable: boolean;
 }
 
 /** How many avatar colours there are; the tone is one of these. */
@@ -61,15 +65,15 @@ export function avatarTone(id: string): number {
 }
 
 /**
- * The rows for a book. The active profile is fixed once the session has begun to capture;
- * another profile is not, so a new one can still be set up and tidied without touching the
- * clip in front of the person.
+ * The selector's rows for a book. The active profile is fixed once the session has begun to
+ * capture; another profile is not, so a new one can still be defined, renamed and removed
+ * without touching the clip in front of the person. The built-in default is left alone: it
+ * is the app's free profile, and the one guaranteed to define nothing.
  */
 export function profileRows(book: Profiles, locked: boolean): ProfileRow[] {
   return book.all.map(profile => {
     const active = profile.id === book.activeId;
     const fixed = profile.id === Profiles.DEFAULT_ID;
-    const frozen = locked && active;
     return {
       id: profile.id,
       name: profile.name,
@@ -78,14 +82,27 @@ export function profileRows(book: Profiles, locked: boolean): ProfileRow[] {
       active,
       selectable: !locked || active,
       fixed,
-      manageable: !fixed && !frozen,
-      settings: seedableClipProperties().map(property => ({
-        id: property.id,
-        label: property.label,
-        control: property.control,
-        value: profile.valueFor(property.id) ?? '',
-        editable: !fixed && !frozen,
-      })),
+      manageable: !fixed && !(locked && active),
+    };
+  });
+}
+
+/**
+ * The rows of a profile's definition sheet: one per item a profile may control, saying
+ * whether it does and at what. Nothing is offered for the built-in default, whose whole
+ * point is that it controls nothing.
+ */
+export function defineRows(profile: Profile, options: { active: boolean; locked: boolean }): DefineRow[] {
+  const editable = !(options.active && options.locked);
+  return seedableClipProperties().map(property => {
+    const value = profile.valueFor(property.id);
+    return {
+      id: property.id,
+      label: property.label,
+      control: property.control,
+      free: value === null,
+      value: value ?? '',
+      editable,
     };
   });
 }

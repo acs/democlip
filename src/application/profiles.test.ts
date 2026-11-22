@@ -48,11 +48,11 @@ const manage = (options: Options = {}) => {
 };
 
 const written = (): StoredProfiles => ({
-  version: 1,
+  version: 2,
   activeId: 'tv',
   profiles: [
-    { id: 'default', name: 'Default', values: {} },
-    { id: 'tv', name: 'DemoClipTV', values: { addToExport: 'true' } },
+    { id: 'default', name: 'Default', controls: {} },
+    { id: 'tv', name: 'DemoClipTV', controls: { addToExport: 'true' } },
   ],
 });
 
@@ -115,19 +115,26 @@ describe('ManageProfiles', () => {
     expect(profiles.current.all).toHaveLength(1);
   });
 
-  it('changes a setting on another profile while capturing, but not on the active one', async () => {
+  it('lets another profile be defined while capturing, but not the active one', async () => {
     const { profiles, store } = manage({ written: written(), capturing: true });
     await profiles.load();
     const other = make(profiles, 'GraditoneTV');
 
-    expect(profiles.setSetting('tv', 'addToExport', '')).toEqual({
+    expect(profiles.declare('tv', 'addToExport', null)).toEqual({
       ok: false,
       reason: 'A profile is fixed once recording has started — press New to start another session.',
     });
-    expect(profiles.setSetting(other, 'addToExport', 'true')).toEqual({ ok: true, value: 'true' });
+    expect(profiles.declare(other, 'addToExport', 'true')).toEqual({ ok: true, property: 'addToExport', value: 'true' });
     expect(profiles.current.get(other)?.valueFor('addToExport')).toBe('true');
     expect(profiles.current.get('tv')?.valueFor('addToExport')).toBe('true');   // unmoved
-    expect(store.saved?.profiles.find(p => p.id === other)?.values.addToExport).toBe('true');
+    expect(store.saved?.profiles.find(p => p.id === other)?.controls.addToExport).toBe('true');
+  });
+
+  it('hands an item back with null, so it is the person’s again', async () => {
+    const { profiles } = manage({ written: written() });
+    await profiles.load();
+    expect(profiles.declare('tv', 'addToExport', null)).toEqual({ ok: true, property: 'addToExport', value: null });
+    expect(profiles.current.controlling('addToExport')).toBeNull();
   });
 
   it('refuses to rename the built-in default, or to give a profile no name', () => {
