@@ -16,6 +16,8 @@ interface Asked {
   method: string;
   url: string;
   body?: string;
+  /** The request's own bytes, for the chunk the video went in. */
+  bytes?: Buffer;
 }
 
 interface Refusal {
@@ -64,7 +66,12 @@ async function standInGoogle(page: Page, standIn: StandIn = {}): Promise<Asked[]
     };
     if (request.method() === 'OPTIONS') return route.fulfill({ status: 204, headers: cors });
 
-    asked.push({ method: request.method(), url: request.url(), body: request.postData() ?? undefined });
+    asked.push({
+      method: request.method(),
+      url: request.url(),
+      body: request.postData() ?? undefined,
+      bytes: request.postDataBuffer() ?? undefined,
+    });
 
     if (request.url().includes('/channels')) {
       if (channelsRefused) {
@@ -331,4 +338,58 @@ test('uploading writes the video, sends the details, and answers with the link',
   // The kept copy went with it, so a reload does not bring the clip back.
   await page.reload();
   await expect.poll(async () => app.clipLength()).toBe(0);
+});
+
+/** Decode an uploaded video's bytes in the page and read its duration. */
+async function durationOf(page: Page, bytes: Buffer, mime: string): Promise<number> {
+  return page.evaluate(async ({ base64, type }) => {
+    const binary = atob(base64);
+    const data = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) data[i] = binary.charCodeAt(i);
+    const video = document.createElement('video');
+    video.preload = 'metadata';
+    const url = URL.createObjectURL(new Blob([data], { type }));
+    video.src = url;
+    await new Promise<void>(resolve => {
+      video.addEventListener('loadedmetadata', () => resolve(), { once: true });
+      setTimeout(resolve, 3000);
+    });
+    const seconds = video.duration;
+    URL.revokeObjectURL(url);
+    return seconds;
+  }, { base64: bytes.toString('base64'), type: mime });
+}
+
+// A published video is an exported video, so it opens with the card too when the clip
+// asks for one. The bytes that went up are decoded and their duration read, the same way
+// a download's would be.
+test('publishing with the card on uploads a video that opens with it', async ({ page }) => {
+  const asked = await standInGoogle(page);
+  await clientId(page, 'stub.apps.googleusercontent.com');
+
+  await review(page);
+  await openYouTube(page);
+  await page.locator('#yt-signin').click();
+  await expect(page.locator('#yt-as')).toContainText('A test channel');
+
+  const supported = await canEncodeMp4(page);
+  test.skip(!supported, 'this browser cannot encode MP4 (AVC) offline');
+
+  // The clip's words, and the card on — through the app's own model.
+  await page.evaluate(async url => {
+    const { session } = await import(/* @vite-ignore */ url);
+    session.clip.setProperty('title', 'A short demo');
+    session.clip.setProperty('description', 'What the clip shows');
+    session.clip.setProperty('addToExport', 'true');
+  }, HOOKS);
+
+  await page.locator('#yt-go').click();
+  await expect(page.locator('#yt-status a')).toHaveAttribute('href', 'https://youtu.be/vid123');
+
+  const chunk = asked.find(call => call.method === 'PUT' && (call.bytes?.length ?? 0) > 0);
+  expect(chunk?.bytes).toBeTruthy();
+  const duration = await durationOf(page, chunk!.bytes!, 'video/mp4');
+  // One second of clip and three of card: about 3.95s.
+  expect(duration).toBeGreaterThan(3.4);
+  expect(duration).toBeLessThan(5);
 });

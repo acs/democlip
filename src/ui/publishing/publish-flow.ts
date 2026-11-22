@@ -7,6 +7,7 @@ import { session } from '../../session.js';
 import { publishToBluesky, type PublicationProgress } from '../../application/publish-to-bluesky.js';
 import { encoder } from '../../infra/offline-encoder.js';
 import { frameRenderer } from '../exporting/frame-renderer.js';
+import { introFor } from '../exporting/intro.js';
 import { keep } from '../keeping/keep.js';
 import { el } from '../dom.js';
 import { AspectRatio } from '../../domain/bluesky/AspectRatio.js';
@@ -64,7 +65,9 @@ export async function publishClip(
     // size are the same two numbers, read once, so the two cannot disagree.
     const picture = { width: el.cv.width || 1280, height: el.cv.height || 720 };
     const { uri } = await publishToBluesky(session.clip, {
-      export: { audio: session.audio, fadeSeconds: FADE_S, annotations: 'drawn' },
+      // The same card the export puts at its head, when the clip asks for one: a
+      // published video is an exported video too.
+      export: { audio: session.audio, fadeSeconds: FADE_S, annotations: 'drawn', intro: introFor(session.clip) },
       text,
       alt,
       aspectRatio: AspectRatio.of(picture.width, picture.height).reduced(),
