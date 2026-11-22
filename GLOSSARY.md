@@ -110,16 +110,18 @@ nothing is drawn there — and putting the cut back brings it back.
 
 An **annotation**'s properties are declared by its **kind** and live with the annotation.
 A clip's are declared by the app and live with the clip: its **title** and its
-**description**, what it says about itself rather than what is drawn over its picture.
-They are what a **publish** fills its fields from — a YouTube video's title and
-description, a Bluesky post's text and its alt — so a clip is branded once and the
-branding goes out wherever it is published. Either may still be changed in a publish
-dialog, for that one publish.
+**description**, what it says about itself rather than what is drawn over its picture, and
+**add to export**, which asks the export for a **title card** at the head of the file.
+The title and description are what a **publish** fills its fields from — a YouTube
+video's title and description, a Bluesky post's text and its alt — so a clip is branded
+once and the branding goes out wherever it is published; either may still be changed in a
+publish dialog, for that one publish, and a publish never takes the card.
 
 | word | what it is | in the code |
 |---|---|---|
-| **clip property** | something about the clip the user can change after it is made — its title, its description. The app declares it: a label, which shared control edits it, and how to read and write the value on the clip. The value lives with the clip | `ClipProperty`, `registerClipProperty()` (`ui/clip/clip-properties.ts`); the value in `ClipProperties` (`src/domain/clip/ClipProperties.ts`) |
+| **clip property** | something about the clip the user can change after it is made — its title, its description, or **add to export**. The app declares it: a label, which shared control edits it, and how to read and write the value on the clip. The value lives with the clip | `ClipProperty`, `registerClipProperty()` (`ui/clip/clip-properties.ts`); the value in `ClipProperties` (`src/domain/clip/ClipProperties.ts`) |
 | **clip properties panel** | the one shared surface that shows and edits the clip's properties — a field per property, whatever it is. Opened from a **settings** control in the corner of the preview (the picture the clip is seen on, so it sits beside the clip as an annotation's settings control sits on it — the same three-sliders mark); it names no property, it asks the register. The clip's answer to the **properties inspector**, one level up | `ui/clip/properties-panel.ts` |
+| **title card** | a head the export may put on a file: the clip's first frame held still for **three seconds**, with its **title** and **description** drawn over it as **text annotations**. It is what **add to export** asks for, and only the export takes it — a publish uses the words alone | `IntroCard` (`src/domain/clip/IntroCard.ts`); the words in `ui/exporting/intro-text.ts`; `introFor()` (`ui/exporting/intro.ts`) |
 
 A clip property is **not a fraction of the clip and is not scaled when the clip grows**,
 where a cut and an annotation are. It changes through the clip, is announced like every

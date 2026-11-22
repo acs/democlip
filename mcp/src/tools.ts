@@ -145,10 +145,10 @@ const setProperty: Tool = {
 const setClipProperty: Tool = {
   name: 'set_clip_property',
   description:
-    'Change what the clip says about itself: `property` is "title" or "description", and `value` is the text. These are the clip\u2019s own properties, and publishing fills its fields from them — a YouTube video\u2019s title and description, a Bluesky post\u2019s text and its alt — so a clip is branded once and the branding goes out with it. One undo takes it back.',
+    'Change what the clip says about itself. `property` is "title" or "description" (the words), or "addToExport" (whether an export puts a title card — those words over the clip\u2019s first frame — at the head of the file). For the two words, `value` is the text; for "addToExport", "true" turns the card on and anything else turns it off. Publishing fills its fields from the title and description, so a clip is branded once. One undo takes it back.',
   inputSchema: objectSchema({
-    property: { type: 'string', enum: ['title', 'description'], description: 'Which of the clip\u2019s own properties' },
-    value: { type: 'string', description: 'The new text' },
+    property: { type: 'string', enum: ['title', 'description', 'addToExport'], description: 'Which of the clip\u2019s own properties' },
+    value: { type: 'string', description: 'The new text, or "true" / "" for "addToExport"' },
   }, ['property', 'value']),
   run: (session, args) => callSurface(session, 'edit.setClipProperty', args.property, args.value),
 };
