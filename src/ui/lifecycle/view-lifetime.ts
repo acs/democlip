@@ -17,6 +17,7 @@ import { drag } from '../cutting/marks.js';
 import { crop } from '../recording/region.js';
 import { canvas } from '../annotating/annotation-canvas.js';
 import { clipboard } from '../annotating/annotation-clipboard.js';
+import { clipPropertiesPanel } from '../clip/properties-panel.js';
 import { images } from '../../infra/images.js';
 import { selection } from '../cutting/selection.js';
 import { exportMenu } from '../exporting/export-menu.js';
@@ -32,6 +33,7 @@ export function initViewLifetime(): void {
     crop.cancel();
     canvas.cancel();
     clipboard.clear();
+    clipPropertiesPanel.dismiss();   // the clip is gone: hide, and write nothing back
     void images.clear();      // the pictures and their decoded copies go with the clip
     selection.clear();
     exportMenu.close();
@@ -41,6 +43,7 @@ export function initViewLifetime(): void {
     el.timeline.classList.remove('on');
     el.idleOv.classList.remove('gone');
     el.btnExp.style.display = 'none';
+    el.propsBtn.style.display = 'none';
     el.resBadge.classList.remove('on');
     playback.reset();
     waveform.clear();

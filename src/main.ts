@@ -22,6 +22,7 @@ import './ui/annotating/plugins.js';        // registers every kind in the view
 import { initAnnotationLane } from './ui/annotating/annotation-lane.js';
 import { inspector } from './ui/annotating/properties-inspector.js';
 import { textEntry } from './ui/annotating/text-entry.js';
+import { clipPropertiesPanel } from './ui/clip/properties-panel.js';
 import { initViewLifetime } from './ui/lifecycle/view-lifetime.js';
 import { toggleRecord, toggleScreen, syncSources, onScreenEnded, initRecordFlow, startTake, stopRecording, hasPicture } from './ui/recording/record-flow.js';
 import { doExport } from './ui/exporting/export-flow.js';
@@ -103,6 +104,11 @@ function init(): void {
   initAnnotationLane();   // and the timeline shows where the annotations are
   inspector.init();       // and a picked annotation's settings open its properties
   textEntry.init();       // the one dialog for typing a line, for entering and editing
+
+  // What the clip says about itself — its title and its description — edited in the
+  // app's own panel and used when the clip is published.
+  clipPropertiesPanel.init();
+  el.propsBtn.addEventListener('click', () => clipPropertiesPanel.open());
 
   // Every view resets itself when the clip is cleared. The session names no view.
   initViewLifetime();
