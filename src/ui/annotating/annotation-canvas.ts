@@ -27,7 +27,7 @@ import { copyControl, drawAnnotations, removeControl, settingsControl } from './
 import { pluginOf, propertiesOf, type AnnotationPlugin, type CreationContext } from './annotation-plugin.js';
 import { inspector } from './properties-inspector.js';
 import { drawFrame } from '../recording/preview.js';
-import { player } from '../clip/clip.js';
+import { player, reviewFrame } from '../clip/clip.js';
 import { playback } from '../clip/playback.js';
 import { clipboard } from './annotation-clipboard.js';
 import { typingIn } from '../../util.js';
@@ -392,7 +392,7 @@ export class AnnotationCanvas {
   private repaint(): void {
     if (currentPhase() !== 'review' || el.rv.readyState < 1) return;
     const w = el.cv.width, h = el.cv.height;
-    try { drawFrame(el.rv); } catch { return; }        // a frame still decoding
+    try { drawFrame(el.rv, reviewFrame(el.rv)); } catch { return; }        // a frame still decoding
     drawAnnotations(ctx, w, h, session.clip.annotationsAt(player.time()), this.selectedId);
     const draft = this.preview();
     if (draft) pluginOf(draft.kind)?.renderer.draw(ctx, draft, w, h);

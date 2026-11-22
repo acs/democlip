@@ -4,6 +4,7 @@ import { RecordTake } from './record-take.js';
 import { Clip } from '../domain/clip/Clip.js';
 import { Take } from '../domain/clip/Take.js';
 import type { TakeRepository } from '../domain/clip/TakeRepository.js';
+import type { Picture } from '../domain/clip/ClipSize.js';
 import { SourceSet } from '../domain/capture/SourceSet.js';
 import { CropRegion } from '../domain/capture/CropRegion.js';
 import type { CapturePort, CaptureSession } from './ports/CapturePort.js';
@@ -16,8 +17,8 @@ import type { ClockPort } from './ports/ClockPort.js';
 
 class FakeTakes implements TakeRepository {
   private takes: Take[] = [];
-  add(blob: Blob, duration: number): Take {
-    const take = Take.of(this.takes.length + 1, blob, `blob:${this.takes.length + 1}`, duration);
+  add(blob: Blob, duration: number, picture?: Picture | null): Take {
+    const take = Take.of(this.takes.length + 1, blob, `blob:${this.takes.length + 1}`, duration, picture ?? null);
     this.takes.push(take);
     return take;
   }
@@ -79,11 +80,12 @@ const recorder = (): TakeRecorderPort & { started: MediaStream[] } => {
   };
 };
 
-const probe = (seconds: number): TakeProbePort => ({ measure: async () => seconds });
+const probe = (seconds: number, picture: { width: number; height: number } | null = null): TakeProbePort =>
+  ({ measure: async () => ({ duration: seconds, picture }) });
 
 const clock = (): ClockPort => ({ now: () => 1000, setTimeout: () => ({ cancel: () => {} }) });
 
-const build = (options: { screen?: boolean; webcam?: boolean; duration?: number } = {}) => {
+const build = (options: { screen?: boolean; webcam?: boolean; duration?: number; picture?: { width: number; height: number } } = {}) => {
   const clip = Clip.empty(new FakeTakes());
   const audio: boolean[] = [];
   const comp = compositor();
@@ -95,7 +97,7 @@ const build = (options: { screen?: boolean; webcam?: boolean; duration?: number 
     mic: microphone(false),
     compositor: comp,
     recorder: rec,
-    probe: probe(options.duration ?? 2.5),
+    probe: probe(options.duration ?? 2.5, options.picture ?? null),
     clock: clock(),
     sources: () => SourceSet.of(options.screen ?? true, options.webcam ?? false, false),
     region: () => CropRegion.FULL,
@@ -126,6 +128,27 @@ describe('RecordTake', () => {
     expect(clip.takes.count()).toBe(1);
     expect(clip.takes.at(0)?.duration).toBe(2.5);
     expect(comp.closed).toBe(1);
+  });
+
+  it("keeps the size of the take's picture, so the clip can size itself by it", async () => {
+    const { clip, take } = build({ screen: true, duration: 2.5, picture: { width: 1920, height: 1080 } });
+    take.start();
+
+    await take.stop();
+
+    expect(clip.takes.at(0)?.picture).toEqual({ width: 1920, height: 1080 });
+  });
+
+  it('falls back to the wall clock when the blob will not say how long it is', async () => {
+    // A blob the browser will not measure comes back as 0, and a take cannot be built
+    // without a length — the take must not be lost over it.
+    const { clip, take } = build({ screen: true, duration: 0 });
+    take.start();
+
+    await take.stop();
+
+    expect(clip.takes.count()).toBe(1);
+    expect(clip.takes.at(0)?.duration).toBeCloseTo(0.1);   // the clock stands still, so the floor
   });
 
   it('refuses a take with no picture, and says why', () => {

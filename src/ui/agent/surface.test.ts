@@ -104,9 +104,10 @@ describe('describeClip', () => {
     expect(described.cuts).toEqual([]);
     expect(described.annotations).toEqual([]);
     expect(described.properties).toEqual([
-      { id: 'title', label: 'Title', control: 'text', value: '' },
-      { id: 'description', label: 'Description', control: 'long-text', value: '' },
-      { id: 'addToExport', label: 'Add to export', control: 'toggle', value: '' },
+      { id: 'title', label: 'Title', control: 'text', value: '', readOnly: false },
+      { id: 'description', label: 'Description', control: 'long-text', value: '', readOnly: false },
+      { id: 'addToExport', label: 'Add to export', control: 'toggle', value: '', readOnly: false },
+      { id: 'size', label: 'Clip size', control: 'text', value: '', readOnly: true },
     ]);
   });
 

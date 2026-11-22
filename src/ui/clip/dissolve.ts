@@ -15,8 +15,26 @@
 // for.
 
 import { el } from '../dom.js';
+import { ClipSize } from '../../domain/clip/ClipSize.js';
+import type { Frame } from '../../domain/clip/ClipSize.js';
 
 export const DISSOLVE_S = 0.08;   // how long the dissolve lasts, in seconds
+
+/** The picture size of a frame source, or null when it has none yet. */
+function pictureOf(source: CanvasImageSource): { width: number; height: number } | null {
+  if (source instanceof HTMLVideoElement) {
+    return source.videoWidth > 0 ? { width: source.videoWidth, height: source.videoHeight } : null;
+  }
+  if (source instanceof HTMLCanvasElement) return { width: source.width, height: source.height };
+  return null;
+}
+
+/** The rectangle a source is drawn into: fitted whole and centred, or the whole canvas. */
+function fitIn(width: number, height: number, picture: { width: number; height: number } | null): Frame {
+  const full: Frame = { x: 0, y: 0, width, height };
+  const size = ClipSize.of(width, height);
+  return size && picture ? size.frameFor(picture) : full;
+}
 
 export class Dissolve {
   private held: HTMLCanvasElement | null = null;   // the frame the last take ended on
@@ -31,8 +49,10 @@ export class Dissolve {
     this.held.width = w; this.held.height = h;
     const g = this.held.getContext('2d');
     if (!g) { this.held = null; return; }
-    g.clearRect(0, 0, w, h);
-    try { g.drawImage(source, 0, 0, w, h); } catch { this.held = null; }
+    g.fillStyle = '#000';
+    g.fillRect(0, 0, w, h);
+    const fit = fitIn(w, h, pictureOf(source));
+    try { g.drawImage(source, fit.x, fit.y, fit.width, fit.height); } catch { this.held = null; }
   }
 
   // Hold the frame the take in hand is ending on.
@@ -64,10 +84,10 @@ export class Dissolve {
   // dissolve is over, so it is used for one join only. Returns whether it drew the
   // dissolve; otherwise the caller draws the plain frame itself.
   draw(
-    g: CanvasRenderingContext2D, vid: HTMLVideoElement, w: number, h: number, since: number,
+    g: CanvasRenderingContext2D, vid: HTMLVideoElement, w: number, h: number, since: number, into?: Frame,
   ): boolean {
-    const frame = this.held;
-    if (!frame) return false;
+    const held = this.held;
+    if (!held) return false;
     const k = this.alpha(since);
     if (k === null) {
       if (since >= DISSOLVE_S) this.held = null;      // spent on this join
@@ -75,9 +95,10 @@ export class Dissolve {
     }
     g.save();
     g.globalAlpha = 1;
-    g.drawImage(frame, 0, 0, w, h);        // the frame being left behind
+    g.drawImage(held, 0, 0, w, h);        // the frame being left behind
     g.globalAlpha = k;
-    g.drawImage(vid, 0, 0, w, h);         // the new take coming in over it
+    if (into) g.drawImage(vid, into.x, into.y, into.width, into.height);
+    else g.drawImage(vid, 0, 0, w, h);    // the new take coming in over it
     g.restore();
     return true;
   }

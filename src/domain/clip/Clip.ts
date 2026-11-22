@@ -7,8 +7,9 @@
 //     it cannot drift from the takes it is made of);
 //   * the cuts — the stretches approved out of it — as a set that cannot overlap;
 //   * the annotations — what is drawn over the picture — as a set that can;
-//   * what the clip says about itself — its title, its description — which nothing
-//     else is a fraction of and nothing is scaled when the clip grows.
+//   * what the clip says about itself — its title and its description — which nothing
+//     else is a fraction of and nothing is scaled when the clip grows. Its own **size**
+//     is derived from the takes, not kept among them.
 //
 // — and it owns the rules that relate them, which used to be spread between the
 // marks module, the exporter and a couple of fields on the app: a cut that is
@@ -27,6 +28,8 @@ import { Span } from './Span.js';
 import { SpanSet } from './SpanSet.js';
 import { TimelineMap } from './TimelineMap.js';
 import { ClipProperties } from './ClipProperties.js';
+import { ClipSize } from './ClipSize.js';
+import type { Picture } from './ClipSize.js';
 import { AnnotationSet } from '../annotation/AnnotationSet.js';
 import { annotationFrom } from '../annotation/kinds.js';
 import type { Annotation, StoredAnnotation } from '../annotation/Annotation.js';
@@ -44,7 +47,7 @@ export type Segment = { takeIndex: number; from: number; to: number };
  * are optional so a clip written down before either existed still reads back.
  */
 export interface ClipSnapshot {
-  takes: ReadonlyArray<{ blob: Blob; duration: number }>;
+  takes: ReadonlyArray<{ blob: Blob; duration: number; picture?: Picture }>;
   cuts: ReadonlyArray<{ s: number; e: number }>;
   annotations?: ReadonlyArray<StoredAnnotation>;
   properties?: Readonly<Record<string, string>>;
@@ -139,14 +142,25 @@ export class Clip {
   }
 
   /**
+   * The clip's own size: the picture the review shows and every export writes. It is the
+   * largest width and largest height among the takes — both even — or null when no take
+   * has a measured picture. Derived, never a field, and **not the person's to set**: it
+   * follows the takes alone, so nothing can hold a clip to a shape its own takes do not
+   * have.
+   */
+  size(): ClipSize | null {
+    return ClipSize.largest(this.repo.all().map(take => take.picture));
+  }
+
+  /**
    * A new recording at the end. The clip is longer, and the cuts and the
    * annotations are fractions of it, so they are re-based to stay over the same
    * moments — and the last change cannot be undone across a join it was never
    * measured against.
    */
-  addTake(blob: Blob, duration: number): Take {
+  addTake(blob: Blob, duration: number, picture?: Picture | null): Take {
     const before = this.total();
-    const take = this.repo.add(blob, duration);
+    const take = this.repo.add(blob, duration, picture);
     const now = this.total();
     if (before > 0 && now > before) {
       const k = before / now;
@@ -347,7 +361,7 @@ export class Clip {
    */
   snapshot(): ClipSnapshot {
     return {
-      takes: this.repo.all().map(take => ({ blob: take.blob, duration: take.duration })),
+      takes: this.repo.all().map(take => ({ blob: take.blob, duration: take.duration, picture: take.picture ?? undefined })),
       cuts: this.removed.spans.map(span => ({ s: span.s, e: span.e })),
       annotations: this.notes.all.map(annotation => annotation.stored()),
       properties: this.props.toRecord(),
@@ -365,7 +379,7 @@ export class Clip {
    */
   restore(snapshot: ClipSnapshot): void {
     this.repo.clear();
-    for (const take of snapshot.takes) this.repo.add(take.blob, take.duration);
+    for (const take of snapshot.takes) this.repo.add(take.blob, take.duration, take.picture ?? null);
     this.removed = SpanSet.of(snapshot.cuts);
     this.notes = AnnotationSet.of(
       (snapshot.annotations ?? [])

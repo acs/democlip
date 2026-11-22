@@ -16,7 +16,7 @@ import type { FixtureTake } from '../fixtures/takes.js';
 const HOOKS = pageModule('e2e/support/app-hooks.ts');
 
 interface PageWindow {
-  __e2eTakes?: Array<{ blob: Blob; seconds: number }>;
+  __e2eTakes?: Array<{ blob: Blob; seconds: number; shape: string }>;
 }
 
 export interface Booted {
@@ -63,7 +63,11 @@ export function boot(page: Page): Booted {
         const store = (window as unknown as PageWindow).__e2eTakes ?? [];
         for (const index of indices) {
           const take = store[index];
-          if (take) session.clip.addTake(take.blob, take.seconds);
+          if (!take) continue;
+          // The take carries its own picture size, as a recorded take does, so the clip
+          // sizes itself by it.
+          const [width, height] = take.shape.split(/[x×]/).map(Number);
+          session.clip.addTake(take.blob, take.seconds, width > 0 && height > 0 ? { width, height } : null);
         }
       }, { url: HOOKS, indices: takes.map(take => take.index) });
     },

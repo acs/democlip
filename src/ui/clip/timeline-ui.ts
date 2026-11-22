@@ -8,7 +8,7 @@ import { clock, el } from '../dom.js';
 import { currentPhase } from '../../state.js';
 import { session } from '../../session.js';
 import { estimateWebmText } from './size-estimate.js';
-import { keptLengthNow, keptOf, player, sourceOf } from './clip.js';
+import { keptLengthNow, keptOf, player, resizeReview, sourceOf } from './clip.js';
 import { waveform } from './waveform.js';
 import { drawThumb, thumbBox } from './thumbnail.js';
 
@@ -21,6 +21,9 @@ export function initTimeline(): void {
   session.clip.onChange(event => {
     if (event.type === 'cut-approved' || event.type === 'cut-undone') {
       void rebuildTimeline();     // the clip is a different length now
+    }
+    if (event.type === 'take-added' || event.type === 'property-changed') {
+      resizeReview();             // a larger take, or the size set: the frame may move
     }
     updateTimeUI();
     updateSizeUI();

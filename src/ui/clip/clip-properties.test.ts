@@ -7,11 +7,12 @@ import { ClipProperties } from '../../domain/clip/ClipProperties.js';
 // no change to the panel or anywhere else — which is what the seam exists for.
 
 describe('the clip property register', () => {
-  it('offers the title, the description and the switch, in order', () => {
-    expect(clipProperties().map(property => property.id)).toEqual(['title', 'description', 'addToExport']);
+  it('offers the title, the description, the switch and the size, in order', () => {
+    expect(clipProperties().map(property => property.id)).toEqual(['title', 'description', 'addToExport', 'size']);
     expect(clipProperty('title')?.label).toBe('Title');
     expect(clipProperty('description')?.control).toBe('long-text');
     expect(clipProperty('addToExport')?.control).toBe('toggle');
+    expect(clipProperty('size')?.readOnly).toBe(true);
   });
 
   it('answers null for a property this build does not offer', () => {
@@ -48,5 +49,14 @@ describe('the clip property register', () => {
     expect(addToExport.value(on)).toBe('true');
     expect(addToExport.value(addToExport.with(on, 'false')!)).toBe('');
     expect(addToExport.value(addToExport.with(on, 'no')!)).toBe('');
+  });
+
+  it('offers the clip size as a value the person does not set', () => {
+    const size = clipProperty('size')!;
+    expect(size.readOnly).toBe(true);
+    // Nothing to write: the size follows the takes, so the property refuses any value.
+    expect(size.with(ClipProperties.EMPTY, '1920x1080')).toBeNull();
+    // And with no clip handed in there is no derived size to show.
+    expect(size.value(ClipProperties.EMPTY)).toBe('');
   });
 });

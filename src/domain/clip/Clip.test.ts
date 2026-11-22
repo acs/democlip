@@ -7,14 +7,15 @@ import { Arrow } from '../annotation/Arrow.js';
 import { AnnotationSet } from '../annotation/AnnotationSet.js';
 import type { Annotation } from '../annotation/Annotation.js';
 import type { TakeRepository } from './TakeRepository.js';
+import type { Picture } from './ClipSize.js';
 
 // The port is what makes this possible: the aggregate is tested with the smallest
 // collection that behaves like the real one, and nothing here touches a browser.
 class FakeTakes implements TakeRepository {
   private takes: Take[] = [];
 
-  add(blob: Blob, duration: number): Take {
-    const take = Take.of(this.takes.length + 1, blob, `blob:${this.takes.length + 1}`, duration);
+  add(blob: Blob, duration: number, picture?: Picture | null): Take {
+    const take = Take.of(this.takes.length + 1, blob, `blob:${this.takes.length + 1}`, duration, picture ?? null);
     this.takes.push(take);
     return take;
   }
@@ -34,6 +35,13 @@ class FakeTakes implements TakeRepository {
 const clipOf = (...durations: number[]): Clip => {
   const clip = Clip.empty(new FakeTakes());
   for (const seconds of durations) clip.addTake(new Blob(['x']), seconds);
+  return clip;
+};
+
+/** A clip whose takes carry measured picture sizes, which is what its own size follows. */
+const clipSized = (...pictures: Array<{ width: number; height: number }>): Clip => {
+  const clip = Clip.empty(new FakeTakes());
+  for (const picture of pictures) clip.addTake(new Blob(['x']), 2, picture);
   return clip;
 };
 
@@ -402,5 +410,48 @@ describe('Clip, leaving as a file and coming back', () => {
 
     expect(clip.carry(AnnotationSet.of([arrow('a', 0.5, 0.6)]))).toBe(0);
     expect(clip.annotations.byId('a')?.span.s).toBeCloseTo(0.1);
+  });
+});
+
+// The clip's own size: the largest take picture (both even) until the person sets one,
+// kept with the clip, taken back by the one undo, and written down with the takes.
+
+describe('Clip size', () => {
+  it('is the largest take picture, both edges even', () => {
+    const clip = clipSized({ width: 1280, height: 720 }, { width: 985, height: 611 });
+    expect(clip.size()?.toString()).toBe('1280x720');
+
+    clip.addTake(new Blob(['x']), 2, { width: 1920, height: 1081 });
+    expect(clip.size()?.toString()).toBe('1920x1082');
+  });
+
+  it('grows to a larger take and does not shrink for a smaller one', () => {
+    const clip = clipSized({ width: 1280, height: 720 });
+    clip.addTake(new Blob(['x']), 2, { width: 1920, height: 1080 });
+    expect(clip.size()?.toString()).toBe('1920x1080');
+
+    clip.addTake(new Blob(['x']), 2, { width: 640, height: 480 });
+    expect(clip.size()?.toString()).toBe('1920x1080');
+  });
+
+  it('is null for a clip whose takes have no measured picture', () => {
+    expect(Clip.empty(new FakeTakes()).size()).toBeNull();
+    expect(clipOf(2).size()).toBeNull();
+  });
+
+  it('is not moved by a size written into the properties — it follows the takes', () => {
+    const clip = clipSized({ width: 1280, height: 720 });
+    clip.setProperty('size', '800x600');
+    expect(clip.size()?.toString()).toBe('1280x720');
+
+    clip.addTake(new Blob(['x']), 2, { width: 1920, height: 1080 });
+    expect(clip.size()?.toString()).toBe('1920x1080');
+  });
+
+  it("comes back from a snapshot with the takes' pictures", () => {
+    const clip = clipSized({ width: 1920, height: 1080 });
+    const rebuilt = Clip.empty(new FakeTakes());
+    rebuilt.restore(clip.snapshot());
+    expect(rebuilt.size()?.toString()).toBe('1920x1080');
   });
 });

@@ -43,7 +43,8 @@ export function describeClip(clip: Clip): ClipDescription {
       id: property.id,
       label: property.label,
       control: property.control,
-      value: property.value(clip.properties),
+      value: property.value(clip.properties, clip),
+      readOnly: !!property.readOnly,
     })),
   };
 }

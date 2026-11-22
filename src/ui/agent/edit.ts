@@ -78,6 +78,7 @@ export function createEditor(clip: Clip, make: MakeAnnotation): Editor {
     setClipProperty(property, value) {
       const descriptor = clipProperty(property);
       if (!descriptor) return { ok: false, reason: `a clip has no property called ${property}` };
+      if (descriptor.readOnly) return { ok: false, reason: `the ${descriptor.label.toLowerCase()} is not the person's to set` };
       if (typeof value !== 'string') return { ok: false, reason: 'a property value is a string' };
       const next = descriptor.with(clip.properties, value);
       if (!next) return { ok: false, reason: `${property} will not take ${JSON.stringify(value)}` };

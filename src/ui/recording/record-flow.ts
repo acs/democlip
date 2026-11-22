@@ -89,12 +89,17 @@ export function syncSources(): void {
 }
 
 function sizePreview(): void {
-  // The element the capture is drawn from is the truth. A display track's settings
-  // report the *display's* size until the first frame of a tab or window arrives —
-  // the whole screen, for a small tab — so sizing from them alone would stretch the
-  // tab to the screen. `setSize` ignores a size of 0, so with no screen (the webcam
-  // alone) the webcam's own size is kept.
-  capture.setSize(el.sv.videoWidth, el.sv.videoHeight);
+  // The element the picture is actually drawn from is the truth: the shared screen,
+  // or the webcam when the screen is off. A display track's settings report the
+  // *display's* size until the first frame of a tab or window arrives — the whole
+  // screen, for a small tab — so sizing from them alone would stretch the tab to the
+  // screen. And sizing from the screen while the webcam is the whole picture would
+  // stretch the webcam into the size the last screen left in `capture`.
+  if (capture.sources.screen && el.sv.videoWidth > 0) {
+    capture.setSize(el.sv.videoWidth, el.sv.videoHeight);
+  } else if (capture.sources.webcam && el.wcv.videoWidth > 0) {
+    capture.setSize(el.wcv.videoWidth, el.wcv.videoHeight);
+  }
   el.cv.width = capture.width || 1280;
   el.cv.height = capture.height || 720;
   el.resBadge.classList.add('on');
@@ -102,15 +107,22 @@ function sizePreview(): void {
 }
 
 /**
- * Wire the preview to the capture's real size. Called once, at startup: the element
- * fires `resize` when the first frame lands and whenever a shared window or tab is
- * resized, and the preview follows both.
+ * Wire the preview to the capture's real size. Called once, at startup: an element
+ * fires `resize` when its first frame lands and whenever its picture changes size, and
+ * the preview follows it — the screen while it is on, the webcam while it is the whole
+ * picture.
  */
 export function initRecordFlow(): void {
   el.sv.addEventListener('resize', () => {
     if (!capture.sources.screen || currentPhase() === 'review') return;
     sizePreview();
   });
+  const followWebcam = (): void => {
+    if (!capture.sources.webcam || capture.sources.screen || currentPhase() === 'review') return;
+    sizePreview();
+  };
+  el.wcv.addEventListener('resize', followWebcam);
+  el.wcv.addEventListener('loadedmetadata', followWebcam);
 }
 
 export async function toggleScreen(): Promise<void> {
@@ -169,6 +181,10 @@ async function startRecording(): Promise<void> {
   const outcome = record.start();
   if (outcome.kind === 'refused') { toast(outcome.reason); return; }
   setPhase('recording');
+  // The preview shows the source this take is drawn from, so it is that source's size —
+  // the webcam's own when the screen is off, not the size the last screen left behind
+  // (the review is not resized, so a take after a larger one would otherwise stretch it).
+  sizePreview();
   el.recBtn.classList.add('recording');
   el.recLbl.textContent = 'Stop';
   el.badge.classList.add('on');

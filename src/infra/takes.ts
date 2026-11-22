@@ -12,14 +12,15 @@
 
 import { Take } from '../domain/clip/Take.js';
 import type { TakeRepository } from '../domain/clip/TakeRepository.js';
+import type { Picture } from '../domain/clip/ClipSize.js';
 
 export class InMemoryTakeRepository implements TakeRepository {
   private takes: Take[] = [];
   private nextId = 1;
 
   /** A new take at the end of the session, with the URL that plays it. */
-  add(blob: Blob, duration: number): Take {
-    const take = Take.of(this.nextId++, blob, URL.createObjectURL(blob), duration);
+  add(blob: Blob, duration: number, picture?: Picture | null): Take {
+    const take = Take.of(this.nextId++, blob, URL.createObjectURL(blob), duration, picture ?? null);
     this.takes.push(take);
     return take;
   }

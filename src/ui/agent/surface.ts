@@ -37,6 +37,8 @@ export interface ClipPropertySummary {
   readonly label: string;
   readonly control: string;
   readonly value: string;
+  /** True for a property the app shows but the person does not set — the clip size. */
+  readonly readOnly: boolean;
 }
 
 /** One annotation of the clip, as data. */

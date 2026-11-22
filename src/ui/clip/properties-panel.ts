@@ -1,14 +1,15 @@
 // The clip properties panel: the one surface that shows and edits what a clip says
-// about itself — its title, its description.
+// about itself — its title, its description, and its size.
 //
 // It is the clip's answer to the annotation properties inspector, one level up, and it
 // opens the same way: a small **settings** control in the corner of the preview — the
 // picture the clip is seen on, so it sits beside the clip as an annotation's settings
 // control sits on the annotation, wearing the same three sliders — opens a popover
 // beside it. The panel names no property; it asks `clipProperties()` for the list and
-// draws one field per descriptor — a line for a title, a paragraph for a description —
-// and writes a change through `clip.setProperty`, so announcing, the one undo and
-// keeping the clip are the clip's and not this module's.
+// draws one field per descriptor — a line for a title, a paragraph for a description,
+// and the size as a value it does not let anyone edit — and writes a change through
+// `clip.setProperty`, so announcing, the one undo and keeping the clip are the clip's
+// and not this module's.
 //
 // It is a body-level popover placed beside the control, the way the annotation
 // inspector is placed beside its annotation. It owns its open state and its listeners;
@@ -115,6 +116,20 @@ class ClipPropertiesPanel {
     const host = document.createElement('div');
     host.className = 'prop-row';
 
+    const name = document.createElement('span');
+    name.className = 'prop-name';
+    name.textContent = property.label;
+
+    // A property the app shows but the person does not set — the clip size — is its
+    // value and nothing to type into.
+    if (property.readOnly) {
+      const value = document.createElement('span');
+      value.className = 'prop-value';
+      value.textContent = property.value(session.clip.properties, session.clip) || '—';
+      host.append(name, value);
+      return host;
+    }
+
     // A toggle is one labelled checkbox, rather than a name over a control.
     if (property.control === 'toggle') {
       const label = document.createElement('label');
@@ -122,28 +137,21 @@ class ClipPropertiesPanel {
       const check = document.createElement('input');
       check.type = 'checkbox';
       check.className = 'prop-check';
-      check.checked = property.value(session.clip.properties) === 'true';
-      check.addEventListener('change', () => this.applyOne(property, check));
-      const name = document.createElement('span');
-      name.className = 'prop-name';
-      name.textContent = property.label;
+      check.checked = property.value(session.clip.properties, session.clip) === 'true';
+      check.addEventListener('change', () => this.applyOne({ property, input: check }));
       label.append(check, name);
       host.append(label);
       this.fields.push({ property, input: check });
       return host;
     }
 
-    const name = document.createElement('span');
-    name.className = 'prop-name';
-    name.textContent = property.label;
-
     const input = property.control === 'text'
       ? document.createElement('input')
       : document.createElement('textarea');
     input.className = property.control === 'text' ? 'prop-input' : 'prop-input prop-textarea';
-    input.value = property.value(session.clip.properties);
+    input.value = property.value(session.clip.properties, session.clip);
     if (input instanceof HTMLTextAreaElement) input.rows = 3;
-    input.addEventListener('change', () => this.applyOne(property, input));
+    input.addEventListener('change', () => this.applyOne({ property, input }));
 
     host.append(name, input);
     this.fields.push({ property, input });
@@ -151,17 +159,20 @@ class ClipPropertiesPanel {
   }
 
   /** Apply one field through the clip: it announces, the one undo holds it, and it is kept. */
-  private applyOne(property: ClipProperty, input: HTMLInputElement | HTMLTextAreaElement): void {
+  private applyOne(field: Field): void {
+    const { property, input } = field;
     const value = input instanceof HTMLInputElement && input.type === 'checkbox'
       ? (input.checked ? 'true' : '')
       : input.value;
+    // A field left as it was is not a change.
+    if (value === property.value(session.clip.properties, session.clip)) return;
     const next = property.with(session.clip.properties, value);
     if (!next) { toast(`${property.label} not changed — that value is not allowed`); return; }
     session.clip.setProperty(property.id, next.get(property.id));
   }
 
   private apply(): void {
-    for (const { property, input } of this.fields) this.applyOne(property, input);
+    for (const field of this.fields) this.applyOne(field);
   }
 }
 
