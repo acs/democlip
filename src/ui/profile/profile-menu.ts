@@ -6,9 +6,9 @@
 // window's right edge, since the pill is there).
 //
 // The selector only *selects*: a row is a pill with the profile's first letters, its name, a tick
-// when it is the one in use, and — on the person's own profiles — a sliders mark and a bin. A
+// when it is the one in use, and — on the person's own profiles — a pencil mark and a bin. A
 // profile is neither named nor configured here: both are its own dialog (`profile-def.ts`), which
-// the sliders mark opens.
+// the pencil mark opens.
 //
 // It names no rule of its own. It asks for the book and whether the session has begun to
 // capture, draws the rows from the answer, and hands every press to the flow.
@@ -27,7 +27,7 @@ export interface ProfileMenuHandlers {
   remove(id: string): void;
 }
 
-const SLIDERS = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><line x1="4" y1="8" x2="20" y2="8"/><line x1="4" y1="16" x2="20" y2="16"/><circle cx="10" cy="8" r="2.6"/><circle cx="15" cy="16" r="2.6"/></svg>';
+const PENCIL = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>';
 const BIN = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/></svg>';
 
 const GAP = 6;      // between the pill and the menu
@@ -159,13 +159,14 @@ class ProfileMenu {
 
   /**
    * What may be done to a profile from here: open it, and let it go. Its **name** is not set
-   * here — that is the profile's own dialog, where everything about it is.
+   * here — that is the profile's own dialog, where everything about it is. The pencil is the
+   * app's mark for editing, the same one the clip's own settings wear.
    */
   private acts(row: ProfileRow): HTMLElement {
     const acts = document.createElement('div');
     acts.className = 'profile-acts';
     acts.append(
-      this.icon('define', `Open ${row.name}`, SLIDERS, row.manageable, () => {
+      this.icon('define', `Open ${row.name}`, PENCIL, row.manageable, () => {
         this.handlers.define(row.id);
       }),
       this.icon('remove', `Remove ${row.name}`, BIN, row.manageable, () => {

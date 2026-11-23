@@ -1,6 +1,6 @@
 // The profile config sheet: what a profile fixes.
 //
-// Opened from a profile's sliders mark — never from the selector itself, and never shown there,
+// Opened from a profile's pencil mark — never from the selector itself, and never shown there,
 // because the selector only selects. Everything about a profile is here: its **name**, and one
 // row per item it may control, saying whether it controls it and at what. It names no item of its
 // own: it walks the items a profile may control. What it writes is a **declaration**: a controlled item is applied to the app and is
