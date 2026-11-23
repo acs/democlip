@@ -82,14 +82,14 @@ describe('placeWatermark', () => {
   });
 });
 
-// The clip's title under the mark: 20% smaller, right-aligned with it. The measuring needs a
+// The clip's title under the mark: half its height, right-aligned with it. The measuring needs a
 // canvas, so it is handed in — the placement itself is arithmetic and proved here.
 describe('placeWatermarkTitle', () => {
   const mark = { y: 0.03, height: 0.09 };
   /** A stand-in for the view's measuring: about 0.6 of the size per character. */
   const measure = (text: string, height: number): number => text.length * height * 0.6;
 
-  it('puts the title under the mark, 20% smaller and right-aligned with it', () => {
+  it('puts the title under the mark, half its height and right-aligned with it', () => {
     const title = placeWatermarkTitle('A demo', mark, measure);
 
     expect(title.text).toBe('A demo');
@@ -110,7 +110,7 @@ describe('placeWatermarkTitle', () => {
   it('stands on its own in the corner when the clip wears no mark', () => {
     const alone = placeWatermarkTitle('A demo', null, measure);
 
-    // 20% smaller than the mark would have been, and at the top-right edge rather than under one.
+    // Half the mark's height would have been, and at the top-right edge rather than under one.
     expect(alone.height).toBeCloseTo(WATERMARK.maxHeight * WATERMARK_TITLE.scale, 6);
     expect(alone.y).toBeCloseTo(WATERMARK.margin, 6);
     expect(alone.x + alone.width).toBeCloseTo(1 - WATERMARK.margin, 6);
