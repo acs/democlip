@@ -79,6 +79,7 @@ export const el = {
   cutWrap:     byId<HTMLElement>('t-cut-wrap'),
   cutUndo:  byId<HTMLButtonElement>('cut-undo'),
   helpBd:    byId<HTMLElement>('help-bd'),
+  helpSteps: byId<HTMLElement>('help-steps'),
   helpBtn:   byId<HTMLButtonElement>('help-btn'),
   helpClose: byId<HTMLButtonElement>('help-close'),
   ver:       byId<HTMLElement>('ver'),
