@@ -27,3 +27,12 @@ export const LOGOS: readonly Logo[] = [
 export function logoFile(name: string): string | null {
   return LOGOS.find(logo => logo.name === name)?.file ?? null;
 }
+
+/**
+ * The name a logo's picture is kept under in the **picture store** (`src/infra/images.ts`), where
+ * an image annotation's bytes live: the watermark's mark is an image annotation, so the app's own
+ * file is fetched there once and drawn by the image kind, rather than by a kind fitted to it.
+ */
+export function logoPictureId(name: string): string {
+  return `logo:${name}`;
+}

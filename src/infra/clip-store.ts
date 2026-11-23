@@ -54,6 +54,8 @@ interface Meta {
   cuts: Array<{ s: number; e: number }>;
   annotations?: StoredAnnotation[];
   properties?: Record<string, string>;
+  /** The ids of the clip's **watermark** — the annotations it wears over the whole clip. */
+  watermark?: readonly string[];
   audio: boolean;
 }
 
@@ -130,7 +132,7 @@ export function loadClip(): Promise<StoredClip | null> {
     for (const take of kept) {
       if (!take.picture) take.picture = await measuredPicture(take.blob);
     }
-    return { clip: { takes: kept, cuts: meta.cuts, annotations: meta.annotations ?? [], properties: meta.properties ?? {} }, audio: !!meta.audio };
+    return { clip: { takes: kept, cuts: meta.cuts, annotations: meta.annotations ?? [], properties: meta.properties ?? {}, watermark: meta.watermark ?? [] }, audio: !!meta.audio };
   }).catch(() => null);
 }
 
@@ -167,6 +169,7 @@ function metaOf(clip: Clip, audio: boolean): Meta {
     cuts: clip.cuts.spans.map(span => ({ s: span.s, e: span.e })),
     annotations: clip.annotations.all.map(annotation => annotation.stored()),
     properties: clip.properties.toRecord(),
+    watermark: clip.snapshot().watermark,
     audio,
   };
 }

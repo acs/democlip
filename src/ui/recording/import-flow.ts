@@ -70,7 +70,7 @@ export async function onFileChosen(): Promise<void> {
   // The take is in the clip like any other, so the review opens on it: the strip, the
   // waveform and the export all follow from there. A **watermark** that came back with the
   // file — or the clip's own, if it wears a logo — is decoded before the review draws.
-  await syncWatermark(false);
+  await syncWatermark('picture');
   setPhase('review');
   await openReview(session.clip.takes.count() - 1, 0);
   setStatus('ready', 'Ready');

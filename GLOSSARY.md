@@ -125,7 +125,7 @@ stays the person's to turn off.
 |---|---|---|
 | **clip property** | something about the clip the user can change after it is made — its title, its description, its **clip size**, or **add to export**. The app declares it: a label, which shared control edits it, and how to read and write the value on the clip. The value lives with the clip | `ClipProperty`, `registerClipProperty()` (`ui/clip/clip-properties.ts`); the value in `ClipProperties` (`src/domain/clip/ClipProperties.ts`) |
 | **logo** | the mark the clip wears at the head of every export: **one of the marks the app serves itself**, from its own folder in the repository, chosen from the **list the app declares** — or nothing, which is the ordinary case. It is drawn **at its own proportions — scaled, never stretched** — as tall as the card's **logo row**, so marks of any shape are read at the same size. It is a **clip property**, a value rather than a switch, and a name the app does not serve is refused rather than kept, so no export waits on a file that will not draw. A clip that wears one opens with a **title card** carrying it, and wears it as a **watermark** over the whole clip | `ui/logos.ts` (the app's own list), the value in `ClipProperties` |
-| **watermark** | the mark the clip wears over the **whole** of its picture: its **logo**, drawn as an **image annotation** spanning the whole clip — placed in the top-right corner, small, **scaled, never stretched** — so the branding is on every frame and not only on the card at its head. It is one of the clip's own annotations: it shows on the **timeline lane**, can be moved and resized, is kept with the clip and is drawn into every export. Setting the **logo** places it and clearing the logo takes it away, and that is a **load** rather than the person's edit, so the one **undo** takes back the **logo** and the watermark follows the logo it is left with | the reconciler in `ui/clip/watermark.ts`; the kind in `domain/annotation/ImageAnnotation.ts`; the placement in `ui/annotating/picture.ts` |
+| **watermark** | the annotations the clip wears over the **whole** of its picture: its **logo** as an **image annotation** spanning the whole clip, and — when it has one — its **title** as a **line of text 20% smaller**, under the mark, or on its own in the corner when the clip wears no mark. Both small in the top-right corner and **scaled, never stretched**, so the branding is on every frame and not only on the card at its head. They are ordinary annotations of the kinds the app already has — nothing inside a kind marks one as a watermark — and the **clip** keeps which ones they are, writing their ids down with itself. So they show on the **timeline lane**, can be picked, moved, resized and edited like anything else the person places, are kept with the clip and are drawn into every export. Each part follows its **own** property — setting the **logo** places the mark and clearing it takes the mark away, and the **title** the line — so a part the person takes away stays away until its own property moves | `Clip.watermarks()` and `Clip.setWatermarks()` — the ids, written down in `ClipSnapshot`; the reconciler in `ui/clip/watermark.ts`; the placement in `ui/annotating/picture.ts` |
 | **clip size** | the picture the clip is shown and exported at: a width and a height, both **even**. It starts at the takes' largest width and largest height, rounded up to even, and grows as a larger take arrives; once the person sets it in the **clip properties panel** it is kept, and a later take is fitted into it | `ClipSize` (`src/domain/clip/ClipSize.ts`), `Clip.size()` |
 | **fit** | how a take whose picture is another shape is drawn into the **clip size**: scaled to sit wholly inside it and centred, with the clip's background around it — nothing is cropped and nothing is stretched. The review and the export draw through the same fit | `ClipSize.frameFor()` (`src/domain/clip/ClipSize.ts`) |
 | **clip properties panel** | the one shared surface that shows and edits the clip's properties — a field per property, whatever it is. Opened from a **settings** control in the corner of the preview (the picture the clip is seen on, so it sits beside the clip as an annotation's settings control sits on it — the same pencil mark); it names no property, it asks the register. The clip's answer to the **properties inspector**, one level up | `ui/clip/properties-panel.ts` |
@@ -135,11 +135,16 @@ A clip property is **not a fraction of the clip and is not scaled when the clip 
 where a cut and an annotation are. It changes through the clip, is announced like every
 other change, is what the one **undo** takes back, and is kept with the clip.
 
-A **watermark** is the one annotation that follows a **clip property**: setting the **logo**
-places it and clearing the logo takes it away, so a clip's branding is on every frame as well
-as on the card at its head. It goes in through a **load** — announced, so the lane and the
-picture follow — and not through the person's edit, so the one **undo** still takes back the
-**logo** itself, and the watermark follows the logo it is left with.
+A **watermark** is the annotations that follow a **clip property**: each part follows its own —
+the mark the **logo**, the line the **title** — so setting one places its part and clearing it
+takes that part away, and a clip's branding is on every frame as well as on the card at its head.
+They go in through a **load** — announced, so the lane and the picture follow — and not through
+the person's edit, so the one **undo** still takes back the **logo** or the **title**, and the
+watermark follows what it is left with. A part the person takes away is not put back by a change
+to the other one, nor by the clip being opened again; it is placed again when its **own** property
+moves. Which annotations are the watermark is the **clip's** own fact — it keeps their ids and
+writes them down with itself — so nothing inside a kind has to carry a marker, and a picture or a
+line the person places is just that.
 
 ## Profiles
 

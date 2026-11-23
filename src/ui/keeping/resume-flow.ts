@@ -18,7 +18,7 @@ export async function resumeClip(): Promise<boolean> {
   // image draws at once rather than after the first frame. The clip's **logo** is a file
   // the app serves itself, so the watermark that wears it is put back and decoded here.
   await images.load();
-  await syncWatermark(false);
+  await syncWatermark('picture');
   session.audio = outcome.audio;
   setPhase('review');
   await openReview(0, 0);

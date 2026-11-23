@@ -1,16 +1,12 @@
 // The image: the second kind of annotation, and the proof that a kind is described
 // rather than fitted.
 //
-// A picture, over the picture of the clip, for a stretch of its time. Where it sits and how
-// big it is are a rect in **fractions of the picture**, like an arrow's ends, so it lands in
-// the same place on the preview, on the export canvas and after a reload. The picture itself
-// is **not here**: the kind holds an `imageId` and numbers, and the bytes live in
-// `src/infra/images.ts`, because `src/domain/` may not touch a `Blob` or a canvas.
-//
-// A picture comes one of two ways. The person **chooses** one, and it is kept as bytes under
-// an `imageId`. Or it is a **logo** — a mark the app serves itself, named in `ui/logos.ts` —
-// which is what the clip's **watermark** wears: its `logo` is the name, and the view resolves
-// it, so nothing is uploaded and nothing is stored for a mark the app already has.
+// A chosen picture, over the picture of the clip, for a stretch of its time. Where it
+// sits and how big it is are a rect in **fractions of the picture**, like an arrow's
+// ends, so it lands in the same place on the preview, on the export canvas and after a
+// reload. The picture itself is **not here**: the kind holds an `imageId` and numbers,
+// and the bytes live in `src/infra/images.ts`, because `src/domain/` may not touch a
+// `Blob` or a canvas.
 //
 // It keeps the picture's own proportions when it is resized. A rect in fractions of the
 // picture does not: a square rect on a 16:9 screen is not square. So the geometry
@@ -28,13 +24,8 @@ import {
 } from './Annotation.js';
 
 export interface ImageGeometry {
-  /** Which kept picture this is — resolved to bytes in `infra/`, never here. '' for a logo. */
+  /** Which kept picture this is — resolved to bytes in `infra/`, never here. */
   readonly imageId: string;
-  /**
-   * The app-served **logo** this is, by name, when its picture is a mark the app serves
-   * rather than one the person chose — resolved in the view (`ui/logos.ts`), never here.
-   */
-  readonly logo?: string;
   /** The rect, as fractions of the picture. */
   readonly x: number;
   readonly y: number;
@@ -80,16 +71,12 @@ export class ImageAnnotation extends Annotation {
 
   /**
    * A new image, its rect pulled inside the picture. Null when it is too small to be
-   * worth keeping, or carries no picture at all — a stray one is not an image. The picture
-   * is a kept `imageId`, a served **logo** by name, or both.
+   * worth keeping, or carries no picture id — a stray one is not an image.
    */
   static create(span: Span, geometry: ImageGeometry, id: string = newAnnotationId()): ImageAnnotation | null {
     const r = rect(geometry?.x, geometry?.y, geometry?.width, geometry?.height);
-    const logo = typeof geometry?.logo === 'string' ? geometry.logo.trim() : '';
     const image = new ImageAnnotation(id, span, {
       imageId: String(geometry?.imageId ?? ''),
-      // Written down only when there is one, so a picture the person chose carries nothing extra.
-      ...(logo ? { logo } : {}),
       ...r,
       imageAspect: positive(geometry?.imageAspect),
       pictureAspect: positive(geometry?.pictureAspect),
@@ -103,7 +90,6 @@ export class ImageAnnotation extends Annotation {
     if (!g) return null;
     return ImageAnnotation.create(Span.of(stored.s, stored.e), {
       imageId: String(g.imageId ?? ''),
-      logo: typeof g.logo === 'string' ? g.logo : undefined,
       x: g.x as number, y: g.y as number, width: g.width as number, height: g.height as number,
       imageAspect: g.imageAspect as number, pictureAspect: g.pictureAspect as number,
     }, stored.id);
@@ -111,7 +97,7 @@ export class ImageAnnotation extends Annotation {
 
   /** Is this worth keeping, or too small to draw? */
   get isUsable(): boolean {
-    return (this.geometry.imageId !== '' || (this.geometry.logo ?? '') !== '')
+    return this.geometry.imageId !== ''
       && this.geometry.width >= MIN_SIZE
       && this.geometry.height >= MIN_SIZE;
   }
@@ -132,7 +118,7 @@ export class ImageAnnotation extends Annotation {
    * flipping the rect inside out.
    */
   withHandle(end: string, to: Point, options?: HandleOptions): ImageAnnotation | null {
-    const { x, y, width, height, imageAspect, pictureAspect, logo } = this.geometry;
+    const { x, y, width, height, imageAspect, pictureAspect } = this.geometry;
     const free = options?.free === true;
     // The fixed corner, and the new width and height measured from the dragged one.
     let anchorX: number, anchorY: number, w: number, h: number;
@@ -150,15 +136,15 @@ export class ImageAnnotation extends Annotation {
     const left = end === 'nw' || end === 'sw' ? anchorX - w : anchorX;
     const top  = end === 'nw' || end === 'ne' ? anchorY - h : anchorY;
     return ImageAnnotation.create(this.span, {
-      imageId: this.geometry.imageId, logo,
+      imageId: this.geometry.imageId,
       x: left, y: top, width: w, height: h, imageAspect, pictureAspect,
     }, this.id);
   }
 
   movedBy(dx: number, dy: number): ImageAnnotation | null {
-    const { x, y, width, height, imageId, logo, imageAspect, pictureAspect } = this.geometry;
+    const { x, y, width, height, imageId, imageAspect, pictureAspect } = this.geometry;
     return ImageAnnotation.create(this.span, {
-      imageId, logo, x: x + dx, y: y + dy, width, height, imageAspect, pictureAspect,
+      imageId, x: x + dx, y: y + dy, width, height, imageAspect, pictureAspect,
     }, this.id);
   }
 
@@ -189,13 +175,4 @@ export class ImageAnnotation extends Annotation {
       geometry: this.geometry,
     };
   }
-}
-
-/**
- * Is this annotation a **watermark** — an image whose picture is a **logo** the app serves,
- * rather than one the person chose? The clip wears at most one, over the whole of its picture,
- * and this is the whole of what makes one *the* watermark rather than another image placed.
- */
-export function isWatermark(annotation: Annotation | null | undefined): boolean {
-  return annotation instanceof ImageAnnotation && (annotation.geometry.logo ?? '') !== '';
 }

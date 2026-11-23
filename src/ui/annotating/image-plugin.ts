@@ -19,7 +19,6 @@
 import { ImageAnnotation } from '../../domain/annotation/ImageAnnotation.js';
 import { newAnnotationId, type Annotation } from '../../domain/annotation/Annotation.js';
 import { images } from '../../infra/images.js';
-import { logoImage } from '../exporting/logo-image.js';
 import { el } from '../dom.js';
 import { registerRenderer, type AnnotationRenderer } from './annotation-layer.js';
 import {
@@ -57,11 +56,9 @@ export class ImagePlugin implements AnnotationPlugin, AnnotationRenderer<Annotat
 
   draw(ctx: CanvasRenderingContext2D, annotation: Annotation, w: number, h: number): void {
     if (!(annotation instanceof ImageAnnotation)) return;
-    const { x, y, width, height, imageId, logo } = annotation.geometry;
-    // A **logo** is a file the app serves itself, by name (`ui/logos.ts`); a picture the person
-    // chose is bytes in the store. Either way it is the image kind, drawn the same.
-    const source = logo ? logoImage(logo) : images.get(imageId);
+    const source = images.get(annotation.geometry.imageId);
     if (!source) return;                       // not decoded yet — nothing to draw, not a crash
+    const { x, y, width, height } = annotation.geometry;
     ctx.drawImage(source, x * w, y * h, width * w, height * h);
   }
 

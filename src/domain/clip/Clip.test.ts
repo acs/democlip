@@ -6,6 +6,7 @@ import { Take } from './Take.js';
 import { Arrow } from '../annotation/Arrow.js';
 import { AnnotationSet } from '../annotation/AnnotationSet.js';
 import { ImageAnnotation } from '../annotation/ImageAnnotation.js';
+import { TextAnnotation } from '../annotation/TextAnnotation.js';
 import type { Annotation } from '../annotation/Annotation.js';
 import type { TakeRepository } from './TakeRepository.js';
 import type { Picture } from './ClipSize.js';
@@ -301,67 +302,100 @@ describe('Clip, annotations', () => {
 // ── The watermark ──────────────────────────────────────────────────────────────
 
 /** The clip's mark: an image whose picture is a **logo** the app serves, over the whole clip. */
-const mark = (logo: string, id = 'watermark'): Annotation => {
+const mark = (id = 'watermark'): Annotation => {
   const made = ImageAnnotation.create(Span.of(0, 1), {
-    imageId: '', logo, x: 0.83, y: 0.03, width: 0.14, height: 0.18, imageAspect: 1, pictureAspect: 16 / 9,
+    imageId: 'logo:democlip', x: 0.83, y: 0.03, width: 0.07, height: 0.09, imageAspect: 1, pictureAspect: 16 / 9,
   }, id);
   if (!made) throw new Error('the test watermark should be usable');
   return made;
 };
 
+/** The clip's title under the mark: a line of text over the whole clip. */
+const line = (id = 'watermark-title'): Annotation => {
+  const made = TextAnnotation.create(Span.of(0, 1), {
+    text: 'A demo', x: 0.6, y: 0.14, width: 0.3, height: 0.07,
+  }, id);
+  if (!made) throw new Error('the test title should be usable');
+  return made;
+};
+
 describe('Clip, the watermark', () => {
-  it('wears the mark its logo asks for, and gives it up when it is taken away', () => {
+  it('wears the annotations it is given, and gives them up when they are taken away', () => {
     const clip = clipOf(4);
-    expect(clip.watermark()).toBeNull();
+    expect(clip.watermarks()).toEqual([]);
 
-    expect(clip.setWatermark(mark('democlip'))).toBe(true);
-    expect(clip.watermark()?.id).toBe('watermark');
-    expect(clip.annotations.count).toBe(1);
+    expect(clip.setWatermarks([mark(), line()])).toBe(true);
+    expect(clip.watermarks().map(a => a.id)).toEqual(['watermark', 'watermark-title']);
+    expect(clip.annotations.count).toBe(2);
 
-    expect(clip.setWatermark(null)).toBe(true);
-    expect(clip.watermark()).toBeNull();
+    expect(clip.setWatermarks([])).toBe(true);
+    expect(clip.watermarks()).toEqual([]);
     expect(clip.annotations.isEmpty).toBe(true);
-    expect(clip.setWatermark(null)).toBe(false);        // nothing to take away
+    expect(clip.setWatermarks([])).toBe(false);         // nothing to take away
   });
 
-  it('is not just any image: one the person chose is not the watermark', () => {
+  it('is not just any annotation: one the person placed is not the watermark', () => {
     const clip = clipOf(4);
-    const picture = ImageAnnotation.create(Span.of(0, 1), {
-      imageId: 'img1', x: 0.3, y: 0.3, width: 0.2, height: 0.2, imageAspect: 1, pictureAspect: 16 / 9,
-    }, 'pic');
-    clip.addAnnotation(picture!);
-    expect(clip.watermark()).toBeNull();
+    clip.addAnnotation(arrow('a', 0.1, 0.3));
+    clip.addAnnotation(mark('pic'));                    // an image the person placed, not tracked
+    clip.addAnnotation(line('words'));
+    expect(clip.watermarks()).toEqual([]);
   });
 
   it('is a load, not the person’s edit: the one undo still takes back the last thing they did', () => {
     const clip = clipOf(4);
     clip.addAnnotation(arrow('a', 0.1, 0.3));
-    clip.setWatermark(mark('democlip'));
+    clip.setWatermarks([mark()]);
     // The mark went on without becoming the undo: the arrow is still what it would take back.
     expect(clip.pendingUndo()?.type).toBe('annotation-added');
     clip.undo();
     expect(clip.annotations.byId('a')).toBeNull();
-    expect(clip.watermark()?.id).toBe('watermark');     // and the mark stays
+    expect(clip.watermarks().map(a => a.id)).toEqual(['watermark']);   // and the mark stays
+  });
+
+  it('hands one back unchanged without touching it, and changes one handed back different', () => {
+    const clip = clipOf(4);
+    const worn = mark();
+    clip.setWatermarks([worn]);
+    expect(clip.setWatermarks([worn])).toBe(false);     // the same mark, the same place
+    expect(clip.setWatermarks([worn.movedBy(-0.1, 0)!])).toBe(true);
+    expect(clip.watermarks()[0].id).toBe('watermark');
+    expect(clip.annotations.count).toBe(1);             // changed, not added twice
+  });
+
+  it('stops being the watermark when the person takes it away, and is one again on undo', () => {
+    const clip = clipOf(4);
+    clip.setWatermarks([mark(), line()]);
+    clip.removeAnnotation('watermark-title');
+    expect(clip.watermarks().map(a => a.id)).toEqual(['watermark']);
+    clip.undo();
+    expect(clip.watermarks().map(a => a.id)).toEqual(['watermark', 'watermark-title']);
   });
 
   it('covers the whole clip, and grows with it rather than staying where it was', () => {
     const clip = clipOf(10);
-    clip.setWatermark(mark('democlip'));
-    expect(clip.annotationsAt(1).map(a => a.id)).toEqual(['watermark']);
-    expect(clip.annotationsAt(9).map(a => a.id)).toEqual(['watermark']);
+    clip.setWatermarks([mark(), line()]);
+    expect(clip.annotationsAt(1).map(a => a.id)).toEqual(['watermark', 'watermark-title']);
+    expect(clip.annotationsAt(9).map(a => a.id)).toEqual(['watermark', 'watermark-title']);
 
     clip.addTake(new Blob(['x']), 10);                  // now 20s
-    expect(clip.watermark()?.span.s).toBe(0);
-    expect(clip.watermark()?.span.e).toBe(1);
-    expect(clip.annotationsAt(19).map(a => a.id)).toEqual(['watermark']);   // over the new take too
+    expect(clip.watermarks().every(one => one.span.s === 0 && one.span.e === 1)).toBe(true);
+    expect(clip.annotationsAt(19).map(a => a.id)).toEqual(['watermark', 'watermark-title']);
   });
 
   it('is kept and read back like any other annotation', () => {
     const clip = clipOf(4);
-    clip.setWatermark(mark('democlip'));
+    clip.setWatermarks([mark(), line()]);
     const back = Clip.empty(new FakeTakes());
     back.restore(clip.snapshot());
-    expect(back.watermark()?.id).toBe('watermark');
+    expect(back.watermarks().map(a => a.id)).toEqual(['watermark', 'watermark-title']);
+  });
+
+  it('lets the watermark go with the session', () => {
+    const clip = clipOf(4);
+    clip.setWatermarks([mark()]);
+    clip.clear();
+    expect(clip.watermarks()).toEqual([]);
   });
 });
 
