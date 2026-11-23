@@ -86,6 +86,33 @@ is reported **skipped**, with the reason, and never counted as a pass.
   for the fades, `URL.revokeObjectURL` for what the repository releases,
   `HTMLAnchorElement.prototype.click` for the download.
 
+## One feature, one or two checks — never a check per behaviour
+
+The suite is a thing to keep, and every check costs a browser boot, a few seconds of
+wall clock and a file the next reader has to skim. It must not grow with the feature's
+every corner: **a feature is proved by one or two checks, and a fold into a check that
+already exists beats a new one.**
+
+- While the feature is being built, write as many checks as it takes — one per
+  behaviour, run while iterating. That is scaffolding, like the retired
+  `verify-*.html` harness, and **most do not survive to the commit.**
+- Before the pull request, **fold them**: one check that walks the feature the way a
+  person does, asserting the few things that story needs; a second only where a
+  second, independent story exists — the refusal beside the success, the reload, the
+  agent's path beside the person's, the one regression the change itself fixes.
+- **Fold, never delete.** Every assertion that pins a regression must live on inside
+  the folded check. Losing coverage to bring the count down is the failure mode this
+  rule invites, and the regression that matters is the one the deleted check would
+  have caught.
+- A **new file** is a new area, not a behaviour: most changes add a check to a file
+  that already exists (`export.spec.ts`, `profiles.spec.ts`, `capture.spec.ts`).
+- A helper two checks would otherwise each copy — reading the exported bytes,
+  decoding a frame at a moment, a written profile book — goes in `e2e/helpers/`,
+  not into both files.
+
+The count is a symptom, not the target: a feature that genuinely needs its two
+checks has its two, and says in the pull request why the second was not a fold.
+
 ## Assert what a person would see, not only the model
 
 The chip's text, whether the undo button is visible, what the status line says. A
