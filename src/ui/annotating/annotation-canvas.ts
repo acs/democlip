@@ -22,7 +22,7 @@ import { currentPhase } from '../../state.js';
 import { session } from '../../session.js';
 import { ctx, el, toast } from '../dom.js';
 import { Span } from '../../domain/clip/Span.js';
-import type { Annotation, Point } from '../../domain/annotation/Annotation.js';
+import type { Annotation, AnnotationHandle, Point } from '../../domain/annotation/Annotation.js';
 import { copyControl, drawAnnotations, removeControl, settingsControl } from './annotation-layer.js';
 import { pluginOf, propertiesOf, type AnnotationPlugin, type CreationContext } from './annotation-plugin.js';
 import { inspector } from './properties-inspector.js';
@@ -39,6 +39,34 @@ const MIN_DRAG_PX = 3;       // shorter than this and a creation gesture was a s
 const COPY_SHIFT = 0.08;     // how far a copy is put from its original, in fractions
 
 const clamp01 = (v: number): number => (v < 0 ? 0 : v > 1 ? 1 : v);
+
+/** The rectangle a kind's corners describe, as fractions of the picture. */
+function boxOf(ends: readonly AnnotationHandle[]): { left: number; right: number; top: number; bottom: number } {
+  const xs = ends.map(end => end.x);
+  const ys = ends.map(end => end.y);
+  return { left: Math.min(...xs), right: Math.max(...xs), top: Math.min(...ys), bottom: Math.max(...ys) };
+}
+
+/** Is a point strictly inside that rectangle? A point on an edge is not — a corner is the grip's. */
+function insideBox(p: Point, box: { left: number; right: number; top: number; bottom: number }): boolean {
+  return p.x > box.left && p.x < box.right && p.y > box.top && p.y < box.bottom;
+}
+
+/**
+ * Has this shape no body of its own — is it smaller than the grips that sit on it? Then every
+ * press inside it lands within a grip's reach, so it could be resized but never picked up and
+ * moved. A shape with no second dimension is not this: an arrow is a line, and its ends are its
+ * whole self, so its grips come first as they always have.
+ */
+function hasNoBody(
+  box: { left: number; right: number; top: number; bottom: number },
+  screenW: number, screenH: number, slopPx: number,
+): boolean {
+  const w = (box.right - box.left) * screenW;
+  const h = (box.bottom - box.top) * screenH;
+  if (!(w > 0) || !(h > 0)) return false;
+  return w < slopPx * 2 || h < slopPx * 2;
+}
 
 // 'move' is the whole thing; anything else is one of the annotation's own handles.
 type Grab = string | null;
@@ -456,9 +484,15 @@ export class AnnotationCanvas {
   private gripAt(p: Point, slopPx: number): { annotation: Annotation; end: string } | null {
     const shown = session.clip.annotationsAt(player.time());
     const screenW = el.cv.clientWidth > 0 ? el.cv.clientWidth : el.cv.width;
+    const screenH = el.cv.clientHeight > 0 ? el.cv.clientHeight : el.cv.height;
     if (!(screenW > 0)) return null;
     for (let i = shown.length - 1; i >= 0; i--) {
-      for (const handle of shown[i].handles()) {
+      const ends = shown[i].handles();
+      // A shape too small to have a body of its own would have every press inside it taken by a
+      // grip, and so could never be picked up and moved. A press inside such a shape is a press
+      // to move it; its corners still resize from on them or just outside.
+      if (hasNoBody(boxOf(ends), screenW, screenH, slopPx) && insideBox(p, boxOf(ends))) continue;
+      for (const handle of ends) {
         if (Math.hypot(handle.x - p.x, handle.y - p.y) * screenW <= slopPx) {
           return { annotation: shown[i], end: handle.end };
         }
