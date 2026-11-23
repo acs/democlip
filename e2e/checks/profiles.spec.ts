@@ -140,6 +140,12 @@ test('the built-in default controls nothing, so a property is the person’s as 
 
   await page.locator('#props-btn').click();
   await expect(page.locator('#clip-prop-menu .prop-lock')).toHaveCount(0);
+  // The switch has nothing to put on the card yet, so it is not the person's to press —
+  // a title is what it is waiting for, and the fields beside it are never disabled.
+  await expect(page.locator('#clip-prop-menu input.prop-check')).toBeDisabled();
+  await page.locator('#clip-prop-menu .prop-row[data-id="title"] input').fill('A short demo');
+  await page.locator('#clip-prop-menu .prop-row[data-id="title"] input').press('Enter');
+  await expect(page.locator('#clip-prop-menu input.prop-check')).toBeEnabled();
   await expect(page.locator('#clip-prop-menu input.prop-check')).not.toBeChecked();
   await page.locator('#clip-prop-menu input.prop-check').check();
   await expect(page.locator('#clip-prop-menu input.prop-check')).toBeChecked();

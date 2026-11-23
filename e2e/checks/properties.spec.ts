@@ -66,6 +66,38 @@ test('a clip is given a title and a description, and they come back after a relo
   await expect(page.locator('#clip-prop-menu textarea')).toHaveValue('What the clip shows');
 });
 
+test('the switch to add the card sits below the logo, and waits for something to draw', async ({ page }) => {
+  const app = boot(page);
+  await app.goto();
+  const takes = await makeTakes(page, { width: 1280, height: 720, seconds: 2 });
+  await app.seed(takes);
+  await app.review();
+
+  await page.locator('#props-btn').click();
+  // The switch is the three things the card draws, and then their switch: it sits below them
+  // all, so a person reads what it will add before asking for it.
+  const ids = await page.locator('#clip-prop-menu .prop-row').evaluateAll(rows =>
+    rows.map(row => (row as HTMLElement).dataset.id));
+  expect(ids).toEqual(['title', 'description', 'logo', 'addToExport', 'size']);
+
+  // With nothing on the card, the switch is drawn disabled — and it says why, so a person
+  // reads what to do rather than guessing at the grey.
+  const hint = page.locator('#clip-prop-menu .prop-row[data-id="addToExport"] .prop-hint');
+  await expect(page.locator('#clip-prop-menu .prop-row[data-id="addToExport"] input.prop-check')).toBeDisabled();
+  await expect(hint).toBeVisible();
+  await expect(hint).toHaveText('Add to export needs something to put on the card — a title, a description or a logo');
+
+  // The fields beside it are never disabled: they are what the switch is waiting for.
+  await expect(page.locator('#clip-prop-menu .prop-row[data-id="title"] input')).toBeEnabled();
+  await expect(page.locator('#clip-prop-menu .prop-row[data-id="logo"] select')).toBeEnabled();
+
+  // A title is enough, and the reason goes as the switch comes to life.
+  await page.locator('#clip-prop-menu .prop-row[data-id="title"] input').fill('A short demo');
+  await page.locator('#clip-prop-menu .prop-row[data-id="title"] input').press('Enter');
+  await expect(page.locator('#clip-prop-menu .prop-row[data-id="addToExport"] input.prop-check')).toBeEnabled();
+  await expect(hint).toBeHidden();
+});
+
 test('the one undo takes a clip property back', async ({ page }) => {
   const app = boot(page);
   await app.goto();

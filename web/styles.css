@@ -363,6 +363,12 @@ select.prop-input option,select.pdef-select option{background:var(--bg);color:va
 .prop-toggle{display:flex;align-items:center;gap:9px;cursor:pointer;}
 .prop-check{width:15px;height:15px;flex-shrink:0;accent-color:var(--brand-orange);cursor:pointer;}
 .prop-toggle .prop-name{text-transform:none;letter-spacing:0;font-size:13px;color:var(--text);}
+/* A control the clip cannot offer yet — the switch to add the card, with nothing to put on it —
+   says why underneath, and the label stops reading as something to press. */
+.prop-check:disabled{cursor:not-allowed;}
+.prop-toggle.off{cursor:not-allowed;}
+.prop-toggle.off .prop-name{color:var(--text-mid);}
+.prop-hint{font-family:var(--font-ui);font-size:11px;line-height:1.45;color:var(--text-mid);}
 .prop-edit{padding:5px 10px;border-radius:7px;border:1px solid var(--glass-b2);background:var(--glass);color:var(--text);font-family:var(--font-ui);font-size:12px;cursor:pointer;transition:background .15s;}
 .prop-edit:hover{background:var(--glass-b);}
 

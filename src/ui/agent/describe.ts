@@ -48,9 +48,12 @@ export function describeClip(clip: Clip, controlling: Controlling = () => null):
       // The values a list offers, so an agent is not guessing at names — and the same list the
       // panel and a profile's sheet draw, from the property's own declaration.
       choices: property.choices?.map(choice => choice.value),
-      // Read-only for a derived property, and for one a profile fixes: either way it is not
+      // Read-only for a derived property, for one a profile fixes, and for one the clip cannot
+      // offer yet (the switch to add the card with nothing to put on it): either way it is not
       // the person's to set, which is what an agent is told here.
-      readOnly: !!property.readOnly || controlling(property.id) !== null,
+      readOnly: !!property.readOnly
+        || controlling(property.id) !== null
+        || (property.blocked?.(clip.properties, clip) ?? null) !== null,
     })),
   };
 }
