@@ -100,7 +100,7 @@ export function placePicture(
  * edge — as wide as the row, and no taller than `maxHeight`, so a tall mark does not run down
  * the picture. A mark is **scaled, never stretched**, whatever its shape.
  */
-export const WATERMARK = { width: 0.14, maxHeight: 0.18, margin: 0.03 };
+export const WATERMARK = { width: 0.07, maxHeight: 0.09, margin: 0.03 };
 
 /**
  * The geometry for a **logo** drawn as the clip's **watermark**: an image whose picture is a
