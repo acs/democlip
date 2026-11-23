@@ -66,6 +66,26 @@ test('a clip is given a title and a description, and they come back after a relo
   await expect(page.locator('#clip-prop-menu textarea')).toHaveValue('What the clip shows');
 });
 
+test('the switch to add the card sits below the logo, and waits for something to draw', async ({ page }) => {
+  const app = boot(page);
+  await app.goto();
+  const takes = await makeTakes(page, { width: 1280, height: 720, seconds: 2 });
+  await app.seed(takes);
+  await app.review();
+
+  await page.locator('#props-btn').click();
+  // The switch is the three things the card draws, and then their switch: it sits below them
+  // all, so a person reads what it will add before asking for it.
+  const ids = await page.locator('#clip-prop-menu .prop-row').evaluateAll(rows =>
+    rows.map(row => (row as HTMLElement).dataset.id));
+  expect(ids).toEqual(['title', 'description', 'logo', 'addToExport', 'size']);
+
+  // With nothing on the card, the switch is drawn disabled — and the fields beside it are not.
+  await expect(page.locator('#clip-prop-menu .prop-row[data-id="addToExport"] input.prop-check')).toBeDisabled();
+  await expect(page.locator('#clip-prop-menu .prop-row[data-id="title"] input')).toBeEnabled();
+  await expect(page.locator('#clip-prop-menu .prop-row[data-id="logo"] select')).toBeEnabled();
+});
+
 test('the one undo takes a clip property back', async ({ page }) => {
   const app = boot(page);
   await app.goto();

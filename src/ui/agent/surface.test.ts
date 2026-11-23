@@ -106,8 +106,9 @@ describe('describeClip', () => {
     expect(described.properties).toEqual([
       { id: 'title', label: 'Title', control: 'text', value: '', readOnly: false },
       { id: 'description', label: 'Description', control: 'long-text', value: '', readOnly: false },
-      { id: 'addToExport', label: 'Add to export', control: 'toggle', value: '', readOnly: false },
       { id: 'logo', label: 'Logo', control: 'choice', value: '', choices: ['', 'democlip', 'graditone'], readOnly: false },
+      // The switch is read-only with nothing to put on the card, and comes to life with a word.
+      { id: 'addToExport', label: 'Add to export', control: 'toggle', value: '', readOnly: true },
       { id: 'size', label: 'Clip size', control: 'text', value: '', readOnly: true },
     ]);
   });

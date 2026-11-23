@@ -177,6 +177,16 @@ describe('setClipProperty', () => {
     expect(clip.properties.toRecord()).toEqual({});
   });
 
+  it('refuses the switch to add the card while the clip has nothing to put on it', () => {
+    const clip = clipOf(10);
+    const refused = editorOf(clip).setClipProperty('addToExport', 'true');
+    expect(refused).toMatchObject({ ok: false });
+    expect(clip.properties.get('addToExport')).toBe('');
+    // A word on the clip is what it was waiting for, and the same change then goes through.
+    editorOf(clip).setClipProperty('title', 'A demo');
+    expect(editorOf(clip).setClipProperty('addToExport', 'true')).toEqual({ ok: true, value: 'true' });
+  });
+
   it('is the change the one undo takes back', () => {
     const clip = clipOf(10);
     const editor = editorOf(clip);

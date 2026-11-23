@@ -144,6 +144,11 @@ class ClipPropertiesPanel {
       return host;
     }
 
+    // A control the clip cannot offer yet — the switch to add the card, while there is nothing
+    // to put on it — is drawn disabled, and comes to life as soon as the clip has something to
+    // add. The fields beside it are never disabled: they are what the switch is waiting for.
+    const blocked = this.blocked(property);
+
     // A toggle is one labelled checkbox, rather than a name over a control.
     if (property.control === 'toggle') {
       const label = document.createElement('label');
@@ -151,6 +156,7 @@ class ClipPropertiesPanel {
       const check = document.createElement('input');
       check.type = 'checkbox';
       check.className = 'prop-check';
+      check.disabled = blocked !== null;
       check.checked = property.value(session.clip.properties, session.clip) === 'true';
       check.addEventListener('change', () => this.applyOne({ property, input: check }));
       label.append(check, name);
@@ -164,6 +170,7 @@ class ClipPropertiesPanel {
     if (property.control === 'choice') {
       const select = document.createElement('select');
       select.className = 'prop-input prop-select';
+      select.disabled = blocked !== null;
       for (const choice of property.choices ?? []) {
         const option = document.createElement('option');
         option.value = choice.value;
@@ -181,6 +188,7 @@ class ClipPropertiesPanel {
       ? document.createElement('input')
       : document.createElement('textarea');
     input.className = property.control === 'text' ? 'prop-input' : 'prop-input prop-textarea';
+    input.disabled = blocked !== null;
     input.value = property.value(session.clip.properties, session.clip);
     if (input instanceof HTMLTextAreaElement) input.rows = 3;
     input.addEventListener('change', () => this.applyOne({ property, input }));
@@ -188,6 +196,11 @@ class ClipPropertiesPanel {
     host.append(name, input);
     this.fields.push({ property, input });
     return host;
+  }
+
+  /** Why the property's control cannot be moved now, or null when it can. */
+  private blocked(property: ClipProperty): string | null {
+    return property.blocked?.(session.clip.properties, session.clip) ?? null;
   }
 
   /**
@@ -214,6 +227,16 @@ class ClipPropertiesPanel {
     const next = property.with(session.clip.properties, value);
     if (!next) { toast(`${property.label} not changed — that value is not allowed`); return; }
     session.clip.setProperty(property.id, next.get(property.id));
+    this.refreshAvailability();
+  }
+
+  /**
+   * Re-read every field's availability after a change, in place: a word just typed onto the
+   * clip may be what the switch to add the card was waiting for. The fields are not rebuilt —
+   * they are being typed in — only what is disabled about them changes.
+   */
+  private refreshAvailability(): void {
+    for (const field of this.fields) field.input.disabled = this.blocked(field.property) !== null;
   }
 
   private apply(): void {
