@@ -27,6 +27,9 @@ import type { Controlling } from '../profile/control.js';
 const GAP = 8;      // between the control and the panel
 const EDGE = 8;     // the least the panel may sit from a viewport edge
 
+/** The mark a profile-fixed property wears: a lock, its tooltip naming the profile. */
+const LOCK_ICON = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
+
 interface Field {
   property: ClipProperty;
   input: HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
@@ -131,19 +134,28 @@ class ClipPropertiesPanel {
     name.textContent = property.label;
 
     // A property the app shows but the person does not set — the clip size — is its value and
-    // nothing to type into. So is one a **profile** fixes: its value, and whose it is, so the
-    // row says why it will not move.
+    // nothing to type into. So is one a **profile** fixes: its value, and a **lock** in place of
+    // the words, carrying whose it is in its tooltip — so the row says why it will not move
+    // without spelling it out on every row.
     const fixedBy = this.controlling(property.id);
     if (property.readOnly || fixedBy) {
       const value = document.createElement('span');
       value.className = 'prop-value';
       value.textContent = this.shown(property);
-      host.append(name, value);
       if (fixedBy) {
-        const note = document.createElement('span');
-        note.className = 'prop-note';
-        note.textContent = `set by ${fixedBy}`;
-        host.append(note);
+        const line = document.createElement('div');
+        line.className = 'prop-fixed';
+        const lock = document.createElement('span');
+        lock.className = 'prop-lock';
+        const said = `Set by ${fixedBy}`;
+        lock.title = said;
+        lock.setAttribute('role', 'img');
+        lock.setAttribute('aria-label', said);
+        lock.innerHTML = LOCK_ICON;
+        line.append(value, lock);
+        host.append(name, line);
+      } else {
+        host.append(name, value);
       }
       return host;
     }

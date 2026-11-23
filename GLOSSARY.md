@@ -146,10 +146,11 @@ back after a reload is still under it. Exactly one is **active**.
 A profile does not hold *defaults*: it holds **declarations**. It says which items it
 **controls**, and the value each of them is fixed at — and while that profile is active, an
 item it controls is applied to the clip and **is not the person's to change**. The clip's
-settings show it as a value with the profile's name beside it, the panel offers nothing to
-press, and the automation surface refuses it with the profile named. An item no profile
-declares is the person's, exactly as it was before there were profiles at all — so a profile
-that declares nothing is a **free** profile, and the built-in **Default** is that profile.
+settings show it as a value with a **lock** beside it, whose tooltip names the profile,
+the panel offers nothing to press, and the automation surface refuses it with the
+profile named. An item no profile declares is the person's, exactly as it was before
+there were profiles at all — so a profile that declares nothing is a **free** profile,
+and the built-in **Default** is that profile.
 
 In its first iteration a profile controls two items: the clip properties **add to export** and
 **logo**. Both are offered by the same register the clip properties are declared in, so a later
@@ -174,7 +175,7 @@ is holding.
 |---|---|---|
 | **profile** | a named set of the app's configuration a person works under, kept outside any clip — a **consistent production environment** for a way of working. It holds the items it controls and the value each is fixed at, and outlives the clip, the page and the session | `Profile` (`src/domain/profile/Profile.ts`) |
 | **active profile** | the one profile the app is working under. Exactly one at a time, and what it declares is in force while it is active. It may be chosen until the session **begins to capture**, and is fixed from then until the session ends | `Profiles.active()`, `Profiles.controlling()` (`src/domain/profile/Profiles.ts`) |
-| **controlled item** | an item the active profile declares: applied to the clip, shown as a value naming the profile, and not the person's to change. An item no profile declares is the person's, as always | `Profiles.controlling()`, the `Controlling` seam (`src/ui/profile/control.ts`) |
+| **controlled item** | an item the active profile declares: applied to the clip, shown as a value with a **lock** naming the profile, and not the person's to change. An item no profile declares is the person's, as always | `Profiles.controlling()`, the `Controlling` seam (`src/ui/profile/control.ts`) |
 | **declaration** | what a profile says about one item — that it controls it, and the value it is fixed at. An item may legitimately be declared fixed at an empty value (a switch fixed **off**), which is why *declared* and *empty* are told apart here and not in the clip's own properties | `Profile.declare()`, `Profile.free()` (`src/domain/profile/Profile.ts`) |
 | **built-in default profile** | the profile the app always has and falls back to, so an app with nothing set up behaves as it always did. It declares nothing — it is the app's free profile — and is never renamed, removed or defined | `Profiles.DEFAULT_ID` (`src/domain/profile/Profiles.ts`) |
 

@@ -137,7 +137,7 @@ test('a card with no logo puts nothing there, so the count is the picture alone'
   expect(box.painted).toBeGreaterThan(5000);    // the picture is there; only the mark is not
 });
 
-test('the logo a profile fixes is not the person’s to change, and names the profile', async ({ page }) => {
+test('the logo a profile fixes is not the person’s to change, and wears a lock naming the profile', async ({ page }) => {
   const app = boot(page);
   await app.goto();
   await clipUnderTheProfile(page, app);
@@ -146,7 +146,7 @@ test('the logo a profile fixes is not the person’s to change, and names the pr
   const row = page.locator('#clip-prop-menu .prop-row[data-id="logo"]');
   // Shown as the mark is called, not as the name it is kept as, and naming the profile.
   await expect(row.locator('.prop-value')).toHaveText('DemoClip');
-  await expect(row.locator('.prop-note')).toHaveText('set by DemoClipTV');
+  await expect(row.locator('.prop-lock')).toHaveAttribute('title', 'Set by DemoClipTV');
   // No control to pick a different mark from.
   await expect(row.locator('input, select')).toHaveCount(0);
 });
