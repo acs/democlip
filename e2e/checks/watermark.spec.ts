@@ -193,6 +193,29 @@ test('a part of the watermark the person takes away stays away', async ({ page }
   await expect.poll(async () => (await watermarkTitleRect(page))?.text ?? null).toBe('A demo again');
 });
 
+test('a clip with a title but no logo wears the title alone, and clearing the logo leaves it', async ({ page }) => {
+  const app = boot(page);
+  await app.goto();
+  await clipWithTheCard(page, app);
+
+  // A title with no logo: the line stands on its own, in the corner.
+  await setTitle(page, 'A demo');
+  await expect.poll(() => watermarkTitleRect(page)).not.toBeNull();
+  expect(await watermarkRect(page)).toBeNull();
+
+  // A logo joins it, above it.
+  await setLogo(page, 'democlip');
+  const mark = await watermarkRect(page);
+  const title = await watermarkTitleRect(page);
+  expect(mark).not.toBeNull();
+  expect(title!.y).toBeGreaterThanOrEqual(mark!.y + mark!.height);
+
+  // And clearing the logo takes only the mark.
+  await setLogo(page, '');
+  expect(await watermarkRect(page)).toBeNull();
+  expect(await watermarkTitleRect(page)).not.toBeNull();
+});
+
 test('clearing the logo takes the watermark away, and the lane lists it while it is worn', async ({ page }) => {
   const app = boot(page);
   await app.goto();

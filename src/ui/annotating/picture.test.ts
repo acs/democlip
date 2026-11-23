@@ -106,4 +106,13 @@ describe('placeWatermarkTitle', () => {
     // The drawn shape is the line's own, so shrinking it does not stretch it.
     expect(title.width / title.height).toBeCloseTo(200 * 0.6, 0);
   });
+
+  it('stands on its own in the corner when the clip wears no mark', () => {
+    const alone = placeWatermarkTitle('A demo', null, measure);
+
+    // 20% smaller than the mark would have been, and at the top-right edge rather than under one.
+    expect(alone.height).toBeCloseTo(WATERMARK.maxHeight * WATERMARK_TITLE.scale, 6);
+    expect(alone.y).toBeCloseTo(WATERMARK.margin, 6);
+    expect(alone.x + alone.width).toBeCloseTo(1 - WATERMARK.margin, 6);
+  });
 });

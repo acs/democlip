@@ -133,18 +133,22 @@ export function placeWatermark(
 export const WATERMARK_TITLE = { scale: 0.8, gap: 0.015 };
 
 /**
- * The clip's **title** as the line under the mark: 20% smaller than the mark, right-aligned with
- * it and a gap below — so the block reads as one, the mark over its name. `measure` is handed the
- * words and the size and answers their width, as a fraction of the picture: the measuring is the
- * view's (it needs a canvas), so the placement itself stays free of the DOM and can be proved in
- * node. A line wider than the picture is shrunk, keeping its shape, as the text kind does.
+ * The clip's **title** as the line of the watermark: **20% smaller** than the mark is drawn, and
+ * right-aligned with it. `mark` is the mark's box when the clip wears one, so the line sits a gap
+ * below it — and null when the clip has a title but no mark, where the line stands on its own in
+ * the corner, 20% smaller than the mark would have been.
+ *
+ * `measure` is handed the words and the size and answers their width, as a fraction of the
+ * picture: the measuring is the view's (it needs a canvas), so the placement itself stays free of
+ * the DOM and can be proved in node. A line wider than the picture is shrunk, keeping its shape,
+ * as the text kind does.
  */
 export function placeWatermarkTitle(
   text: string,
-  mark: { y: number; height: number },
+  mark: { y: number; height: number } | null,
   measure: (text: string, height: number) => number,
 ): TextGeometry {
-  const size = mark.height * WATERMARK_TITLE.scale;
+  const size = (mark ? mark.height : WATERMARK.maxHeight) * WATERMARK_TITLE.scale;
   const measured = measure(text, size);
   let height = size;
   let width = Number.isFinite(measured) && measured > 0 ? measured : 0;
@@ -155,10 +159,11 @@ export function placeWatermarkTitle(
     width = room;
     height *= k;
   }
+  const above = mark ? mark.y + mark.height + WATERMARK_TITLE.gap : WATERMARK.margin;
   return {
     text,
     x: Math.max(WATERMARK.margin, 1 - WATERMARK.margin - width),
-    y: Math.min(mark.y + mark.height + WATERMARK_TITLE.gap, Math.max(0, 1 - height)),
+    y: Math.min(above, Math.max(0, 1 - height)),
     width,
     height,
   };
