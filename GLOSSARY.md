@@ -116,7 +116,10 @@ The title and description are what a **publish** fills its fields from — a You
 video's title and description, a Bluesky post's text and its alt — so a clip is branded
 once and the branding goes out wherever it is published; either may still be changed in a
 publish dialog, for that one publish. And **every export takes the card**, a publish
-included, so a published video opens with the same words the file would.
+included, so a published video opens with the same words the file would. The switch asks
+for a card, so it is offered only once there is something to put on one — a title, a
+description or a logo — and says why underneath while there is not; a switch already on
+stays the person's to turn off.
 
 | word | what it is | in the code |
 |---|---|---|

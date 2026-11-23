@@ -7,8 +7,9 @@ import { ClipProperties } from '../../domain/clip/ClipProperties.js';
 // no change to the panel or anywhere else — which is what the seam exists for.
 
 describe('the clip property register', () => {
-  it('offers the title, the description, the switch, the logo and the size, in order', () => {
-    expect(clipProperties().map(property => property.id)).toEqual(['title', 'description', 'addToExport', 'logo', 'size']);
+  it('offers the title, the description, the logo, the switch and the size, in order', () => {
+    // The switch sits below the three things the card draws, because it is their switch.
+    expect(clipProperties().map(property => property.id)).toEqual(['title', 'description', 'logo', 'addToExport', 'size']);
     expect(clipProperty('title')?.label).toBe('Title');
     expect(clipProperty('description')?.control).toBe('long-text');
     expect(clipProperty('addToExport')?.control).toBe('toggle');
@@ -51,6 +52,23 @@ describe('the clip property register', () => {
     expect(addToExport.value(addToExport.with(on, 'no')!)).toBe('');
   });
 
+  it('blocks the switch until the clip has something to put on the card', () => {
+    const addToExport = clipProperty('addToExport')!;
+    // Nothing to draw: the switch is not the person's to move.
+    expect(addToExport.blocked?.(ClipProperties.EMPTY)).not.toBeNull();
+    // Any one of the three the card draws is enough — a title, a description or a logo.
+    expect(addToExport.blocked?.(ClipProperties.EMPTY.with('title', 'A demo'))).toBeNull();
+    expect(addToExport.blocked?.(ClipProperties.EMPTY.with('description', 'What it shows'))).toBeNull();
+    expect(addToExport.blocked?.(ClipProperties.EMPTY.with('logo', 'democlip'))).toBeNull();
+    // A switch already on stays movable, so the card can always be taken back off — even
+    // after the last word has been cleared from it.
+    expect(addToExport.blocked?.(ClipProperties.EMPTY.with('addToExport', 'true'))).toBeNull();
+    // It is the switch's own rule: every other property is always the person's to move.
+    expect(clipProperty('title')?.blocked).toBeUndefined();
+    expect(clipProperty('description')?.blocked).toBeUndefined();
+    expect(clipProperty('logo')?.blocked).toBeUndefined();
+  });
+
   it('offers the clip size as a value the person does not set', () => {
     const size = clipProperty('size')!;
     expect(size.readOnly).toBe(true);
@@ -60,10 +78,10 @@ describe('the clip property register', () => {
     expect(size.value(ClipProperties.EMPTY)).toBe('');
   });
 
-  it('marks the switch and the logo as what a profile may control', () => {
+  it('marks the logo and the switch as what a profile may control', () => {
     // What a profile may declare in this iteration; the title, the description and the
     // read-only size are never a profile's.
-    expect(seedableClipProperties().map(property => property.id)).toEqual(['addToExport', 'logo']);
+    expect(seedableClipProperties().map(property => property.id)).toEqual(['logo', 'addToExport']);
   });
 
   it('offers the marks the app ships as a list, with None above them', () => {

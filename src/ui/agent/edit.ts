@@ -84,6 +84,11 @@ export function createEditor(clip: Clip, make: MakeAnnotation, controlling: Cont
       // either — the same answer the properties panel gives, asked in the same place.
       const fixedBy = controlling(property);
       if (fixedBy) return { ok: false, reason: `${fixedBy} fixes ${descriptor.label.toLowerCase()}, so it is not the person's to set` };
+      // A property the clip cannot offer yet — the switch to add the card with nothing to put
+      // on it — is refused with the property's own words, the same reason the panel draws it
+      // disabled for.
+      const blocked = descriptor.blocked?.(clip.properties, clip) ?? null;
+      if (blocked) return { ok: false, reason: blocked };
       if (typeof value !== 'string') return { ok: false, reason: 'a property value is a string' };
       const next = descriptor.with(clip.properties, value);
       if (!next) return { ok: false, reason: `${property} will not take ${JSON.stringify(value)}` };

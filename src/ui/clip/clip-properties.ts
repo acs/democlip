@@ -50,6 +50,14 @@ export interface ClipProperty {
    */
   readonly readOnly?: boolean;
   /**
+   * Why the control cannot be moved now, or null when it can. Absent for every property
+   * that is always the person's to move. Only **add to export** has one: the switch asks
+   * for a **title card**, and a card with nothing to draw is not worth asking for, so it
+   * waits for a title, a description or a logo. The panel draws its control disabled; the
+   * automation surface refuses it with the same words.
+   */
+  blocked?(properties: ClipProperties, clip?: Clip): string | null;
+  /**
    * True for a property a **profile** may preload onto a new clip — **add to export** in
    * this iteration. A profile carries settings keyed by property id, and only the
    * seedable ones are ever applied, so flagging one here is the whole of teaching a
@@ -111,19 +119,6 @@ registerClipProperty({
   with: (properties, value) => properties.with('description', value),
 });
 
-// And the one switch: whether an export puts a title card — these two lines over the
-// clip's first frame — at the head of the file. Off unless it is turned on. It is the one
-// property a **profile** may preload (`seedable`), so a clip made under DemoClipTV opens
-// its export with the card without the switch being pressed.
-registerClipProperty({
-  id: 'addToExport',
-  label: 'Add to export',
-  control: 'toggle',
-  seedable: true,
-  value: properties => (properties.get('addToExport') === 'true' ? 'true' : ''),
-  with: (properties, value) => properties.with('addToExport', value === 'true' ? 'true' : ''),
-});
-
 // And the mark a clip wears at the head of its export: one of the logos the app ships
 // (`ui/logos.ts`), or **None** at all — which is the ordinary case. It is a *list*, not a field:
 // the app knows which marks it serves, so a person chooses one rather than typing a name that
@@ -146,6 +141,33 @@ registerClipProperty({
     return properties.with('logo', name);
   },
 });
+
+// And the one switch: whether an export puts a title card — the clip's logo, title and
+// description over its first frame — at the head of the file. Off unless it is turned on. It
+// sits below the three things the card draws, because it is their switch: with nothing to put
+// on the card there is nothing to switch on, so it is offered only once the clip has a title, a
+// description or a logo (`blocked`). It is one of the two properties a **profile** may preload
+// (`seedable`), so a clip made under DemoClipTV opens its export with the card without the
+// switch being pressed.
+registerClipProperty({
+  id: 'addToExport',
+  label: 'Add to export',
+  control: 'toggle',
+  seedable: true,
+  value: properties => (properties.get('addToExport') === 'true' ? 'true' : ''),
+  with: (properties, value) => properties.with('addToExport', value === 'true' ? 'true' : ''),
+  // A switch already **on** stays movable: the person may always take the card back off, even
+  // after clearing the last word from it. It is only switching it *on* that needs something to
+  // switch on.
+  blocked: properties => (hasCardContent(properties) || properties.get('addToExport') === 'true'
+    ? null
+    : 'Add to export needs something to put on the card — a title, a description or a logo'),
+});
+
+/** Whether the clip has anything for a **title card** to draw: a title, a description or a logo. */
+function hasCardContent(properties: ClipProperties): boolean {
+  return properties.get('title') !== '' || properties.get('description') !== '' || properties.get('logo') !== '';
+}
 
 // And the clip's own size: the picture the review shows and every export writes — the
 // largest width and height among the takes, both even. It is **shown, not set**: the size
