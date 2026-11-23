@@ -113,7 +113,9 @@ purpose: you are watching it).
 democlip/
 ├── web/                  # The web shell: what the browser loads, and nothing else
 │   ├── index.html        # The page — links the stylesheet and the entry below
+│   ├── help.html         # The complete guide, a page of its own — the dialog links here
 │   ├── main.ts           # The page's entry — imports src/main.ts, one level up
+│   ├── help-page.ts      # The guide page's entry — the theme and the version
 │   ├── styles.css        # All styling (theme variables, layout, components)
 │   └── public/           # Copied verbatim into the build
 │       ├── manifest.json # PWA manifest
@@ -194,7 +196,8 @@ democlip/
 │       ├── dom.ts          # Central element registry + status/toast helpers
 │       ├── shell/          # The frame around the app
 │       │   ├── theme.ts      # Light / dark theme
-│       │   ├── help.ts       # Instructions modal
+│       │   ├── help.ts       # Instructions modal — the brief tutorial and the guide link
+│       │   ├── help-steps.html # The brief tutorial the modal shows
 │       │   └── version.ts    # The version badge, and the newer-build offer
 │       ├── recording/      # Making a take
 │       │   ├── preview.ts    # Preview canvas, seeking, live mirror

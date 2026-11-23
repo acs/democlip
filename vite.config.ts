@@ -1,5 +1,6 @@
 import basicSsl from '@vitejs/plugin-basic-ssl';
 import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vite';
 
 // The version shown beside the logo. `package.json` is the one place it is
@@ -82,5 +83,17 @@ export default defineConfig(({ mode }) => ({
     fs: { allow: ['..'] },
   },
   preview: { port: 5173 },
-  build: { outDir: '../dist', emptyOutDir: true },
+  // Two pages: the app, and the complete guide (`help.html`) the instructions
+  // dialog links to. Both are entries, so the guide is built with its own
+  // stylesheet and script rather than copied in beside the app.
+  build: {
+    outDir: '../dist',
+    emptyOutDir: true,
+    rollupOptions: {
+      input: {
+        main: fileURLToPath(new URL('./web/index.html', import.meta.url)),
+        help: fileURLToPath(new URL('./web/help.html', import.meta.url)),
+      },
+    },
+  },
 }));
