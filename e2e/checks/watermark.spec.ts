@@ -161,6 +161,38 @@ test('the clip’s title is worn under the mark, 20% smaller, and drawn there', 
   expect(await watermarkRect(page)).not.toBeNull();
 });
 
+test('a part of the watermark the person takes away stays away', async ({ page }) => {
+  const app = boot(page);
+  await app.goto();
+  await clipWithTheCard(page, app);
+  await setLogo(page, 'democlip');
+  await setTitle(page, 'A demo');
+  await expect(page.locator('#tl-annots .tl-annot')).toHaveCount(2);
+
+  // The person takes the title line away.
+  await page.evaluate(async url => {
+    const { session } = await import(/* @vite-ignore */ url);
+    session.clip.removeAnnotation('watermark-title');
+  }, HOOKS);
+  await expect.poll(() => watermarkTitleRect(page)).toBeNull();
+
+  // A change to the **other** property does not put it back...
+  await setLogo(page, 'graditone');
+  await page.waitForTimeout(400);
+  expect(await watermarkTitleRect(page)).toBeNull();
+
+  // ...nor does opening the clip again.
+  await page.reload();
+  await expect(page.locator('#s-text')).toHaveText('Ready');
+  await page.waitForTimeout(800);
+  expect(await watermarkTitleRect(page)).toBeNull();
+  expect(await watermarkRect(page)).not.toBeNull();
+
+  // But the title moving puts it back, under the mark.
+  await setTitle(page, 'A demo again');
+  await expect.poll(async () => (await watermarkTitleRect(page))?.text ?? null).toBe('A demo again');
+});
+
 test('clearing the logo takes the watermark away, and the lane lists it while it is worn', async ({ page }) => {
   const app = boot(page);
   await app.goto();
