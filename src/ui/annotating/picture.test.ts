@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { placePicture, placeWatermark, PLACED_WIDTH, WATERMARK, type PreparedPicture } from './picture.js';
+import {
+  placePicture, placeWatermark, placeWatermarkTitle, PLACED_WIDTH, WATERMARK, WATERMARK_TITLE,
+  type PreparedPicture,
+} from './picture.js';
 
 // Where a picture lands, and how big: the one placement both a person's picker and an
 // agent's clipboard go through, proved without a browser because it is arithmetic.
@@ -61,10 +64,9 @@ describe('placeWatermark', () => {
     (g.width * g.pictureAspect) / (g.height * g.imageAspect);
 
   it('puts a wide mark small in the top-right corner, as wide as the row', () => {
-    const g = placeWatermark('democlip', 3, WIDE);
+    const g = placeWatermark('logo:democlip', 3, WIDE);
 
-    expect(g.logo).toBe('democlip');
-    expect(g.imageId).toBe('');                         // a served logo, not bytes in the store
+    expect(g.imageId).toBe('logo:democlip');            // the app's own file, kept in the store
     expect(g.width).toBeCloseTo(WATERMARK.width);
     expect(g.y).toBeCloseTo(WATERMARK.margin);
     expect(g.x + g.width).toBeCloseTo(1 - WATERMARK.margin);
@@ -72,10 +74,36 @@ describe('placeWatermark', () => {
   });
 
   it('bounds a tall mark by height, so it does not run down the picture', () => {
-    const g = placeWatermark('graditone', 748 / 1140, WIDE);
+    const g = placeWatermark('logo:graditone', 748 / 1140, WIDE);
 
     expect(g.height).toBeCloseTo(WATERMARK.maxHeight);
     expect(g.x + g.width).toBeCloseTo(1 - WATERMARK.margin);
     expect(keepsProportions(g)).toBeCloseTo(1);
+  });
+});
+
+// The clip's title under the mark: 20% smaller, right-aligned with it. The measuring needs a
+// canvas, so it is handed in — the placement itself is arithmetic and proved here.
+describe('placeWatermarkTitle', () => {
+  const mark = { y: 0.03, height: 0.09 };
+  /** A stand-in for the view's measuring: about 0.6 of the size per character. */
+  const measure = (text: string, height: number): number => text.length * height * 0.6;
+
+  it('puts the title under the mark, 20% smaller and right-aligned with it', () => {
+    const title = placeWatermarkTitle('A demo', mark, measure);
+
+    expect(title.text).toBe('A demo');
+    expect(title.height).toBeCloseTo(mark.height * WATERMARK_TITLE.scale, 6);
+    expect(title.y).toBeCloseTo(mark.y + mark.height + WATERMARK_TITLE.gap, 6);
+    expect(title.x + title.width).toBeCloseTo(1 - WATERMARK.margin, 6);
+  });
+
+  it('shrinks a line wider than the picture, keeping its shape', () => {
+    const title = placeWatermarkTitle('x'.repeat(200), mark, measure);
+
+    expect(title.width).toBeCloseTo(1 - WATERMARK.margin * 2, 6);
+    expect(title.height).toBeLessThan(mark.height * WATERMARK_TITLE.scale);
+    // The drawn shape is the line's own, so shrinking it does not stretch it.
+    expect(title.width / title.height).toBeCloseTo(200 * 0.6, 0);
   });
 });

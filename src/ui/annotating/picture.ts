@@ -11,6 +11,7 @@
 // `src/domain/` holds the shape, not the bytes.
 
 import type { ImageGeometry } from '../../domain/annotation/ImageAnnotation.js';
+import type { TextGeometry } from '../../domain/annotation/TextAnnotation.js';
 
 /** A picture, measured and — when it was too big — made smaller, ready to keep. */
 export interface PreparedPicture {
@@ -103,12 +104,12 @@ export function placePicture(
 export const WATERMARK = { width: 0.07, maxHeight: 0.09, margin: 0.03 };
 
 /**
- * The geometry for a **logo** drawn as the clip's **watermark**: an image whose picture is a
- * file the app serves itself (`ui/logos.ts`) rather than bytes the person chose — so the
- * picture is the logo's **name**, and its own proportions are kept.
+ * The geometry for the clip's **watermark** mark: the app-served logo, kept as bytes under
+ * `imageId` (`src/infra/images.ts`), placed small in the top-right corner with its own
+ * proportions kept.
  */
 export function placeWatermark(
-  logo: string,
+  imageId: string,
   imageAspect: number,
   picture: { w: number; h: number },
 ): ImageGeometry {
@@ -118,12 +119,49 @@ export function placeWatermark(
   if ((width * pictureAspect) / imageAspect > WATERMARK.maxHeight) {
     width = (WATERMARK.maxHeight * imageAspect) / pictureAspect;
   }
-  const placed = placePicture('', { imageAspect }, picture, {
+  return placePicture(imageId, { imageAspect }, picture, {
     x: 1 - WATERMARK.margin - width,
     y: WATERMARK.margin,
     width,
   });
-  return { ...placed, logo };
+}
+
+/**
+ * The clip's **title** under the mark: 20% smaller than the mark is drawn, and how far below it
+ * the line sits, both as fractions of the picture's height.
+ */
+export const WATERMARK_TITLE = { scale: 0.8, gap: 0.015 };
+
+/**
+ * The clip's **title** as the line under the mark: 20% smaller than the mark, right-aligned with
+ * it and a gap below — so the block reads as one, the mark over its name. `measure` is handed the
+ * words and the size and answers their width, as a fraction of the picture: the measuring is the
+ * view's (it needs a canvas), so the placement itself stays free of the DOM and can be proved in
+ * node. A line wider than the picture is shrunk, keeping its shape, as the text kind does.
+ */
+export function placeWatermarkTitle(
+  text: string,
+  mark: { y: number; height: number },
+  measure: (text: string, height: number) => number,
+): TextGeometry {
+  const size = mark.height * WATERMARK_TITLE.scale;
+  const measured = measure(text, size);
+  let height = size;
+  let width = Number.isFinite(measured) && measured > 0 ? measured : 0;
+
+  const room = 1 - WATERMARK.margin * 2;
+  if (width > room) {
+    const k = room / width;
+    width = room;
+    height *= k;
+  }
+  return {
+    text,
+    x: Math.max(WATERMARK.margin, 1 - WATERMARK.margin - width),
+    y: Math.min(mark.y + mark.height + WATERMARK_TITLE.gap, Math.max(0, 1 - height)),
+    width,
+    height,
+  };
 }
 
 function decode(blob: Blob): Promise<HTMLImageElement | null> {

@@ -32,7 +32,6 @@ import { ClipSize } from './ClipSize.js';
 import type { Picture } from './ClipSize.js';
 import { AnnotationSet } from '../annotation/AnnotationSet.js';
 import { annotationFrom } from '../annotation/kinds.js';
-import { isWatermark } from '../annotation/ImageAnnotation.js';
 import type { Annotation, StoredAnnotation } from '../annotation/Annotation.js';
 import type { Take } from './Take.js';
 import type { TakeRepository } from './TakeRepository.js';
@@ -44,14 +43,17 @@ export type Segment = { takeIndex: number; from: number; to: number };
  * A clip written down: the takes it is made of (the recording bytes and the
  * length each one has), its cuts, its annotations and what it says about itself.
  * `snapshot()` gives one and `restore()` takes one back, and it is the shape a store
- * persists — the blobs are the recordings themselves. `annotations` and `properties`
- * are optional so a clip written down before either existed still reads back.
+ * persists — the blobs are the recordings themselves. `annotations`, `properties` and
+ * `watermark` are optional so a clip written down before any of them existed still
+ * reads back.
  */
 export interface ClipSnapshot {
   takes: ReadonlyArray<{ blob: Blob; duration: number; picture?: Picture }>;
   cuts: ReadonlyArray<{ s: number; e: number }>;
   annotations?: ReadonlyArray<StoredAnnotation>;
   properties?: Readonly<Record<string, string>>;
+  /** The ids of the clip's **watermark** — the annotations it wears over the whole clip. */
+  watermark?: ReadonlyArray<string>;
 }
 
 /**
@@ -81,7 +83,7 @@ export type ClipChange =
   | { type: 'cut-approved'; cut: Span; removed: number; before: SpanSet }
   | { type: 'annotation-added'; annotation: Annotation }
   | { type: 'annotation-changed'; annotation: Annotation; previous: Annotation }
-  | { type: 'annotation-removed'; annotation: Annotation }
+  | { type: 'annotation-removed'; annotation: Annotation; watermark: boolean }
   | { type: 'property-changed'; id: string; value: string; previous: string };
 
 export type ClipListener = (event: ClipEvent) => void;
@@ -95,11 +97,13 @@ export class Clip {
     private removed: SpanSet,
     private notes: AnnotationSet,
     private props: ClipProperties,
+    /** The ids of the clip's **watermark**, in draw order — what it wears over the whole clip. */
+    private watermarkIds: readonly string[],
   ) {}
 
   /** A clip with nothing in it yet. */
   static empty(takes: TakeRepository): Clip {
-    return new Clip(takes, SpanSet.EMPTY, AnnotationSet.EMPTY, ClipProperties.EMPTY);
+    return new Clip(takes, SpanSet.EMPTY, AnnotationSet.EMPTY, ClipProperties.EMPTY, []);
   }
 
   /** Listen for what happens to the clip. Call the returned function to stop. */
@@ -167,11 +171,12 @@ export class Clip {
       const k = before / now;
       this.removed = this.removed.scaled(k);
       this.notes = this.notes.rebase(k);
-      // The **watermark** is the one annotation that is not a moment of the old clip: it is
-      // the mark over the whole of it, so it grows with the clip rather than staying where it
-      // was — and it keeps its place on the picture, which is what rebasing would have moved.
-      const watermark = this.watermark();
-      if (watermark) this.notes = this.notes.change(watermark.id, watermark.withSpan(Span.of(0, 1)));
+      // The **watermark** is the annotations that are not a moment of the old clip: the marks
+      // over the whole of it, so they grow with the clip rather than staying where they were —
+      // and they keep their place on the picture, which is what rebasing would have moved.
+      for (const watermark of this.watermarks()) {
+        this.notes = this.notes.change(watermark.id, watermark.withSpan(Span.of(0, 1)));
+      }
     }
     this.lastChange = null;
     this.announce({ type: 'take-added', take, index: this.repo.count() - 1, previousTotal: before });
@@ -216,7 +221,10 @@ export class Clip {
     const annotation = this.notes.byId(id);
     if (!annotation) return null;
     this.notes = this.notes.remove(id);
-    this.lastChange = { type: 'annotation-removed', annotation };
+    // A watermark the person takes away stops being one; the one undo puts it back as one.
+    const watermark = this.watermarkIds.includes(id);
+    if (watermark) this.watermarkIds = this.watermarkIds.filter(one => one !== id);
+    this.lastChange = { type: 'annotation-removed', annotation, watermark };
     this.announce({ type: 'annotation-removed', annotation });
     return annotation;
   }
@@ -231,34 +239,45 @@ export class Clip {
     return this.notes.shownAt(source, this.timeline());
   }
 
-  /** The clip's **watermark** — the mark it wears over the whole of its picture — or null. */
-  watermark(): Annotation | null {
-    return this.notes.all.find(isWatermark) ?? null;
+  /** The clip's **watermark** — the annotations it wears over the whole of its picture — in draw order. */
+  watermarks(): readonly Annotation[] {
+    return this.watermarkIds
+      .map(id => this.notes.byId(id))
+      .filter((annotation): annotation is Annotation => annotation !== null);
   }
 
   /**
-   * Put on, or take away, the clip's **watermark**: the mark the clip wears over the whole of
-   * its picture, which follows its **logo**. It is a load rather than an edit — announced, so
-   * the lane and the picture follow — and deliberately **not** what the one undo takes back:
-   * the undo takes back the **logo** itself, and the watermark follows the logo it is left
-   * with. Says whether anything changed.
+   * Put on, or take away, the clip's **watermark**: the annotations it wears over the whole of its
+   * picture, which follow its **logo** and its **title**. A load rather than an edit — announced,
+   * so the lane and the picture follow — and deliberately **not** what the one undo takes back:
+   * the undo takes back the **logo** or the **title**, and the watermark follows what it is left
+   * with. An annotation handed back as it is keeps its place; one not handed back is taken away.
    */
-  setWatermark(annotation: Annotation | null): boolean {
-    const current = this.watermark();
-    if (!annotation) {
-      if (!current) return false;
-      this.notes = this.notes.remove(current.id);
-      this.announce({ type: 'annotation-removed', annotation: current });
-      return true;
+  setWatermarks(next: readonly Annotation[]): boolean {
+    const ids = next.map(annotation => annotation.id);
+    let changed = ids.length !== this.watermarkIds.length
+      || ids.some((id, at) => id !== this.watermarkIds[at]);
+
+    for (const annotation of this.watermarks()) {
+      if (ids.includes(annotation.id)) continue;
+      this.notes = this.notes.remove(annotation.id);
+      this.announce({ type: 'annotation-removed', annotation });
+      changed = true;
     }
-    if (!current) {
-      this.notes = this.notes.add(annotation);
-      this.announce({ type: 'annotation-added', annotation });
-      return true;
+    for (const annotation of next) {
+      const existing = this.notes.byId(annotation.id);
+      if (!existing) {
+        this.notes = this.notes.add(annotation);
+        this.announce({ type: 'annotation-added', annotation });
+        changed = true;
+      } else if (existing !== annotation) {
+        this.notes = this.notes.change(annotation.id, annotation);
+        this.announce({ type: 'annotation-changed', annotation, previous: existing });
+        changed = true;
+      }
     }
-    this.notes = this.notes.change(current.id, annotation);
-    this.announce({ type: 'annotation-changed', annotation, previous: current });
-    return true;
+    this.watermarkIds = ids;
+    return changed;
   }
 
   /**
@@ -369,6 +388,8 @@ export class Clip {
         break;
       case 'annotation-removed':
         this.notes = this.notes.add(last.annotation);
+        // It was the clip's watermark when it went, so it is one again.
+        if (last.watermark) this.watermarkIds = [...this.watermarkIds, last.annotation.id];
         this.announce({ type: 'annotation-added', annotation: last.annotation });
         break;
       case 'annotation-changed':
@@ -408,7 +429,8 @@ export class Clip {
 
   /**
    * Everything this clip is made of, so it can be written down and read back:
-   * its takes, its cuts, its annotations and what it says about itself.
+   * its takes, its cuts, its annotations, what it says about itself, and which of
+   * those annotations are its **watermark**.
    */
   snapshot(): ClipSnapshot {
     return {
@@ -416,6 +438,7 @@ export class Clip {
       cuts: this.removed.spans.map(span => ({ s: span.s, e: span.e })),
       annotations: this.notes.all.map(annotation => annotation.stored()),
       properties: this.props.toRecord(),
+      ...(this.watermarkIds.length ? { watermark: [...this.watermarkIds] } : {}),
     };
   }
 
@@ -438,6 +461,7 @@ export class Clip {
         .filter((annotation): annotation is Annotation => annotation !== null),
     );
     this.props = ClipProperties.of(snapshot.properties);
+    this.watermarkIds = (snapshot.watermark ?? []).filter(id => this.notes.byId(id) !== null);
     this.lastChange = null;
   }
 
@@ -447,6 +471,7 @@ export class Clip {
     this.removed = SpanSet.EMPTY;
     this.notes = AnnotationSet.EMPTY;
     this.props = ClipProperties.EMPTY;
+    this.watermarkIds = [];
     this.lastChange = null;
     this.announce({ type: 'cleared' });
   }
