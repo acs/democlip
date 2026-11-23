@@ -126,3 +126,51 @@ test('clearing the logo takes the watermark away, and the lane lists it while it
   await setLogo(page, '');
   await expect(page.locator('#tl-annots .tl-annot')).toHaveCount(0);
 });
+
+/** The watermark's rect, as fractions of the picture, read from the clip's own model. */
+const watermarkRect = (page: Page) => page.evaluate(async url => {
+  const { session } = await import(/* @vite-ignore */ url);
+  const worn = session.clip.watermark() as {
+    geometry: { x: number; y: number; width: number; height: number; logo?: string };
+  } | null;
+  if (!worn) return null;
+  const { x, y, width, height, logo } = worn.geometry;
+  return { x, y, width, height, logo };
+}, HOOKS);
+
+test('the watermark is picked, moved and resized on the picture like any annotation', async ({ page }) => {
+  const app = boot(page);
+  await app.goto();
+  await clipWithTheCard(page, app);
+  await setLogo(page, 'democlip');
+
+  const before = await watermarkRect(page);
+  if (!before) throw new Error('no watermark was placed');
+  const preview = await page.locator('#preview').boundingBox();
+  if (!preview) throw new Error('no preview');
+  const at = (fx: number, fy: number) => ({ x: preview.x + preview.width * fx, y: preview.y + preview.height * fy });
+
+  // Drag it by its middle, away from the corner it was placed in.
+  const middle = at(before.x + before.width / 2, before.y + before.height / 2);
+  const to = at(before.x + before.width / 2 - 0.3, before.y + before.height / 2 + 0.4);
+  await page.mouse.move(middle.x, middle.y);
+  await page.mouse.down();
+  await page.mouse.move(to.x, to.y, { steps: 8 });
+  await page.mouse.up();
+
+  const moved = await watermarkRect(page);
+  expect(moved?.logo).toBe('democlip');
+  expect(moved!.x).toBeLessThan(before.x - 0.1);
+
+  // Drag its south-east grip: it resizes, keeping the mark's own proportions.
+  const grip = at(moved!.x + moved!.width, moved!.y + moved!.height);
+  const wider = at(moved!.x + moved!.width + 0.2, moved!.y + moved!.height + 0.2);
+  await page.mouse.move(grip.x, grip.y);
+  await page.mouse.down();
+  await page.mouse.move(wider.x, wider.y, { steps: 8 });
+  await page.mouse.up();
+
+  const resized = await watermarkRect(page);
+  expect(resized?.logo).toBe('democlip');
+  expect(resized!.width).toBeGreaterThan(moved!.width);
+});

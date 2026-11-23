@@ -132,7 +132,7 @@ export class ImageAnnotation extends Annotation {
    * flipping the rect inside out.
    */
   withHandle(end: string, to: Point, options?: HandleOptions): ImageAnnotation | null {
-    const { x, y, width, height, imageAspect, pictureAspect } = this.geometry;
+    const { x, y, width, height, imageAspect, pictureAspect, logo } = this.geometry;
     const free = options?.free === true;
     // The fixed corner, and the new width and height measured from the dragged one.
     let anchorX: number, anchorY: number, w: number, h: number;
@@ -150,15 +150,15 @@ export class ImageAnnotation extends Annotation {
     const left = end === 'nw' || end === 'sw' ? anchorX - w : anchorX;
     const top  = end === 'nw' || end === 'ne' ? anchorY - h : anchorY;
     return ImageAnnotation.create(this.span, {
-      imageId: this.geometry.imageId,
+      imageId: this.geometry.imageId, logo,
       x: left, y: top, width: w, height: h, imageAspect, pictureAspect,
     }, this.id);
   }
 
   movedBy(dx: number, dy: number): ImageAnnotation | null {
-    const { x, y, width, height, imageId, imageAspect, pictureAspect } = this.geometry;
+    const { x, y, width, height, imageId, logo, imageAspect, pictureAspect } = this.geometry;
     return ImageAnnotation.create(this.span, {
-      imageId, x: x + dx, y: y + dy, width, height, imageAspect, pictureAspect,
+      imageId, logo, x: x + dx, y: y + dy, width, height, imageAspect, pictureAspect,
     }, this.id);
   }
 
