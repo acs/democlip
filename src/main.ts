@@ -13,7 +13,7 @@ import { onPhaseChange, currentPhase, type Phase } from './state.js';
 import { session } from './session.js';
 import { loadPrefs } from './prefs.js';
 import { applyTheme, toggleTheme } from './ui/shell/theme.js';
-import { toggleHelp, helpBdClick } from './ui/shell/help.js';
+import { toggleHelp, helpBdClick, initHelp } from './ui/shell/help.js';
 import { drawGrid } from './ui/recording/preview.js';
 import { initTimeline, updateTimeUI, updateSizeUI } from './ui/clip/timeline-ui.js';
 import { initTimelineMarks } from './ui/cutting/marks.js';
@@ -61,6 +61,7 @@ function init(): void {
 
   drawGrid();
   initVersion();
+  initHelp();
   updateTimeUI();
   updateSizeUI();
 
