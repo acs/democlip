@@ -38,7 +38,7 @@ async function createProfile(page: Page, name: string): Promise<void> {
   await page.locator('.profile-new-add').click();
 }
 
-/** Fix an item in a profile's own config sheet: the sliders mark, then a choice. */
+/** Fix an item in a profile's own config sheet: the pencil mark, then a choice. */
 async function defineIn(page: Page, name: string, item: string, choice: 'free' | 'on' | 'off'): Promise<void> {
   const row = page.locator('.profile-row', { has: page.locator('.profile-name', { hasText: name }) });
   await row.locator('.profile-ico[data-act="define"]').click();
@@ -165,7 +165,7 @@ test('a profile is defined in its own sheet, and the selector shows no config', 
   await expect(page.locator('#profile-menu .pdef-row')).toHaveCount(0);
   await expect(page.locator('#profile-menu .profile-setting')).toHaveCount(0);
 
-  // Two marks on a profile of the person's own: the sliders, which open it, and the bin. Its
+  // Two marks on a profile of the person's own: the pencil, which opens it, and the bin. Its
   // **name** is set in the profile's own dialog, so nothing here renames it.
   await expect(row.locator('.profile-ico')).toHaveCount(2);
   await expect(row.locator('.profile-ico[data-act="rename"]')).toHaveCount(0);
@@ -242,7 +242,7 @@ test('a profile and what it controls come back after a reload, and it can be let
   expect(book?.activeId).not.toBe('default');
   expect(book?.profiles.find(profile => profile.name === 'DemoClipTV')?.controls).toEqual({ addToExport: 'true' });
 
-  // The built-in default offers no sliders mark and no bin.
+  // The built-in default offers no pencil mark and no bin.
   await page.locator('#profile-btn').click();
   await expect(page.locator('.profile-row[data-id="default"] .profile-ico')).toHaveCount(0);
 
