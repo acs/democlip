@@ -30,6 +30,10 @@ const EDGE = 8;     // the least the panel may sit from a viewport edge
 interface Field {
   property: ClipProperty;
   input: HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
+  /** The line under the control saying why it cannot be moved, for a property that has a reason. */
+  hint?: HTMLSpanElement;
+  /** The label around a switch, so it reads as not the person's to press while the switch is. */
+  label?: HTMLLabelElement;
 }
 
 class ClipPropertiesPanel {
@@ -145,14 +149,17 @@ class ClipPropertiesPanel {
     }
 
     // A control the clip cannot offer yet — the switch to add the card, while there is nothing
-    // to put on it — is drawn disabled, and comes to life as soon as the clip has something to
-    // add. The fields beside it are never disabled: they are what the switch is waiting for.
+    // to put on it — is drawn disabled, with the reason under it, and comes to life as soon as
+    // the clip has something to add. The fields beside it are never disabled: they are what the
+    // switch is waiting for.
     const blocked = this.blocked(property);
+    const hint = this.hint(property, blocked);
 
     // A toggle is one labelled checkbox, rather than a name over a control.
     if (property.control === 'toggle') {
       const label = document.createElement('label');
       label.className = 'prop-toggle';
+      label.classList.toggle('off', blocked !== null);
       const check = document.createElement('input');
       check.type = 'checkbox';
       check.className = 'prop-check';
@@ -161,7 +168,8 @@ class ClipPropertiesPanel {
       check.addEventListener('change', () => this.applyOne({ property, input: check }));
       label.append(check, name);
       host.append(label);
-      this.fields.push({ property, input: check });
+      if (hint) host.append(hint);
+      this.fields.push({ property, input: check, hint: hint ?? undefined, label });
       return host;
     }
 
@@ -180,7 +188,8 @@ class ClipPropertiesPanel {
       select.value = property.value(session.clip.properties, session.clip);
       select.addEventListener('change', () => this.applyOne({ property, input: select }));
       host.append(name, select);
-      this.fields.push({ property, input: select });
+      if (hint) host.append(hint);
+      this.fields.push({ property, input: select, hint: hint ?? undefined });
       return host;
     }
 
@@ -194,13 +203,29 @@ class ClipPropertiesPanel {
     input.addEventListener('change', () => this.applyOne({ property, input }));
 
     host.append(name, input);
-    this.fields.push({ property, input });
+    if (hint) host.append(hint);
+    this.fields.push({ property, input, hint: hint ?? undefined });
     return host;
   }
 
   /** Why the property's control cannot be moved now, or null when it can. */
   private blocked(property: ClipProperty): string | null {
     return property.blocked?.(session.clip.properties, session.clip) ?? null;
+  }
+
+  /**
+   * The line under a control that says why it cannot be moved — for a property that has a
+   * reason, shown while the reason holds and hidden when it does not. It is made for every
+   * such property, not only while it is blocked, so a change can bring it into view in place
+   * without rebuilding the row.
+   */
+  private hint(property: ClipProperty, blocked: string | null): HTMLSpanElement | null {
+    if (!property.blocked) return null;
+    const hint = document.createElement('span');
+    hint.className = 'prop-hint';
+    hint.textContent = blocked ?? '';
+    hint.hidden = blocked === null;
+    return hint;
   }
 
   /**
@@ -233,10 +258,19 @@ class ClipPropertiesPanel {
   /**
    * Re-read every field's availability after a change, in place: a word just typed onto the
    * clip may be what the switch to add the card was waiting for. The fields are not rebuilt —
-   * they are being typed in — only what is disabled about them changes.
+   * they are being typed in — only what is disabled about them changes, and the reason under
+   * a control comes and goes with it.
    */
   private refreshAvailability(): void {
-    for (const field of this.fields) field.input.disabled = this.blocked(field.property) !== null;
+    for (const field of this.fields) {
+      const reason = this.blocked(field.property);
+      field.input.disabled = reason !== null;
+      field.label?.classList.toggle('off', reason !== null);
+      if (field.hint) {
+        field.hint.textContent = reason ?? '';
+        field.hint.hidden = reason === null;
+      }
+    }
   }
 
   private apply(): void {
