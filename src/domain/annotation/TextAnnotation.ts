@@ -148,10 +148,15 @@ export class TextAnnotation extends Annotation {
       default: return null;
     }
     // One factor scales both, so the text keeps its shape: it fits inside the box the
-    // drag describes rather than stretching past the pointer.
-    const k = Math.min(w / width, h / height);
-    const nw = Math.max(MIN_SIZE, width * k);
-    const nh = Math.max(MIN_SIZE, height * k);
+    // drag describes rather than stretching past the pointer. The smallest it may go is a
+    // box of MIN_SIZE — and the floor is on the **factor**, not on each edge. Clamping the
+    // edges one at a time left the box a different shape from the words, so at the smallest
+    // size the line ran out past its own box and the grips sat on the first word alone.
+    const asked = Math.min(w / width, h / height);
+    const smallest = MIN_SIZE / Math.min(width, height);
+    const k = Math.max(smallest, asked);
+    const nw = width * k;
+    const nh = height * k;
     const left = end === 'nw' || end === 'sw' ? anchorX - nw : anchorX;
     const top  = end === 'nw' || end === 'ne' ? anchorY - nh : anchorY;
     return TextAnnotation.create(this.span, {

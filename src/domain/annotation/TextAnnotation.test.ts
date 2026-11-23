@@ -53,6 +53,18 @@ describe('the text annotation', () => {
     expect(scaled.geometry.width / scaled.geometry.height).toBeCloseTo(0.2 / 0.1);
   });
 
+  it('keeps the words’ shape at the smallest size, rather than squashing one edge', () => {
+    // A drag far below the smallest size: the box stops there with the shape the words are.
+    // Clamping each edge on its own left the box a different shape from the text, so at the
+    // smallest size the line ran out past its box and its grips sat on the first word alone.
+    const text = make({ x: 0.2, y: 0.2, width: 0.2, height: 0.1 });
+    const tiny = text.withHandle('se', { x: 0.201, y: 0.201 })!;
+
+    expect(tiny.geometry.height).toBeCloseTo(0.02);          // the smallest edge is the floor
+    expect(tiny.geometry.width).toBeCloseTo(0.04);
+    expect(tiny.geometry.width / tiny.geometry.height).toBeCloseTo(0.2 / 0.1);
+  });
+
   it('does not stretch when told to resize freely', () => {
     // The canvas hands every kind `{ free }` when a modifier is held; text ignores it.
     const text = make();
