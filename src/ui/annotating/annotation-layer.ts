@@ -224,22 +224,34 @@ function drawControl(ctx: CanvasRenderingContext2D, control: Control, x: number,
     return;
   }
 
-  // The settings control: three sliders, the mark everyone reads as "change something".
+  // The settings control: a pencil, the mark everyone reads as "edit" — the same mark a
+  // profile's row wore for its name before naming moved into its own dialog.
   if (control === 'settings') {
-    const half = r * 0.62;
-    const rows = [-0.4, 0, 0.4];
-    const knobs = [0.25, -0.35, 0.3];
-    rows.forEach((ry, i) => {
-      const cy = y + ry * r;
-      ctx.beginPath();
-      ctx.moveTo(x - half, cy);
-      ctx.lineTo(x + half, cy);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.arc(x + knobs[i] * half, cy, Math.max(1, r * 0.14), 0, Math.PI * 2);
-      ctx.fillStyle = '#fff';
-      ctx.fill();
+    const s = r * 0.62;                     // half its length, along its own axis
+    const w = r * 0.17;                     // half its width, across it
+    const u = Math.SQRT1_2;                 // its axis: up and to the right
+    // A point on the pencil: `along` down its axis from the middle, `side` across it.
+    const at = (along: number, side: number) => ({
+      x: x + along * u + side * w * u,
+      y: y - along * u + side * w * u,
     });
+    const tip = at(-s, 0);                  // the point, at the lower-left end
+    const base = -s + s * 0.45;             // where the nib meets the shaft
+    ctx.beginPath();
+    ctx.moveTo(at(s, 1).x, at(s, 1).y);
+    ctx.lineTo(at(base, 1).x, at(base, 1).y);
+    ctx.lineTo(tip.x, tip.y);
+    ctx.lineTo(at(base, -1).x, at(base, -1).y);
+    ctx.lineTo(at(s, -1).x, at(s, -1).y);
+    ctx.closePath();
+    ctx.fillStyle = '#fff';
+    ctx.fill();
+    // The nib, cut back out of the disc's own colour so the point reads.
+    ctx.beginPath();
+    ctx.moveTo(at(base, -1).x, at(base, -1).y);
+    ctx.lineTo(at(base, 1).x, at(base, 1).y);
+    ctx.strokeStyle = ACCENT;
+    ctx.stroke();
     return;
   }
 

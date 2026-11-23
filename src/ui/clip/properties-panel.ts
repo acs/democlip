@@ -4,7 +4,7 @@
 // It is the clip's answer to the annotation properties inspector, one level up, and it
 // opens the same way: a small **settings** control in the corner of the preview — the
 // picture the clip is seen on, so it sits beside the clip as an annotation's settings
-// control sits on the annotation, wearing the same three sliders — opens a popover
+// control sits on the annotation, wearing the same pencil — opens a popover
 // beside it. The panel names no property; it asks `clipProperties()` for the list and
 // draws one field per descriptor — a line for a title, a paragraph for a description,
 // and the size as a value it does not let anyone edit — and writes a change through
