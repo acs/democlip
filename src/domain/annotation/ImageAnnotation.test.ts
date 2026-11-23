@@ -126,4 +126,20 @@ describe('the image annotation', () => {
     expect(ImageAnnotation.restore({ id: 'z', kind: 'image', s: 0, e: 0.1, geometry: null } as StoredAnnotation)).toBeNull();
     expect(ImageAnnotation.restore({ id: 'z', kind: 'image', s: 0, e: 0.1, geometry: { imageId: '' } } as unknown as StoredAnnotation)).toBeNull();
   });
+
+  it('is usable as a logo, with no picture of its own', () => {
+    const image = ImageAnnotation.create(span, geo({ imageId: '', logo: 'democlip' }));
+    expect(image?.geometry.logo).toBe('democlip');
+    expect(image?.isUsable).toBe(true);
+  });
+
+  it('is not a logo with an empty or blank name, any more than it is one with no picture', () => {
+    expect(ImageAnnotation.create(span, geo({ imageId: '', logo: '' }))).toBeNull();
+    expect(ImageAnnotation.create(span, geo({ imageId: '', logo: '   ' }))).toBeNull();
+  });
+
+  it('keeps the logo it wears when it is written down and read back', () => {
+    const image = ImageAnnotation.create(span, geo({ imageId: '', logo: 'democlip' }))!;
+    expect(ImageAnnotation.restore(image.stored())?.geometry.logo).toBe('democlip');
+  });
 });

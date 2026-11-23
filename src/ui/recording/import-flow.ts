@@ -17,6 +17,7 @@ import { readSidecar } from '../../infra/annotation-sidecar.js';
 import { images } from '../../infra/images.js';
 import { el, setStatus, toast } from '../dom.js';
 import { openReview } from '../clip/review-flow.js';
+import { syncWatermark } from '../clip/watermark.js';
 
 const importTake = new ImportTake({
   clip: session.clip,
@@ -67,7 +68,9 @@ export async function onFileChosen(): Promise<void> {
   }
 
   // The take is in the clip like any other, so the review opens on it: the strip, the
-  // waveform and the export all follow from there.
+  // waveform and the export all follow from there. A **watermark** that came back with the
+  // file — or the clip's own, if it wears a logo — is decoded before the review draws.
+  await syncWatermark(false);
   setPhase('review');
   await openReview(session.clip.takes.count() - 1, 0);
   setStatus('ready', 'Ready');

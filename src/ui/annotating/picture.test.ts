@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { placePicture, PLACED_WIDTH, type PreparedPicture } from './picture.js';
+import { placePicture, placeWatermark, PLACED_WIDTH, WATERMARK, type PreparedPicture } from './picture.js';
 
 // Where a picture lands, and how big: the one placement both a person's picker and an
 // agent's clipboard go through, proved without a browser because it is arithmetic.
@@ -50,5 +50,32 @@ describe('placePicture', () => {
       const geometry = placePicture('picture-5', prepared(1), WIDE, { width });
       expect(geometry.width).toBeCloseTo(PLACED_WIDTH);
     }
+  });
+});
+
+// The clip's watermark: a logo the app serves, placed small in the top-right corner, scaled
+// and never stretched — the same arithmetic as a chosen picture, held to the corner.
+describe('placeWatermark', () => {
+  /** The drawn shape is the mark's own proportions, whatever rectangle it is put in. */
+  const keepsProportions = (g: ReturnType<typeof placeWatermark>): number =>
+    (g.width * g.pictureAspect) / (g.height * g.imageAspect);
+
+  it('puts a wide mark small in the top-right corner, as wide as the row', () => {
+    const g = placeWatermark('democlip', 3, WIDE);
+
+    expect(g.logo).toBe('democlip');
+    expect(g.imageId).toBe('');                         // a served logo, not bytes in the store
+    expect(g.width).toBeCloseTo(WATERMARK.width);
+    expect(g.y).toBeCloseTo(WATERMARK.margin);
+    expect(g.x + g.width).toBeCloseTo(1 - WATERMARK.margin);
+    expect(keepsProportions(g)).toBeCloseTo(1);
+  });
+
+  it('bounds a tall mark by height, so it does not run down the picture', () => {
+    const g = placeWatermark('graditone', 748 / 1140, WIDE);
+
+    expect(g.height).toBeCloseTo(WATERMARK.maxHeight);
+    expect(g.x + g.width).toBeCloseTo(1 - WATERMARK.margin);
+    expect(keepsProportions(g)).toBeCloseTo(1);
   });
 });
