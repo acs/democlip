@@ -93,9 +93,10 @@ test('an item a profile controls is applied, and shown as fixed rather than as a
   await app.add(takes);
   await app.review();
 
-  // The value is the profile's, the row says whose it is, and there is no control to change it.
+  // The value is the profile's, the row wears a lock whose tooltip says whose it is, and
+  // there is no control to change it.
   await page.locator('#props-btn').click();
-  await expect(page.locator('#clip-prop-menu .prop-note')).toHaveText('set by DemoClipTV');
+  await expect(page.locator('#clip-prop-menu .prop-lock')).toHaveAttribute('title', 'Set by DemoClipTV');
   await expect(page.locator('#clip-prop-menu input.prop-check')).toHaveCount(0);
   // And the value reads as what it means, not as the string it is kept as.
   await expect(page.locator('#clip-prop-menu .prop-value').first()).toHaveText('On');
@@ -138,7 +139,7 @@ test('the built-in default controls nothing, so a property is the person’s as 
   await app.review();
 
   await page.locator('#props-btn').click();
-  await expect(page.locator('#clip-prop-menu .prop-note')).toHaveCount(0);
+  await expect(page.locator('#clip-prop-menu .prop-lock')).toHaveCount(0);
   await expect(page.locator('#clip-prop-menu input.prop-check')).not.toBeChecked();
   await page.locator('#clip-prop-menu input.prop-check').check();
   await expect(page.locator('#clip-prop-menu input.prop-check')).toBeChecked();
@@ -172,7 +173,7 @@ test('a profile is defined in its own sheet, and the selector shows no config', 
   await app.add(takes);
   await app.review();
   await page.locator('#props-btn').click();
-  await expect(page.locator('#clip-prop-menu .prop-note')).toHaveText('set by DemoClipTV');
+  await expect(page.locator('#clip-prop-menu .prop-lock')).toHaveAttribute('title', 'Set by DemoClipTV');
   await expect(page.locator('#clip-prop-menu input.prop-check')).toHaveCount(0);
 });
 
@@ -190,7 +191,7 @@ test('a profile can fix a switch off, which is not the same as leaving it free',
   await app.review();
   await page.locator('#props-btn').click();
   // Fixed, so no control — even though the value is the same as a free, off item would be.
-  await expect(page.locator('#clip-prop-menu .prop-note')).toHaveText('set by Quiet');
+  await expect(page.locator('#clip-prop-menu .prop-lock')).toHaveAttribute('title', 'Set by Quiet');
   await expect(page.locator('#clip-prop-menu input.prop-check')).toHaveCount(0);
   await expect(page.locator('#clip-prop-menu .prop-value').first()).toHaveText('Off');
 });
@@ -263,7 +264,7 @@ test('a profile and what it controls come back after a reload, and it can be let
   await app.add(takes);
   await app.review();
   await page.locator('#props-btn').click();
-  await expect(page.locator('#clip-prop-menu .prop-note')).toHaveCount(0);
+  await expect(page.locator('#clip-prop-menu .prop-lock')).toHaveCount(0);
   await expect(page.locator('#clip-prop-menu input.prop-check')).toBeChecked();
   await page.locator('#clip-prop-menu input.prop-check').uncheck();
   await expect(page.locator('#clip-prop-menu input.prop-check')).not.toBeChecked();
