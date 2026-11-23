@@ -63,11 +63,12 @@ export async function preparePicture(blob: Blob, picture: { w: number; h: number
 /**
  * The geometry to place a prepared picture with: its own proportions kept, centred
  * unless told where, and made smaller rather than taller than the recording when a
- * width that would not fit is asked for.
+ * width that would not fit is asked for. Only the picture's own aspect is needed, so a
+ * caller that measured one another way — a **logo** the app serves — places it the same.
  */
 export function placePicture(
   imageId: string,
-  prepared: PreparedPicture,
+  prepared: { readonly imageAspect: number },
   picture: { w: number; h: number },
   placement: Placement = {},
 ): ImageGeometry {
@@ -92,6 +93,37 @@ export function placePicture(
     imageAspect: prepared.imageAspect,
     pictureAspect,
   };
+}
+
+/**
+ * Where the clip's **watermark** sits: small, in the top-right corner, a margin in from the
+ * edge — as wide as the row, and no taller than `maxHeight`, so a tall mark does not run down
+ * the picture. A mark is **scaled, never stretched**, whatever its shape.
+ */
+export const WATERMARK = { width: 0.07, maxHeight: 0.09, margin: 0.03 };
+
+/**
+ * The geometry for a **logo** drawn as the clip's **watermark**: an image whose picture is a
+ * file the app serves itself (`ui/logos.ts`) rather than bytes the person chose — so the
+ * picture is the logo's **name**, and its own proportions are kept.
+ */
+export function placeWatermark(
+  logo: string,
+  imageAspect: number,
+  picture: { w: number; h: number },
+): ImageGeometry {
+  const pictureAspect = (picture.w || 1) / (picture.h || 1);
+  // As wide as the row, unless that would make it taller than the corner may hold.
+  let width = WATERMARK.width;
+  if ((width * pictureAspect) / imageAspect > WATERMARK.maxHeight) {
+    width = (WATERMARK.maxHeight * imageAspect) / pictureAspect;
+  }
+  const placed = placePicture('', { imageAspect }, picture, {
+    x: 1 - WATERMARK.margin - width,
+    y: WATERMARK.margin,
+    width,
+  });
+  return { ...placed, logo };
 }
 
 function decode(blob: Blob): Promise<HTMLImageElement | null> {

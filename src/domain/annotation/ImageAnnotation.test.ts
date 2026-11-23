@@ -126,4 +126,37 @@ describe('the image annotation', () => {
     expect(ImageAnnotation.restore({ id: 'z', kind: 'image', s: 0, e: 0.1, geometry: null } as StoredAnnotation)).toBeNull();
     expect(ImageAnnotation.restore({ id: 'z', kind: 'image', s: 0, e: 0.1, geometry: { imageId: '' } } as unknown as StoredAnnotation)).toBeNull();
   });
+
+  it('is usable as a logo, with no picture of its own', () => {
+    const image = ImageAnnotation.create(span, geo({ imageId: '', logo: 'democlip' }));
+    expect(image?.geometry.logo).toBe('democlip');
+    expect(image?.isUsable).toBe(true);
+  });
+
+  it('is not a logo with an empty or blank name, any more than it is one with no picture', () => {
+    expect(ImageAnnotation.create(span, geo({ imageId: '', logo: '' }))).toBeNull();
+    expect(ImageAnnotation.create(span, geo({ imageId: '', logo: '   ' }))).toBeNull();
+  });
+
+  it('keeps the logo it wears when it is written down and read back', () => {
+    const image = ImageAnnotation.create(span, geo({ imageId: '', logo: 'democlip' }))!;
+    expect(ImageAnnotation.restore(image.stored())?.geometry.logo).toBe('democlip');
+  });
+
+  it('keeps the logo it wears when it is moved and resized', () => {
+    // The two ways a placed image is edited rebuild its geometry, and a rebuild that
+    // dropped the logo would leave it with no picture — the move or the resize refused.
+    const logo = ImageAnnotation.create(span, geo({ imageId: '', logo: 'democlip' }))!;
+
+    const moved = logo.movedBy(0.05, 0.02);
+    expect(moved).not.toBeNull();
+    expect(moved?.geometry.logo).toBe('democlip');
+    expect(moved?.geometry.imageId).toBe('');
+    expect(moved?.geometry.x).toBeCloseTo(0.35);
+
+    const resized = logo.withHandle('se', { x: 0.6, y: 0.6 });
+    expect(resized).not.toBeNull();
+    expect(resized?.geometry.logo).toBe('democlip');
+    expect(resized?.geometry.width).toBeCloseTo(0.3);
+  });
 });

@@ -20,6 +20,7 @@ import { initTimelineMarks } from './ui/cutting/marks.js';
 import { initAnnotationCanvas } from './ui/annotating/annotation-canvas.js';
 import './ui/annotating/plugins.js';        // registers every kind in the view
 import { initAnnotationLane } from './ui/annotating/annotation-lane.js';
+import { initWatermark } from './ui/clip/watermark.js';
 import { inspector } from './ui/annotating/properties-inspector.js';
 import { textEntry } from './ui/annotating/text-entry.js';
 import { clipPropertiesPanel } from './ui/clip/properties-panel.js';
@@ -104,6 +105,7 @@ function init(): void {
   // edits whatever is placed — the arrow today, an image beside it.
   initAnnotationCanvas();
   initAnnotationLane();   // and the timeline shows where the annotations are
+  initWatermark();        // and a clip that wears a logo wears it over the whole clip
   inspector.init();       // and a picked annotation's settings open its properties
   textEntry.init();       // the one dialog for typing a line, for entering and editing
 

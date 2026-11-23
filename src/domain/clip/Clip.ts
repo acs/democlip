@@ -32,6 +32,7 @@ import { ClipSize } from './ClipSize.js';
 import type { Picture } from './ClipSize.js';
 import { AnnotationSet } from '../annotation/AnnotationSet.js';
 import { annotationFrom } from '../annotation/kinds.js';
+import { isWatermark } from '../annotation/ImageAnnotation.js';
 import type { Annotation, StoredAnnotation } from '../annotation/Annotation.js';
 import type { Take } from './Take.js';
 import type { TakeRepository } from './TakeRepository.js';
@@ -166,6 +167,11 @@ export class Clip {
       const k = before / now;
       this.removed = this.removed.scaled(k);
       this.notes = this.notes.rebase(k);
+      // The **watermark** is the one annotation that is not a moment of the old clip: it is
+      // the mark over the whole of it, so it grows with the clip rather than staying where it
+      // was — and it keeps its place on the picture, which is what rebasing would have moved.
+      const watermark = this.watermark();
+      if (watermark) this.notes = this.notes.change(watermark.id, watermark.withSpan(Span.of(0, 1)));
     }
     this.lastChange = null;
     this.announce({ type: 'take-added', take, index: this.repo.count() - 1, previousTotal: before });
@@ -223,6 +229,36 @@ export class Clip {
    */
   annotationsAt(source: number): readonly Annotation[] {
     return this.notes.shownAt(source, this.timeline());
+  }
+
+  /** The clip's **watermark** — the mark it wears over the whole of its picture — or null. */
+  watermark(): Annotation | null {
+    return this.notes.all.find(isWatermark) ?? null;
+  }
+
+  /**
+   * Put on, or take away, the clip's **watermark**: the mark the clip wears over the whole of
+   * its picture, which follows its **logo**. It is a load rather than an edit — announced, so
+   * the lane and the picture follow — and deliberately **not** what the one undo takes back:
+   * the undo takes back the **logo** itself, and the watermark follows the logo it is left
+   * with. Says whether anything changed.
+   */
+  setWatermark(annotation: Annotation | null): boolean {
+    const current = this.watermark();
+    if (!annotation) {
+      if (!current) return false;
+      this.notes = this.notes.remove(current.id);
+      this.announce({ type: 'annotation-removed', annotation: current });
+      return true;
+    }
+    if (!current) {
+      this.notes = this.notes.add(annotation);
+      this.announce({ type: 'annotation-added', annotation });
+      return true;
+    }
+    this.notes = this.notes.change(current.id, annotation);
+    this.announce({ type: 'annotation-changed', annotation, previous: current });
+    return true;
   }
 
   /**
