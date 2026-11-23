@@ -28,7 +28,10 @@ stacked, merged without checking, put two branches' work in the wrong place and 
 
 1. **What and why** — the problem, in the words of whoever reported it, if anyone did.
 2. **How it was verified** — the harness output pasted in, the unit tests, and the
-   number that mattered (10.8× real time; a duration of 5.36 s).
+   number that mattered (10.8× real time; a duration of 5.36 s). The end-to-end
+   suite follows the **one or two checks per feature** rule (the verification
+   skill): a fold into a check that exists, never a check per behaviour — a branch
+   that grew ten checks for one feature is folded before it is proposed.
 3. **A post-mortem, when the change fixes a regression** — see below.
 4. **What was deliberately not done**, and why.
 5. **Caveats** — what could not be verified, what is a guess, what is a trade.
