@@ -127,16 +127,18 @@ export function placeWatermark(
 }
 
 /**
- * The clip's **title** under the mark: 20% smaller than the mark is drawn, and how far below it
- * the line sits, both as fractions of the picture's height.
+ * The clip's **title** under the mark: **half** the height the mark is drawn at — a subtitle, not
+ * a second heading — and how far below it the line sits, both as fractions of the picture's
+ * height. Half reads as a caption beside a mark; a larger fraction left the line nearly as tall as
+ * the mark and, being the words, far wider, so it dominated the corner instead of naming it.
  */
-export const WATERMARK_TITLE = { scale: 0.8, gap: 0.015 };
+export const WATERMARK_TITLE = { scale: 0.5, gap: 0.015 };
 
 /**
- * The clip's **title** as the line of the watermark: **20% smaller** than the mark is drawn, and
+ * The clip's **title** as the line of the watermark: **half** the height the mark is drawn at, and
  * right-aligned with it. `mark` is the mark's box when the clip wears one, so the line sits a gap
  * below it — and null when the clip has a title but no mark, where the line stands on its own in
- * the corner, 20% smaller than the mark would have been.
+ * the corner, half the height the mark would have been.
  *
  * `measure` is handed the words and the size and answers their width, as a fraction of the
  * picture: the measuring is the view's (it needs a canvas), so the placement itself stays free of

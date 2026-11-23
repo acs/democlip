@@ -131,7 +131,7 @@ test('a clip that wears a logo wears it as a watermark over the whole clip', asy
   expect(await bandDiffers(page, bare, marked)).toBeGreaterThan(300);
 });
 
-test('the clip’s title is worn under the mark, 20% smaller, and drawn there', async ({ page }) => {
+test('the clip’s title is worn under the mark, half its height, and drawn there', async ({ page }) => {
   const app = boot(page);
   await app.goto();
   await clipWithTheCard(page, app);
@@ -145,10 +145,11 @@ test('the clip’s title is worn under the mark, 20% smaller, and drawn there', 
   const title = await watermarkTitleRect(page);
   if (!mark || !title) throw new Error('no watermark');
 
-  // The line's box: under the mark, 20% smaller, right-aligned with it so the block reads as one.
+  // The line's box: under the mark, half its height, right-aligned with it so the block reads as
+  // one — a subtitle to the mark, not a second heading beside it.
   expect(title.text).toBe('A demo');
   expect(title.y).toBeGreaterThanOrEqual(mark.y + mark.height);
-  expect(title.height).toBeCloseTo(mark.height * 0.8, 5);
+  expect(title.height).toBeCloseTo(mark.height * 0.5, 5);
   expect(title.x + title.width).toBeCloseTo(mark.x + mark.width, 5);
 
   // And it is drawn: the band under the mark is not the same picture any more.

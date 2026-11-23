@@ -1,8 +1,8 @@
 // The watermark: the marks the clip wears over the whole of its picture.
 //
 // A clip that wears a **logo** wears it as a **watermark** — the same mark, over the whole clip
-// rather than only on the card at its head — and under it, **20% smaller**, its **title** when it
-// has one. Both are ordinary annotations of the kinds the app already has: the mark an **image
+// rather than only on the card at its head — and under it, at **half its height**, its **title**
+// when it has one. Both are ordinary annotations of the kinds the app already has: the mark an **image
 // annotation** whose picture is a file the app serves itself, the title a **line of text**. So
 // they show on the timeline lane, can be picked, moved, resized and edited exactly as anything
 // else the person places, are kept with the clip and are drawn into every export — and no kind
