@@ -44,7 +44,6 @@ export function initViewLifetime(): void {
     el.idleOv.classList.remove('gone');
     el.btnExp.style.display = 'none';
     el.propsBtn.style.display = 'none';
-    el.resBadge.classList.remove('on');
     playback.reset();
     waveform.clear();
     drawGrid();

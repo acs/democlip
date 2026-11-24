@@ -59,13 +59,14 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 .logo-mark-light{display:none;}
 [data-theme="light"] .logo-mark-light{display:block;}
 [data-theme="light"] .logo-mark-dark{display:none;}
-.logo-name{display:flex;flex-direction:column;gap:1px;}
+.logo-name{display:flex;flex-direction:column;gap:1px;align-items:flex-start;}
 .logo-title{font-size:13px;font-weight:800;letter-spacing:.02em;color:var(--text);line-height:1;}
 .logo-title-accent{color:var(--brand-orange);}
-.logo-sub{font-family:var(--font-mono);font-size:9px;letter-spacing:.2em;color:var(--text-dim);text-transform:uppercase;}
-/* The build's version, beside the logo: the one number that says which deployed
-   build this window is running. */
-.logo-ver{font-family:var(--font-mono);font-size:9px;letter-spacing:.12em;color:var(--text-dim);border:1px solid var(--glass-b);border-radius:5px;padding:3px 6px;line-height:1;align-self:center;}
+/* The build's version, under the wordmark: the one number that says which deployed
+   build this window is running, in the line the old "Screen · WebM" subtitle held,
+   and a link to the project's own page. */
+.logo-ver{font-family:var(--font-mono);font-size:9px;letter-spacing:.12em;color:var(--text-dim);line-height:1;text-decoration:none;width:max-content;}
+.logo-ver:hover{color:var(--text-mid);text-decoration:underline;}
 /* Offered when the deployment is serving a newer build than the one running. It
    is only a offer: reloading by itself would take a recording in progress. */
 .ver-new{display:none;font-family:var(--font-mono);font-size:9px;letter-spacing:.1em;color:var(--amber);border:1px solid rgba(245,158,11,.35);background:rgba(245,158,11,.08);border-radius:5px;padding:3px 7px;line-height:1;align-self:center;cursor:pointer;}
@@ -73,10 +74,6 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 .ver-new:hover{border-color:rgba(245,158,11,.6);}
 
 .hdr-actions{display:flex;align-items:center;gap:7px;margin-left:auto;}
-/* The capture's size, shown once there is one. Shown with `.on` rather than an
-   inline `display`, so the stylesheet's `display:none` is not the fallback. */
-.res-badge{font-family:var(--font-mono);font-size:10px;letter-spacing:.1em;color:var(--text-mid);padding:4px 10px;border:1px solid var(--glass-b);border-radius:100px;background:var(--glass);display:none;}
-.res-badge.on{display:inline-block;}
 
 .icon-btn{width:30px;height:30px;border-radius:50%;border:1px solid var(--glass-b);background:var(--glass);color:var(--text-mid);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;font-family:var(--font-mono);font-size:13px;font-weight:600;line-height:1;flex-shrink:0;}
 .icon-btn:hover{background:var(--glass-b);color:var(--text);border-color:var(--glass-b2);}
@@ -92,16 +89,14 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 .s-dot.proc{background:var(--blue);box-shadow:0 0 6px var(--blue);animation:blink .7s infinite;}
 
 /* The agent badge: a page that asked to be driven says so, beside the status chip.
-   It is the header's chip family — the same shape, ink and type as .status-chip and
-   .res-badge — and its dot is the status dot in its ready state, so "a green dot that
-   says on" keeps one definition. Revealed by the same gate that publishes the surface,
-   so what the page offers and what it says cannot disagree.
+   It is the header's chip family — the same shape, ink and type as .status-chip —
+   and its dot is the status dot in its ready state, so "a green dot that says on"
+   keeps one definition. Revealed by the same gate that publishes the surface, so
+   what the page offers and what it says cannot disagree.
 
-   Not carried to a narrow window (see the media query below). The header overflows a
-   phone width already — measured at 390px: 381px of content in a 346px row, with the
-   status chip ending 13px past the viewport — and this badge would take that to 94px,
-   costing the status chip its word. That overflow is older than this badge and worth
-   its own change; this one does not add to it. */
+   Not carried to a narrow window (see the media query below): the header fits a 390px
+   phone only by using its whole row, and this badge would cost the status chip its
+   word. */
 .agent-chip{display:none;align-items:center;gap:7px;padding:5px 12px;border-radius:100px;background:var(--glass);border:1px solid var(--glass-b);font-family:var(--font-mono);font-size:10px;letter-spacing:.1em;color:var(--text-mid);user-select:none;flex-shrink:0;}
 .agent-chip.on{display:flex;}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.25}}

@@ -109,5 +109,5 @@ looks right.
 ## In prose
 
 The project is `DemoClip`, one word — not Demo Clip, not Democlip, not DEMOCLIP.
-The header's second line, `Screen · WebM`, is a label and not the name; it may stay
-small capitals.
+The header's second line is the build's version, `vX.Y.Z`, and it links to the
+project on GitHub. It replaced the `Screen · WebM` label, which is no longer shown.
