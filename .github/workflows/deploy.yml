@@ -43,7 +43,7 @@ jobs:
       # into the app — so the tag, main's package.json and the number beside the
       # logo all agree. A push made with GITHUB_TOKEN does not start another run,
       # and `[skip ci]` says so as well. Bump the minor or major by hand before
-      # merging when a release deserves it: see VERSIONING.md.
+      # merging when a release deserves it: see docs/VERSIONING.md.
       #
       # The MCP server carries the same number, because a clip's written shape is a
       # contract between the two: CI owns it, and stamps both in this one commit so

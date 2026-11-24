@@ -66,7 +66,7 @@ each pull request that undoes one names it, so the trail is legible from any of 
 
 Every merge to `main` bumps the patch, tags `vX.Y.Z` and deploys — the workflow
 commits that back. Do not bump `package.json` by hand except for a deliberate minor
-or major release, done before merging. See `VERSIONING.md`.
+or major release, done before merging. See `docs/VERSIONING.md`.
 
 ## Before pushing
 

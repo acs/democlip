@@ -1,7 +1,7 @@
 # DemoClip Constitution
 
 The principles of this project are **already written down** — in `.agents/skills/` and
-`GLOSSARY.md`. This file does not restate them, because two copies of a rule drift and
+`docs/GLOSSARY.md`. This file does not restate them, because two copies of a rule drift and
 then one of them lies. It names them, so that Spec Kit's gates have something to check
 a plan against.
 
@@ -12,7 +12,7 @@ a plan against.
 `.agents/skills/` holds how work is done here: **overview** (what the app is, and which
 document owns which fact), **domain-model** (where a rule belongs), **verification**
 (what counts as proof), **project-workflow** (branches, commits, pull requests) and
-**branding** (the mark, the name, the colours). `GLOSSARY.md` holds the words.
+**branding** (the mark, the name, the colours). `docs/GLOSSARY.md` holds the words.
 
 A plan or a task list that disagrees with a skill is wrong. Change the skill, in its
 own change — never quietly diverge from it.
@@ -39,7 +39,7 @@ to hide.
 
 ### V. The words come first
 
-A new concept is written into `GLOSSARY.md` **before** it appears in code, and the
+A new concept is written into `docs/GLOSSARY.md` **before** it appears in code, and the
 code, the tests, the commits and the pull request all use those words.
 
 ### VI. One change per pull request, and CI owns the version
@@ -57,7 +57,7 @@ change it describes. The gates `/speckit.plan` checks are the six principles abo
 
 ## Governance
 
-These principles are amended by amending `.agents/skills/` or `GLOSSARY.md`, in their
+These principles are amended by amending `.agents/skills/` or `docs/GLOSSARY.md`, in their
 own pull request. This file is a pointer to them: if it and a skill ever disagree, the
 **skill wins**, and this file is the thing to fix.
 

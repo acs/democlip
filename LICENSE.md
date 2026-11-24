@@ -1,7 +1,7 @@
 MIT License
 
-Copyright (c) 2026 Afonso Branco
 Copyright (c) 2026 Alvaro del Castillo
+Original work Copyright (c) 2026 Afonso Branco
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

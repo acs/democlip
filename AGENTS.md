@@ -2,7 +2,7 @@
 
 Before exploring the code, load the **Project overview** skill: what the app is,
 the flow it is built around, the runtime objects and their lifetimes, where each
-kind of code lives, and which document owns which fact. Then **GLOSSARY.md** — the
+kind of code lives, and which document owns which fact. Then **docs/GLOSSARY.md** — the
 words, and the words we do not use.
 
 - **Finding code:** prefer the **codebase-memory MCP** (`search_graph`,

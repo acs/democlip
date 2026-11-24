@@ -1,0 +1,75 @@
+# Features
+
+Everything DemoClip does, in full. The [README](../README.md) keeps the headline
+capabilities; this is the whole list, grouped by what you are doing. The categories
+are the app's main use cases — record, import, keep, restore, cutting, annotating,
+export, publish and profiles — with a section for the clip's own properties, for the
+round trip, and for the app itself, named as [`GLOSSARY.md`](GLOSSARY.md) names them.
+
+## Record
+
+- **Nothing captured until you ask** — every source starts off, so the app never opens a screen picker on its own; press **Screen** or **Webcam** to start one, and Record with nothing on says so
+- **Record sources in one row** — Screen, Webcam and Mic sit on the left, the record button is centred in the bar, and the sources are out while a take is being set up or records. They are independent toggles, **all off at start**: press Screen to share, and press it again to let the share go — nothing reaches for the screen after that — or Webcam, which carries the picture on its own when the screen is off. The recording's duration is read off the timeline rather than a separate clock
+- **Region crop** — a red box over the preview always shows what will be recorded: the whole screen by default, drag to record just part of it, click to reset; while recording the box breathes (red ↔ background)
+- **Webcam** — a source button adds a mirrored bubble in the corner of the recording (disabled when no camera is present), or is **the whole recording** when the screen is off; when the device has more than one camera, a picker beside the button chooses which one
+- **Microphone** — a source button (disabled when no mic) with a live level meter; its audio is **mixed with the tab/system audio** in the recording
+- **Tab / system audio** — requested on every capture (`audio: true` plus Chrome's `systemAudio: 'include'` hint, so the audio option is offered); the browser owns that checkbox, so the app says so when a share comes back silent, and **New** returns to the picker to redo it
+- **Add more takes** — pressing Record after a recording appends the new one to the end of the clip; the share is kept between takes, so there is no second picker and **every take in a clip comes from the same source** (the same tab, window or screen). **A short fade either side of the join, and a dissolve across it**, soften the change from one take to the next. New starts a new clip; if a source ends, turn it back on and the next take still adds on
+- **Live timeline** — the timeline is there while a take records, filling in with the picture and the sound as they are captured (drawn from the live preview and the recorded stream's own levels, never by decoding the half-written file), and it becomes the timeline you cut on when you stop
+- **Audio track** — a waveform of the recording under the thumbnails, shown when the clip has sound
+
+## Import
+
+- **Import a video file** — press **Import** to bring a **WebM or MP4** already on your machine in as a take: it joins the clip to cut, annotate, export and publish like a recording. Nothing is re-recorded — the file's own bytes become the take, and its own length and sound are read from the file — and it is read back by the same decoder the export writes with, so the two containers an export can read are the two an import takes
+
+## Keep
+
+- **Your recording is not lost to a reload** — the clip is kept in the browser (IndexedDB) as it changes; the session is over at **New**, or when the clip is exported (the file written, the post published), and the kept copy goes with it
+
+## Restore
+
+- **It is back where you left it** — a page reload, an update, or the trip a Bluesky sign-in takes all come back to the clip, opened straight into the review
+
+## Cutting
+
+- **Timeline cutting** — **click twice to select a section and cut it out with the scissors** (or by clicking inside it), with an **undo** on the section to drop the selection and an **undo** in the header to put an approved cut back. **An approved cut leaves the timeline**, which closes up over it, so the timeline always shows what the export will hold — the strip, the waveform and the playhead all follow. **Drag a mark or the selected section** (whole, or by an edge) to reposition it, with the frame under it following as it moves, or **step it a frame at a time with ← / →** (Shift a second) — a click, a drag or a step **holds the frame, it does not play**, so the exact moment can be found by eye
+- **Playback** — play the recorded clip back on the preview with sound (**P** or ▶), skipping the cuts
+
+## Annotating
+
+- **Annotations — point with an arrow, put a picture over it, or write on it** — select a stretch on the timeline, then press the **arrow** on the section and drag across the preview to point an arrow at the detail, press the **image** beside it to put a picture over the stretch — choose a file, **paste one**, or **drop one on the preview** — and drag its corners to resize it (hold **Shift** to stretch it freely), or press the **text** button to type a line, which grows and shrinks as you drag a corner. Any kind is shown over that stretch in playback and in the export — **dissolving onto the picture at the start of its stretch and off it at the end, as a take does at a join, so it never pops in or out** — stays over the same part of the picture as the frames move, and is kept with the clip across a reload. **Click one on the picture** to pick it and drag it to move (an arrow's ends aim it, a picture's or a text's corners resize it), **click its mark on the timeline lane** to jump to it, **copy and paste it** (**⌘/Ctrl+C** then **⌘/Ctrl+V**) for a new one of the same shape at the playhead, or delete it by pressing **Delete** with it picked, or by tapping the **×** that appears on it — and the **copy** beside the **×** puts another like it on the picture, to drag where it is wanted — and the **settings** control beside them changes what the annotation is made of: its **colour** from the app's palette, and for a text its **words**, typed in the app's own dialog — a new one starts in the clip's **annotation colour** (red, unless the clip's own settings or a profile say otherwise), and changing that colours what is made next rather than what is already placed — and the header's one **undo** takes back whatever you last did, a cut or an annotation. **A cut takes its part of an annotation's stretch with it**, exactly as it takes the picture
+
+## What a clip says about itself
+
+- **A clip's own title and description** — the **settings** control in the corner of the preview (the pencil over the picture) opens what the clip says about itself: a **title** and a **description**, its own properties, kept with the clip and taken back by the one undo. Publishing fills its fields from them — a YouTube video's title and description, a Bluesky post's text and its alt — so the clip is branded once and the branding goes out with the upload, changed per publish if you want. Switch on **Add to export** and **every export — the files and a publish alike — begins with a 2-second title card**: the clip's first frame held still, with the title and description drawn over it as text and the date and the app's name under them, so a file opens by saying what it is and a published video opens with it too
+- **One size for every take** — a clip's takes may come from different crops and different files, so the clip has its own **clip size**: the largest width and height among the takes, both even, so no take is scaled below its own picture. Every take is shown **fitted whole and centred** in the review and written the same way in every export, so a file never changes picture size partway. The size is a **clip property** beside the title and description — change it in the same settings control and the review and the next export follow, kept with the clip and taken back by the one undo; once you set it, a later larger take is fitted into it rather than growing it
+- **A logo on the head of the export, and as a watermark over the whole clip** — a clip wears a **logo** as one of its own properties: the **name** of a mark DemoClip serves itself (a file in the repository, nothing uploaded), or nothing at all, which is the ordinary case. A clip that wears one opens **every** export — the WebM and MP4 files, the file for editing and a publish — with a **title card** carrying it, above the clip's words; and a name the app does not ship is refused rather than kept, so a file is never waited on that will never draw. The same mark is worn as a **watermark** over the whole clip: an **image annotation** in the top-right corner, and the clip's **title** when it has one, half the mark's height, as a line of text **in the clip's annotation colour** under it — or on its own in the corner when the clip wears no mark. Both are scaled and never stretched, so they are on every frame of the file and can be moved or resized like any other annotation; clearing the logo takes the mark away and clearing the title the line, and either part can be taken away on its own. A **profile** may fix it, which is what makes a production environment wear the same mark every time
+
+## Profiles
+
+- **Profiles — the app's configuration, one set per way of working** — the pill at the right-hand end of the toolbar, wearing the active profile's first letters (**Dem** for DemoClipTV), holds the app's configuration as named **profiles**: **DemoClipTV**, **GraditoneTV**, one for each way of working. A profile **fixes the items it controls**: fix **Add to export** on in DemoClipTV and every clip made under it opens its export with the title card, fix **Logo** to one of the marks DemoClip serves and every one opens with that mark on the card, or fix **Annotation colour** and every arrow and text made under it starts in that colour — and none is **yours to change** while the profile is in use, because the row shows its value with a lock whose tooltip names the profile, and nothing to press. An item no profile controls is yours exactly as before; a profile that controls nothing is a **free** profile, and the app's **Default** is that one — always there, never renamed or removed. A profile's **name** and what it controls are both set in **its own dialog** (the pencil mark on its row) — never in the list, which only selects, creates and removes; the dialog closes by **Done**, Escape or a press outside it. A profile that fixes an **Annotation colour** also wears it as its **badge** — the initials on its row and on the toolbar pill — so a way of working is recognised at a glance. The choice belongs to the session, so a profile is **fixed from the moment a take starts recording until the session ends**
+
+## Export
+
+- **Export to WebM or MP4, encoded offline** — WebM is VP9 (VP8 fallback) with Opus audio, MP4 is H.264 with AAC; both are written straight from the decoded frames by WebCodecs: about **10× faster than the clip**, it keeps going while the tab is in the background, and the file carries a duration and cue points, so any player can scrub it
+- **Export progress on the timeline** — the playhead travels across the clip as it is written, with the frames shown on the preview and how much of the clip is left to write counted down; nothing runs off a bottom bar
+
+## A clip that leaves and comes back
+
+- **A clip that leaves and comes back** — **Export ▾ → WebM for editing** writes the picture alone and a **sidecar** beside it holding the annotations as data, so the clip can be worked on by anything on the machine — ffmpeg, an editor, another encoder — and brought back with **Import** (the video and the sidecar chosen together) with its annotations whole: they return as annotations of their own, over the stretch the file was given, ready to be moved again. The plain downloads are untouched by it: a WebM or MP4 file still holds exactly the cuts and the annotations the person watched
+
+## Publish
+
+- **Publish to YouTube** — from the same Export menu, the kept clip goes to your own YouTube channel: sign in with Google once in that window — Google asks which account, and then which channel, your own or a brand account, so the channel is chosen there and nowhere else — set the title, the description and who may see it — **private** unless you say otherwise — and upload. The app says how far it has got, from writing the video to uploading it, and offers the video's own link as soon as YouTube has taken it — the video is on your channel then, and YouTube finishes processing it just after. Nothing is uploaded before you have signed in **and** pressed Upload, no token is kept anywhere, nothing about your account is read, and a clip too long for the account is refused before a frame is written
+
+## Being driven by an agent
+
+- **Drive it from an agent** — a local MCP server (`mcp/`, shipped with the app, on npm as `democlip-mcp`) opens the app in a browser of its own and offers an agent the app's own operations: read the clip, cut, annotate, place the picture on your clipboard, change a property, remove, undo, seek, record a take, bring a video file in as a take, export, publish. You record exactly as always — the picker is yours, and what is *shared* is chosen by you — and every change the agent makes lands in that window as you watch, is announced to the app's views, and is taken back by the app's **one undo**, whoever made it. There is no tool that runs code in the page, no second editor, and the recording is never re-encoded: an agent's change is the same kind of change a person's is. The server serves the app's own build on loopback and refuses to drive a page of another release, and an export is taken from the browser's own download — the same file you would have got
+
+## The app
+
+- **Zero dependencies on your machine** — runs entirely in the browser via `getDisplayMedia`
+- **Light / dark mode** — full CSS variable theming, persisted to `localStorage`
+- **PWA** — installable as a desktop app, offline-capable for core recording and export
+- **Version on screen** — the deployed build's version sits beside the logo (in the help panel too), and when a newer build has been deployed the header offers a reload; every merge to `main` bumps it, tags it and deploys — see [VERSIONING.md](VERSIONING.md)
+- **100% offline mode** — recording, playback and export happen entirely in your browser, and nothing is uploaded or stored on a server. Publishing a clip — to YouTube or Bluesky — is optional, and only happens when you ask
