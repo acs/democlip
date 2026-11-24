@@ -48,6 +48,7 @@ async function standInGoogle(page: Page, standIn: StandIn = {}): Promise<Asked[]
   await page.route('https://accounts.google.com/gsi/client', route => route.fulfill({
     contentType: 'application/javascript',
     body: `window.google = { accounts: { oauth2: { initTokenClient: function (config) {
+      window.__youtubeTokenConfig = config;
       return { requestAccessToken: function () { config.callback({ access_token: 'stub-token' }); } };
     } } } };`,
   }));
@@ -214,6 +215,11 @@ test('signing in shows whose channel it will go to, and what the destination ref
   await openYouTube(page);
   await page.locator('#yt-signin').click();
   await expect(page.locator('#yt-as')).toContainText('A test channel');
+  // The app asks Google for its account and channel chooser — where the channel is picked — so a
+  // returning visitor is not silently kept on the one they last consented with.
+  expect(await page.evaluate(() =>
+    (window as unknown as { __youtubeTokenConfig?: { prompt?: string } }).__youtubeTokenConfig?.prompt,
+  )).toBe('select_account');
   await expect(page.locator('#yt-visibility')).toHaveValue('private');
   await expect(page.locator('#yt-title')).toBeVisible();
   await expect(page.locator('#yt-description')).toBeVisible();

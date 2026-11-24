@@ -193,6 +193,7 @@ interface GoogleAccounts {
       initTokenClient(config: {
         client_id: string;
         scope: string;
+        prompt?: string;
         callback: (response: TokenResponse) => void;
       }): TokenClient;
     };
@@ -301,6 +302,12 @@ function requestToken(id: string): Promise<string> {
     const client = google.accounts.oauth2.initTokenClient({
       client_id: id,
       scope: SCOPE,
+      // Ask for Google's account and channel chooser on every sign-in. An account may own more
+      // than one channel, and the channel is picked in Google's own flow — this app can neither
+      // list nor target one (`videos.insert` has no channel parameter, and the upload scope
+      // cannot read them) — so without this a returning visitor is silently kept on the channel
+      // they last consented with, and another could never be chosen.
+      prompt: 'select_account',
       callback: response => {
         if (response?.access_token) resolve(response.access_token);
         else reject(new Error(signInProblem(response)));
