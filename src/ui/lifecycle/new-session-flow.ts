@@ -27,7 +27,7 @@ export function startNewSession(): void {
   // The fresh clip is given what the active profile fixes. The session has ended, so a
   // profile may be chosen again — and this one is what a new clip is made under.
   applyProfile();
-  setStatus('ready', 'Ready');
+  setStatus('Ready');
 
   // Same as the app start: go back for a share — but only while the screen is a
   // source. The webcam, if it is on, keeps the preview and nothing reaches for the

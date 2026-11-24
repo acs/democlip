@@ -44,6 +44,13 @@ test.describe('on a phone', () => {
     // The capture's size is the clip properties panel's, not the header's.
     await expect(page.locator('#res-badge')).toHaveCount(0);
 
+    // The status is announced rather than drawn: no chip in the header, and the text
+    // lives in the page's live region.
+    await expect(page.locator('.status-chip')).toHaveCount(0);
+    await expect(page.locator('.hdr #s-text')).toHaveCount(0);
+    await expect(page.locator('.status-live')).toHaveAttribute('aria-live', 'polite');
+    await expect(page.locator('#s-text')).toHaveText('Ready');
+
     // The header no longer overflows a 390px phone: the profile pill, its last control,
     // is wholly inside the window.
     const pill = await page.locator('#profile-btn').boundingBox();

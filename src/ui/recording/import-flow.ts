@@ -52,17 +52,17 @@ export async function onFileChosen(): Promise<void> {
   // takes, and the sidecar is the `.json` beside it — read as ours, or not read at all.
   const video = chosen.find(candidate => TakeFile.of(candidate.name, candidate.type) !== null);
   if (!video) {
-    setStatus('ready', 'Ready');
+    setStatus('Ready');
     toast('Only WebM and MP4 videos can be imported.');
     return;
   }
   const written = chosen.find(candidate => candidate !== video && candidate.name.toLowerCase().endsWith('.json'));
   const sidecar = written ? readSidecar(await written.text()) : null;
 
-  setStatus('proc', 'Importing…');
+  setStatus('Importing…');
   const outcome = await importTake.run({ name: video.name, type: video.type, blob: video }, sidecar);
   if (outcome.kind !== 'imported') {
-    setStatus('ready', 'Ready');
+    setStatus('Ready');
     toast(outcome.reason);
     return;
   }
@@ -73,7 +73,7 @@ export async function onFileChosen(): Promise<void> {
   await syncWatermark('picture');
   setPhase('review');
   await openReview(session.clip.takes.count() - 1, 0);
-  setStatus('ready', 'Ready');
+  setStatus('Ready');
 
   const carried = outcome.annotations;
   if (carried?.reason) toast(`Imported — ${carried.reason}`);

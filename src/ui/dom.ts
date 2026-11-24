@@ -19,7 +19,6 @@ export const el = {
   recBtn:    byId<HTMLButtonElement>('rec-btn'),
   ctrl:      byId<HTMLElement>('ctrl'),
   ring3:     byId<HTMLElement>('ring-3'),
-  sDot:      byId<HTMLElement>('s-dot'),
   sText:     byId<HTMLElement>('s-text'),
   recLbl:    byId<HTMLElement>('rec-lbl'),
   btnNew:    byId<HTMLButtonElement>('btn-new'),
@@ -126,8 +125,8 @@ export function clock(seconds: number): string {
   return String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
 }
 
-export function setStatus(cls: string, txt: string): void {
-  el.sDot.className = 's-dot ' + cls;
+/** Say what the app is doing: announced by the page's live region, drawn nowhere. */
+export function setStatus(txt: string): void {
   el.sText.textContent = txt;
 }
 

@@ -82,17 +82,16 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 .icon-btn:disabled:hover{background:var(--glass);color:var(--text-mid);border-color:var(--glass-b);}
 .icon-btn svg{pointer-events:none;}
 
-.status-chip{display:flex;align-items:center;gap:7px;padding:5px 12px;border-radius:100px;background:var(--glass);border:1px solid var(--glass-b);font-family:var(--font-mono);font-size:10px;letter-spacing:.1em;color:var(--text-mid);user-select:none;flex-shrink:0;}
+/* The status is announced, not drawn — see the live region at the end of the page. */
+.status-live{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0;}
+/* A status dot: the agent badge's mark that the surface is on. */
 .s-dot{width:6px;height:6px;border-radius:50%;background:var(--text-dim);transition:background .3s,box-shadow .3s;flex-shrink:0;}
 .s-dot.ready{background:var(--green);box-shadow:0 0 6px var(--green);}
-.s-dot.rec{background:var(--crimson);box-shadow:0 0 8px var(--crimson-glow);animation:blink 1s infinite;}
-.s-dot.proc{background:var(--blue);box-shadow:0 0 6px var(--blue);animation:blink .7s infinite;}
 
-/* The agent badge: a page that asked to be driven says so, beside the status chip.
-   It is the header's chip family — the same shape, ink and type as .status-chip —
-   and its dot is the status dot in its ready state, so "a green dot that says on"
-   keeps one definition. Revealed by the same gate that publishes the surface, so
-   what the page offers and what it says cannot disagree.
+/* The agent badge: a page that asked to be driven says so, after the help button.
+   It keeps the header's chip shape and ink, and its dot is the status dot in its
+   ready state. Revealed by the same gate that publishes the surface, so what the
+   page offers and what it says cannot disagree.
 
    Not carried to a narrow window (see the media query below): the header fits a 390px
    phone only by using its whole row, and this badge would cost the status chip its

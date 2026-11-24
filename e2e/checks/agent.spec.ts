@@ -162,7 +162,7 @@ test('the surface is published only on a page that asked, and refuses what a han
   const badge = page.locator('#agent-chip');
   await expect(badge).toBeVisible();
   await expect(badge).toHaveText('Agent');
-  await expect(page.locator('.status-chip')).toHaveText('Ready');   // still its own chip
+  await expect(page.locator('#s-text')).toHaveText('Ready');   // announced, not drawn
   // The tooltip is the whole of the explanation, and it has to be an explanation, not a label.
   const title = (await badge.getAttribute('title')) ?? '';
   expect(title).toMatch(/agent/i);

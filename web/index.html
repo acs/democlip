@@ -78,10 +78,6 @@
         <div class="s-dot ready"></div>
         <span>Agent</span>
       </div>
-      <div class="status-chip">
-        <div class="s-dot" id="s-dot"></div>
-        <span id="s-text">Initialising</span>
-      </div>
       <button class="icon-btn profile-pill" id="profile-btn" aria-haspopup="menu" aria-expanded="false" aria-label="Profiles" title="Profiles">
         <span class="icon-btn-lbl" id="profile-initials">—</span>
       </button>
@@ -355,6 +351,12 @@
 <video id="rv" style="display:none" playsinline preload="auto"></video>
 <video id="wcv" style="display:none" autoplay muted playsinline></video>
 <input id="file-input" type="file" accept="video/webm,video/mp4,application/json" multiple hidden>
+
+<!-- The status is announced, not drawn: the header has no room for a chip whose word is
+     mostly "Ready", and the visible feedback is the REC badge, the timeline's progress and
+     the toasts. Kept as a live region so a person using a screen reader still hears the
+     app say what it is doing. -->
+<div class="status-live" role="status" aria-live="polite"><span id="s-text">Initialising</span></div>
 
 <script type="module" src="/main.ts"></script>
 </body>
