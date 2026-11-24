@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
 import { RestoreClip } from './restore-clip.js';
-import { Clip } from '../domain/clip/Clip.js';
+import { Clip, type ClipSnapshot } from '../domain/clip/Clip.js';
 import { Take } from '../domain/clip/Take.js';
 import type { TakeRepository } from '../domain/clip/TakeRepository.js';
-import type { KeptClipPort, StoredClip } from './ports/KeptClipPort.js';
+import type { KeptClipPort } from './ports/KeptClipPort.js';
 
 class FakeTakes implements TakeRepository {
   private takes: Take[] = [];
@@ -32,7 +32,7 @@ const clipWith = (...durations: number[]): Clip => {
   return clip;
 };
 
-const storeOf = (stored: StoredClip | null): KeptClipPort & { cleared: number } => {
+const storeOf = (stored: ClipSnapshot | null): KeptClipPort & { cleared: number } => {
   let cleared = 0;
   return {
     get cleared() { return cleared; },
@@ -45,15 +45,15 @@ const storeOf = (stored: StoredClip | null): KeptClipPort & { cleared: number } 
 };
 
 describe('RestoreClip', () => {
-  it('rebuilds a stored clip and returns its audio', async () => {
+  it('rebuilds a stored clip', async () => {
     const saved = clipWith(2, 3);
     const clip = clipWith();
-    const store = storeOf({ clip: saved.snapshot(), audio: true });
+    const store = storeOf(saved.snapshot());
     const restore = new RestoreClip({ clip, store });
 
     const outcome = await restore.run();
 
-    expect(outcome).toEqual({ kind: 'restored', audio: true });
+    expect(outcome).toEqual({ kind: 'restored' });
     expect(clip.takes.count()).toBe(2);
     expect(clip.total()).toBe(5);
   });
@@ -71,7 +71,7 @@ describe('RestoreClip', () => {
 
   it('drops a clip it cannot rebuild and says why', async () => {
     const clip = clipWith();
-    const store = storeOf({ clip: { takes: [{ blob: new Blob(['x']), duration: 0 }], cuts: [] }, audio: false });
+    const store = storeOf({ takes: [{ blob: new Blob(['x']), duration: 0 }], cuts: [] });
     const restore = new RestoreClip({ clip, store });
 
     const outcome = await restore.run();
@@ -84,7 +84,7 @@ describe('RestoreClip', () => {
   it('announces nothing: a restore is a load, not a change', async () => {
     const saved = clipWith(2);
     const clip = clipWith();
-    const store = storeOf({ clip: saved.snapshot(), audio: false });
+    const store = storeOf(saved.snapshot());
     const restore = new RestoreClip({ clip, store });
     const seen: string[] = [];
     clip.onChange(event => seen.push(event.type));

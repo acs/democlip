@@ -59,6 +59,11 @@ export async function publishClip(
   handlers: PublishHandlers,
 ): Promise<void> {
   try {
+    // A video service takes a video, and the use case refuses a sound-only clip too; said
+    // here first, so nothing is loaded or signed in for a publish that cannot happen.
+    if (!session.clip.keepsPicture()) {
+      throw new Error('Bluesky takes a video, and this clip is sound only — it has no picture to write. Export it as a file instead');
+    }
     const api = await bluesky();
     const service = await api.blueskyService();
     // The clip's own size: the post's aspect ratio and the encoded video's own size are
@@ -69,7 +74,7 @@ export async function publishClip(
     const intro = introFor(session.clip);
     await frameRenderer.prepare(intro);
     const { uri } = await publishToBluesky(session.clip, {
-      export: { audio: session.audio, fadeSeconds: FADE_S, annotations: 'drawn', intro },
+      export: { fadeSeconds: FADE_S, annotations: 'drawn', intro },
       text,
       alt,
       aspectRatio: AspectRatio.of(picture.width, picture.height).reduced(),

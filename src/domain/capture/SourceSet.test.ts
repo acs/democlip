@@ -5,12 +5,23 @@ describe('SourceSet', () => {
   it('starts with nothing on', () => {
     expect(SourceSet.NONE.any).toBe(false);
     expect(SourceSet.NONE.hasPicture).toBe(false);
+    expect(SourceSet.NONE.canRecord).toBe(false);
   });
 
-  it('needs a picture for a take', () => {
+  it('needs a source for a take: a picture, or the microphone on its own', () => {
+    expect(SourceSet.of(true, false, false).canRecord).toBe(true);
+    expect(SourceSet.of(false, true, false).canRecord).toBe(true);
+    expect(SourceSet.of(false, false, true).canRecord).toBe(true);
+    expect(SourceSet.NONE.canRecord).toBe(false);
+  });
+
+  it('knows the picture sources apart from the microphone alone', () => {
     expect(SourceSet.of(true, false, false).hasPicture).toBe(true);
     expect(SourceSet.of(false, true, false).hasPicture).toBe(true);
     expect(SourceSet.of(false, false, true).hasPicture).toBe(false);
+    expect(SourceSet.of(false, false, true).soundOnly).toBe(true);
+    expect(SourceSet.of(true, false, true).soundOnly).toBe(false);
+    expect(SourceSet.of(false, true, true).soundOnly).toBe(false);
   });
 
   it('keeps the three toggles independent', () => {

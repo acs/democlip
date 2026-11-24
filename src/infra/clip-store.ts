@@ -34,17 +34,12 @@ const IMAGES = 'images';
 const META_KEY = 'current';
 const FORMAT = 1;
 
-/** A clip as it is kept: what it is made of, and whether it had sound. */
-export interface StoredClip {
-  clip: ClipSnapshot;
-  audio: boolean;
-}
-
-/** One take as it is kept: the recording, how long it is, and the size of its picture. */
+/** One take as it is kept: the recording, how long it is, its picture and its sound. */
 interface StoredTake {
   blob: Blob;
   duration: number;
   picture?: Picture;
+  hasAudio?: boolean;
 }
 
 /** The small half: how many takes, the cuts, the annotations, what it says, and the sound. */
@@ -70,26 +65,31 @@ function serial<T>(op: () => Promise<T>): Promise<T> {
 }
 
 /** A take arrived: write it down, and the clip's small half with it. */
-export function saveTake(clip: Clip, index: number, audio: boolean): Promise<void> {
+export function saveTake(clip: Clip, index: number): Promise<void> {
   return serial(async () => {
     const take = clip.takes.at(index);
     if (!take) return;
     const db = await openDb();
     const tx = db.transaction([TAKES, META], 'readwrite');
-    const record: StoredTake = { blob: take.blob, duration: take.duration, picture: take.picture ?? undefined };
+    const record: StoredTake = {
+      blob: take.blob,
+      duration: take.duration,
+      picture: take.picture ?? undefined,
+      hasAudio: take.hasAudio,
+    };
     tx.objectStore(TAKES).put(record, index);
-    tx.objectStore(META).put(metaOf(clip, audio), META_KEY);
+    tx.objectStore(META).put(metaOf(clip), META_KEY);
     await txComplete(tx);
   });
 }
 
 /** The cuts moved: only the small half changes. */
-export function saveMeta(clip: Clip, audio: boolean): Promise<void> {
+export function saveMeta(clip: Clip): Promise<void> {
   return serial(async () => {
     if (clip.takes.isEmpty()) return;
     const db = await openDb();
     const tx = db.transaction(META, 'readwrite');
-    tx.objectStore(META).put(metaOf(clip, audio), META_KEY);
+    tx.objectStore(META).put(metaOf(clip), META_KEY);
     await txComplete(tx);
   });
 }
@@ -100,7 +100,7 @@ export function saveMeta(clip: Clip, audio: boolean): Promise<void> {
  * the page: it re-attempts any take an earlier write failed to keep, and it
  * settles on the transaction's completion, because the caller is about to go.
  */
-export function saveClip(clip: Clip, audio: boolean): Promise<void> {
+export function saveClip(clip: Clip): Promise<void> {
   return serial(async () => {
     const db = await openDb();
     const have = new Set(await keysOf(db, TAKES));
@@ -108,16 +108,21 @@ export function saveClip(clip: Clip, audio: boolean): Promise<void> {
     const tx = db.transaction([TAKES, META], 'readwrite');
     takes.forEach((take, i) => {
       if (have.has(i)) return;
-      const record: StoredTake = { blob: take.blob, duration: take.duration, picture: take.picture ?? undefined };
+      const record: StoredTake = {
+        blob: take.blob,
+        duration: take.duration,
+        picture: take.picture ?? undefined,
+        hasAudio: take.hasAudio,
+      };
       tx.objectStore(TAKES).put(record, i);
     });
-    tx.objectStore(META).put(metaOf(clip, audio), META_KEY);
+    tx.objectStore(META).put(metaOf(clip), META_KEY);
     await txComplete(tx);
   });
 }
 
 /** The clip that was written down, or null when there is none usable. */
-export function loadClip(): Promise<StoredClip | null> {
+export function loadClip(): Promise<ClipSnapshot | null> {
   return serial(async () => {
     const db = await openDb();
     const meta = await readMeta(db);
@@ -126,13 +131,23 @@ export function loadClip(): Promise<StoredClip | null> {
     // Every take the small half counts has to be there, or the clip is not one
     // to hand back: a missing take would make every position after it wrong.
     if (takes.length !== meta.count || takes.some(take => !take || !(take.duration > 0))) return null;
-    // A take written before the clip size existed carries no picture of its own;
-    // measure it now, so the clip still knows the size to be shown and exported at.
+    // A take written before the clip size or the per-take sound existed carries
+    // neither; measure both now, so the clip still knows its picture and its sound.
+    // The small half's old `audio` flag is the fallback when the blob will not say.
     const kept = takes as StoredTake[];
     for (const take of kept) {
-      if (!take.picture) take.picture = await measuredPicture(take.blob);
+      if (take.picture && take.hasAudio !== undefined) continue;
+      const info = await measured(take.blob);
+      if (!take.picture) take.picture = info?.picture ?? undefined;
+      if (take.hasAudio === undefined) take.hasAudio = info?.hasAudio ?? !!meta.audio;
     }
-    return { clip: { takes: kept, cuts: meta.cuts, annotations: meta.annotations ?? [], properties: meta.properties ?? {}, watermark: meta.watermark ?? [] }, audio: !!meta.audio };
+    return {
+      takes: kept,
+      cuts: meta.cuts,
+      annotations: meta.annotations ?? [],
+      properties: meta.properties ?? {},
+      watermark: meta.watermark ?? [],
+    };
   }).catch(() => null);
 }
 
@@ -157,12 +172,17 @@ export const keptClip: KeptClipPort = {
   clear: clearClip,
 };
 
-/** A stored take's picture size, measured from its blob, or undefined when it will not say. */
-async function measuredPicture(blob: Blob): Promise<Picture | undefined> {
-  try { return (await takeFile.inspect(blob)).picture ?? undefined; } catch { return undefined; }
+/** A stored take's picture and sound, measured from its blob, or null when it will not say. */
+async function measured(blob: Blob): Promise<{ picture?: Picture; hasAudio?: boolean } | null> {
+  try {
+    const info = await takeFile.inspect(blob);
+    return { picture: info.picture ?? undefined, hasAudio: info.hasAudio };
+  } catch {
+    return null;
+  }
 }
 
-function metaOf(clip: Clip, audio: boolean): Meta {
+function metaOf(clip: Clip): Meta {
   return {
     version: FORMAT,
     count: clip.takes.count(),
@@ -170,7 +190,7 @@ function metaOf(clip: Clip, audio: boolean): Meta {
     annotations: clip.annotations.all.map(annotation => annotation.stored()),
     properties: clip.properties.toRecord(),
     watermark: clip.snapshot().watermark,
-    audio,
+    audio: clip.hasSound(),
   };
 }
 

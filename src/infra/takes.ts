@@ -19,8 +19,8 @@ export class InMemoryTakeRepository implements TakeRepository {
   private nextId = 1;
 
   /** A new take at the end of the session, with the URL that plays it. */
-  add(blob: Blob, duration: number, picture?: Picture | null): Take {
-    const take = Take.of(this.nextId++, blob, URL.createObjectURL(blob), duration, picture ?? null);
+  add(blob: Blob, duration: number, picture?: Picture | null, hasAudio = false): Take {
+    const take = Take.of(this.nextId++, blob, URL.createObjectURL(blob), duration, picture ?? null, hasAudio);
     this.takes.push(take);
     return take;
   }

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { clipProperties, clipProperty, registerClipProperty, seedableClipProperties, annotationColour, type ClipProperty } from './clip-properties.js';
 import { ClipProperties } from '../../domain/clip/ClipProperties.js';
+import type { Clip } from '../../domain/clip/Clip.js';
 
 // The register, proved in node: the properties the app offers, and that a new property needs
 // no change to the panel or anywhere else — which is what the seam exists for.
@@ -70,6 +71,13 @@ describe('the clip property register', () => {
     expect(clipProperty('title')?.blocked).toBeUndefined();
     expect(clipProperty('description')?.blocked).toBeUndefined();
     expect(clipProperty('logo')?.blocked).toBeUndefined();
+  });
+
+  it('does not offer the card to a clip with no picture for it to be drawn on', () => {
+    const addToExport = clipProperty('addToExport')!;
+    const soundOnly = { takes: { count: () => 1 }, hasPicture: () => false } as unknown as Clip;
+    expect(addToExport.blocked?.(ClipProperties.EMPTY.with('title', 'A demo'), soundOnly))
+      .toMatch(/sound-only/i);
   });
 
   it('offers the clip size as a value the person does not set', () => {

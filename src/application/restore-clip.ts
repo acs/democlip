@@ -7,7 +7,7 @@ import type { Clip } from '../domain/clip/Clip.js';
 import type { KeptClipPort } from './ports/KeptClipPort.js';
 
 export type RestoreOutcome =
-  | { kind: 'restored'; audio: boolean }
+  | { kind: 'restored' }
   | { kind: 'empty' }
   | { kind: 'failed'; reason: string };
 
@@ -23,8 +23,8 @@ export class RestoreClip {
     const stored = await this.deps.store.load();
     if (!stored) return { kind: 'empty' };
     try {
-      this.deps.clip.restore(stored.clip);
-      return { kind: 'restored', audio: stored.audio };
+      this.deps.clip.restore(stored);
+      return { kind: 'restored' };
     } catch (error) {
       await this.deps.store.clear();
       return { kind: 'failed', reason: error instanceof Error ? error.message : 'the saved clip could not be rebuilt' };

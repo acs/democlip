@@ -16,7 +16,7 @@ import type { FixtureTake } from '../fixtures/takes.js';
 const HOOKS = pageModule('e2e/support/app-hooks.ts');
 
 interface PageWindow {
-  __e2eTakes?: Array<{ blob: Blob; seconds: number; shape: string }>;
+  __e2eTakes?: Array<{ blob: Blob; seconds: number; shape: string; hasAudio: boolean }>;
 }
 
 export interface Booted {
@@ -66,10 +66,15 @@ export function boot(page: Page): Booted {
         for (const index of indices) {
           const take = store[index];
           if (!take) continue;
-          // The take carries its own picture size, as a recorded take does, so the clip
-          // sizes itself by it.
+          // The take carries its own picture size and sound, as a recorded take does, so
+          // the clip sizes itself by it and knows whether it has sound.
           const [width, height] = take.shape.split(/[x×]/).map(Number);
-          session.clip.addTake(take.blob, take.seconds, width > 0 && height > 0 ? { width, height } : null);
+          session.clip.addTake(
+            take.blob,
+            take.seconds,
+            width > 0 && height > 0 ? { width, height } : null,
+            take.hasAudio,
+          );
         }
       }, { url: HOOKS, indices: takes.map(take => take.index) });
     },
@@ -82,7 +87,12 @@ export function boot(page: Page): Booted {
           const take = store[index];
           if (!take) continue;
           const [width, height] = take.shape.split(/[x×]/).map(Number);
-          session.clip.addTake(take.blob, take.seconds, width > 0 && height > 0 ? { width, height } : null);
+          session.clip.addTake(
+            take.blob,
+            take.seconds,
+            width > 0 && height > 0 ? { width, height } : null,
+            take.hasAudio,
+          );
         }
       }, { url: HOOKS, indices: takes.map(take => take.index) });
     },

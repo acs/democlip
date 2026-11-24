@@ -7,7 +7,7 @@
 import { clock, el } from '../dom.js';
 import { currentPhase } from '../../state.js';
 import { session } from '../../session.js';
-import { estimateWebmText } from './size-estimate.js';
+import { estimateSoundText, estimateWebmText } from './size-estimate.js';
 import { keptLengthNow, keptOf, player, resizeReview, sourceOf } from './clip.js';
 import { waveform } from './waveform.js';
 import { drawThumb, thumbBox } from './thumbnail.js';
@@ -39,8 +39,11 @@ export function updateTimeUI(): void {
 
 export function updateSizeUI(): void {
   if (!session.clip.total() || currentPhase() === 'idle') { el.tSize.textContent = '—'; return; }
-  // Cuts are taken out, so they shrink the estimate too.
-  el.tSize.textContent = estimateWebmText(keptLengthNow(), el.cv.width, el.cv.height);
+  // Cuts are taken out, so they shrink the estimate too. A sound-only clip has no
+  // picture to size the file by, and its export is the sound alone.
+  el.tSize.textContent = session.clip.hasPicture()
+    ? estimateWebmText(keptLengthNow(), el.cv.width, el.cv.height)
+    : estimateSoundText(keptLengthNow());
 }
 
 // ── the export's progress ────────────────────────────────────────────────────
@@ -88,7 +91,9 @@ export function rebuildTimeline(): void {
   updateTimeUI();
   updateSizeUI();
   waveform.draw();
-  void strip.build();
+  // A sound-only clip has no frames for the strip; the timeline shows its sound alone.
+  if (session.clip.hasPicture()) void strip.build();
+  else el.thumbs.replaceChildren();
 }
 
 // The thumbnail strip: the clip's own frames, taken by seeking the element through

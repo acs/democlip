@@ -11,7 +11,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { boot } from '../helpers/app.js';
 import { makeFile, makeTakes, type FixtureFile } from '../fixtures/takes.js';
-import { exportFile, frameCounts, probeFile } from '../helpers/exports.js';
+import { exportFile, frameCounts, hasSound, probeFile } from '../helpers/exports.js';
 
 /** Choose a file through the Import button, the way a person does. */
 async function importFile(page: Page, file: FixtureFile): Promise<void> {
@@ -179,4 +179,43 @@ test('a file becomes a take, and a clip exported for editing comes back with its
   } finally {
     await rm(work, { recursive: true, force: true });
   }
+});
+
+// A clip with both kinds of take is a video; its sound-only stretch is black, so the file
+// and the review stay in step. Cut the picture away and the same clip is a sound file.
+test('a mixed clip writes black over its sound-only stretch, and sound alone once the picture is cut', async ({ page }) => {
+  const app = boot(page);
+  await app.gotoAgent();
+  const takes = await makeTakes(
+    page,
+    { soundOnly: true, seconds: 1 },
+    { width: 640, height: 360, seconds: 1 },
+  );
+  await app.seed(takes);
+  await app.review();
+
+  const mixed = await exportFile(page, '#exp-webm');
+  const picture = await probeFile(page, mixed, 'video/webm');
+  expect({ width: picture.width, height: picture.height }).toEqual({ width: 640, height: 360 });
+
+  // The first kept second has no picture: the file writes it as black. The second is the
+  // picture take's own frame.
+  expect((await frameCounts(page, mixed, 'video/webm', 0.2)).painted).toBe(0);
+  expect((await frameCounts(page, mixed, 'video/webm', 1.2)).painted).toBeGreaterThan(0);
+
+  // Cut the whole picture take away, through the app's own operation.
+  const cut = await page.evaluate(async () => {
+    const surface = (globalThis as unknown as {
+      democlip?: { edit: { cut: (from: number, to: number) => { ok: boolean } } };
+    }).democlip;
+    return surface?.edit.cut(0.5, 1);
+  });
+  expect(cut?.ok).toBe(true);
+
+  // The kept clip has no picture, so the export is the sound alone — and no video service.
+  const sound = await exportFile(page, '#exp-webm');
+  const audio = await probeFile(page, sound, 'audio/webm');
+  expect({ width: audio.width, height: audio.height }).toEqual({ width: 0, height: 0 });
+  expect(audio.duration).toBeGreaterThan(0.5);
+  expect(await hasSound(page, sound)).toBe(true);
 });

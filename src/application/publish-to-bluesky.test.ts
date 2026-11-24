@@ -16,8 +16,8 @@ import type { TakeRepository } from '../domain/clip/TakeRepository.js';
 class FakeTakes implements TakeRepository {
   private takes: Take[] = [];
 
-  add(blob: Blob, duration: number): Take {
-    const take = Take.of(this.takes.length + 1, blob, `blob:${this.takes.length + 1}`, duration);
+  add(blob: Blob, duration: number, picture?: { width: number; height: number } | null): Take {
+    const take = Take.of(this.takes.length + 1, blob, `blob:${this.takes.length + 1}`, duration, picture ?? null);
     this.takes.push(take);
     return take;
   }
@@ -34,9 +34,17 @@ class FakeTakes implements TakeRepository {
   clear() { this.takes = []; }
 }
 
+// Takes with a picture, since a video service takes a video: the sound-only refusal has
+// a clip of its own below.
 const clipOf = (...durations: number[]): Clip => {
   const clip = Clip.empty(new FakeTakes());
-  for (const seconds of durations) clip.addTake(new Blob(['x']), seconds);
+  for (const seconds of durations) clip.addTake(new Blob(['x']), seconds, { width: 1280, height: 720 });
+  return clip;
+};
+
+const soundOnlyClipOf = (seconds: number): Clip => {
+  const clip = Clip.empty(new FakeTakes());
+  clip.addTake(new Blob(['x']), seconds);
   return clip;
 };
 
@@ -72,7 +80,7 @@ class FakeService implements BlueskyService {
 
 const at = new Date('2026-01-02T03:04:05.000Z');
 const ratio = AspectRatio.of(1280, 720);
-const settings = { export: { audio: true, fadeSeconds: 0.08, annotations: 'drawn' as const }, text: 'A demo', alt: 'a screen recording', langs: ['en'], aspectRatio: ratio };
+const settings = { export: { fadeSeconds: 0.08, annotations: 'drawn' as const }, text: 'A demo', alt: 'a screen recording', langs: ['en'], aspectRatio: ratio };
 const deps = (service: BlueskyService, onProgress?: (p: PublicationProgress) => void, over: Partial<PublicationDeps> = {}): PublicationDeps => ({
   service,
   encode: async () => new Blob(['mp4'], { type: 'video/mp4' }),
@@ -154,6 +162,17 @@ describe('publishToBluesky', () => {
     const service = new FakeService({ jobId: 'job-1', state: 'JOB_STATE_CREATED' });
 
     await expect(publishToBluesky(clipOf(601), settings, deps(service))).rejects.toThrow(/up to 10 minutes/);
+    expect(service.uploads).toHaveLength(0);
+  });
+
+  it('refuses a sound-only clip, because Bluesky takes a video and not a sound file', async () => {
+    const service = new FakeService({ jobId: 'job-1', state: 'JOB_STATE_CREATED' });
+    let encodes = 0;
+
+    await expect(publishToBluesky(soundOnlyClipOf(4), settings, deps(service, undefined, {
+      encode: async () => { encodes++; return new Blob(['mp4'], { type: 'video/mp4' }); },
+    }))).rejects.toThrow(/picture/i);
+    expect(encodes).toBe(0);
     expect(service.uploads).toHaveLength(0);
   });
 

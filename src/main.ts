@@ -25,7 +25,7 @@ import { inspector } from './ui/annotating/properties-inspector.js';
 import { textEntry } from './ui/annotating/text-entry.js';
 import { clipPropertiesPanel } from './ui/clip/properties-panel.js';
 import { initViewLifetime } from './ui/lifecycle/view-lifetime.js';
-import { toggleRecord, toggleScreen, syncSources, onScreenEnded, initRecordFlow, startTake, stopRecording, hasPicture } from './ui/recording/record-flow.js';
+import { toggleRecord, toggleScreen, syncSources, onScreenEnded, initRecordFlow, startTake, stopRecording, canRecord } from './ui/recording/record-flow.js';
 import { doExport } from './ui/exporting/export-flow.js';
 import { startNewSession } from './ui/lifecycle/new-session-flow.js';
 import { playback, initPlaybackKeys } from './ui/clip/playback.js';
@@ -179,8 +179,8 @@ function init(): void {
   const returning = [url.search, url.hash].some(part => part.includes('code=') || part.includes('error='));
   if (returning) void import('./infra/bluesky.js').then(({ initBluesky }) => initBluesky());
 
-  // Nothing is captured on load: every source starts off, and the Screen and
-  // Webcam buttons are what start one. A take needs a picture, so Record with
+  // Nothing is captured on load: every source starts off, and the Screen, Webcam
+  // and Mic buttons are what start one. A take needs a source, so Record with
   // nothing on says so rather than reaching for the screen.
 
   // Service worker: off under Vite's dev server, whose cache-first strategy
@@ -238,7 +238,7 @@ function init(): void {
 const recording: Recording = {
   start: startTake,
   stop: stopRecording,
-  hasPicture,
+  canRecord,
   sources: () => ({
     screen: capture.sources.screen,
     webcam: capture.sources.webcam,

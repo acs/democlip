@@ -199,6 +199,9 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 .thumb-frame{flex:1;background:var(--glass);border-radius:2px;overflow:hidden;}
 .thumb-frame canvas{width:100%;height:100%;display:block;object-fit:cover;}
 .wave-strip{display:block;width:100%;height:34px;border-radius:4px;background:var(--glass);border:1px solid var(--glass-b);margin-bottom:7px;box-sizing:border-box;cursor:pointer;}
+/* A sound-only clip has no pictures to show: its waveform takes the strip's room. */
+.timeline.sound-only .thumb-strip{display:none;}
+.timeline.sound-only .wave-strip{height:74px;margin-top:2px;}
 .range-wrap{position:relative;height:22px;display:flex;align-items:center;cursor:pointer;}
 .range-bg{position:absolute;left:0;right:0;height:3px;background:var(--glass-b);border-radius:2px;}
 
@@ -484,6 +487,8 @@ select.prop-input option,select.pdef-select option{background:var(--bg);color:va
 .export-menu.on{opacity:1;visibility:visible;transform:translateY(0);transition:opacity .16s,transform .16s,visibility 0s;}
 .export-item{display:flex;flex-direction:column;align-items:flex-start;gap:1px;padding:8px 12px;border-radius:7px;border:none;background:transparent;color:var(--text);font-family:var(--font-ui);cursor:pointer;transition:background .15s;}
 .export-item:hover{background:var(--glass-b2);}
+.export-item:disabled{opacity:.4;cursor:not-allowed;}
+.export-item:disabled:hover{background:transparent;}
 .export-item-name{font-size:13px;letter-spacing:.02em;}
 .export-item-note{font-family:var(--font-mono);font-size:10px;letter-spacing:.06em;color:var(--text-mid);}
 

@@ -30,10 +30,64 @@ export function drawGrid(): void {
   ctx.beginPath(); ctx.moveTo(mx, my - 62); ctx.lineTo(mx, my + 62); ctx.stroke();
 }
 
+/**
+ * The preview of a **sound-only** clip or take: there is no picture, so the canvas says
+ * what is being made rather than showing the last frame of something else.
+ */
+export function drawSoundOnly(): void {
+  drawGrid();
+  const w = el.cv.width, h = el.cv.height;
+  if (!(w > 0) || !(h > 0)) return;
+  const light = document.documentElement.dataset.theme === 'light';
+  const ink = light ? 'rgba(8,9,26,0.55)' : 'rgba(228,230,240,0.6)';
+  const dim = light ? 'rgba(8,9,26,0.32)' : 'rgba(228,230,240,0.36)';
+  const s = Math.min(w, h) * 0.085;
+  const cx = w / 2, cy = h / 2 - s * 0.55;
+
+  ctx.save();
+  ctx.strokeStyle = ink;
+  ctx.lineWidth = Math.max(2, s * 0.12);
+  ctx.lineCap = 'round';
+  const r = s * 0.4, top = cy - s * 0.75, bottom = cy + s * 0.75;
+  // The microphone: a capsule, the cradle under it, and its stand.
+  ctx.beginPath();
+  ctx.moveTo(cx - r, top + r);
+  ctx.arc(cx, top + r, r, Math.PI, 0);
+  ctx.lineTo(cx + r, bottom - r);
+  ctx.arc(cx, bottom - r, r, 0, Math.PI);
+  ctx.closePath();
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(cx, bottom - s * 0.1, s * 0.95, Math.PI * 0.15, Math.PI * 0.85);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(cx, bottom - s * 0.1 + s * 0.95);
+  ctx.lineTo(cx, bottom + s * 0.5);
+  ctx.moveTo(cx - s * 0.4, bottom + s * 0.5);
+  ctx.lineTo(cx + s * 0.4, bottom + s * 0.5);
+  ctx.stroke();
+
+  ctx.fillStyle = ink;
+  ctx.font = `600 ${Math.round(Math.max(14, s * 0.55))}px 'Syne', 'Helvetica Neue', sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('Sound only', cx, cy + s * 2.1);
+  ctx.fillStyle = dim;
+  ctx.font = `${Math.round(Math.max(10, s * 0.34))}px 'JetBrains Mono', 'SF Mono', monospace`;
+  ctx.fillText('The file holds the sound, and no picture', cx, cy + s * 2.75);
+  ctx.restore();
+}
+
 // Draw a frame on the preview. With a `frame` the take is drawn **fitted** into it —
 // whole and centred, the clip's background around it; without one it fills the canvas,
-// which is what the live mirror wants.
+// which is what the live mirror wants. A take with no picture — a sound-only stretch of
+// a clip that has a picture elsewhere — is the clip's background, as the file writes it.
 export function drawFrame(vid: HTMLVideoElement, frame?: Frame): void {
+  if (!(vid.videoWidth > 0) || !(vid.videoHeight > 0)) {
+    ctx.fillStyle = BACKGROUND;
+    ctx.fillRect(0, 0, el.cv.width, el.cv.height);
+    return;
+  }
   if (!frame) { ctx.drawImage(vid, 0, 0, el.cv.width, el.cv.height); return; }
   ctx.fillStyle = BACKGROUND;
   ctx.fillRect(0, 0, el.cv.width, el.cv.height);
@@ -43,6 +97,11 @@ export function drawFrame(vid: HTMLVideoElement, frame?: Frame): void {
 // Draw the review clip's frame, dissolving from the frame held at the last join
 // for the first moments of a new take — the picture's side of the faded seam.
 export function drawClipFrame(vid: HTMLVideoElement, frame?: Frame): void {
+  if (!(vid.videoWidth > 0) || !(vid.videoHeight > 0)) {
+    dissolve.clear();                      // nothing to dissolve onto: no picture here
+    drawFrame(vid, frame);
+    return;
+  }
   if (!dissolve.draw(ctx, vid, el.cv.width, el.cv.height, vid.currentTime, frame)) drawFrame(vid, frame);
 }
 

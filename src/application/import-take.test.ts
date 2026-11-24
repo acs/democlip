@@ -12,8 +12,8 @@ import type { TakeFileInfo, TakeFilePort } from './ports/TakeFilePort.js';
 
 class FakeTakes implements TakeRepository {
   private takes: Take[] = [];
-  add(blob: Blob, duration: number): Take {
-    const take = Take.of(this.takes.length + 1, blob, `blob:${this.takes.length + 1}`, duration);
+  add(blob: Blob, duration: number, picture?: { width: number; height: number } | null, hasAudio = false): Take {
+    const take = Take.of(this.takes.length + 1, blob, `blob:${this.takes.length + 1}`, duration, picture ?? null, hasAudio);
     this.takes.push(take);
     return take;
   }
@@ -42,7 +42,6 @@ const files = (info: TakeFileInfo | Error): TakeFilePort => ({
 
 const build = (info: TakeFileInfo | Error) => {
   const clip = Clip.empty(new FakeTakes());
-  const audio: boolean[] = [];
   const pictures: Array<{ id: string; blob: Blob }> = [];
   const run = new ImportTake({
     clip,
@@ -51,9 +50,8 @@ const build = (info: TakeFileInfo | Error) => {
       put: async (id, blob) => { pictures.push({ id, blob }); },
       all: async () => [],
     },
-    setAudio: has => { if (has) audio.push(has); },
   });
-  return { clip, run, audio, pictures };
+  return { clip, run, pictures };
 };
 
 /** A sidecar: arrows over the given fractions of a file of this length. */
@@ -87,21 +85,30 @@ describe('ImportTake', () => {
     expect(clip.takes.at(0)?.duration).toBe(12.5);
   });
 
-  it('tells the session the file has sound before the take is added', async () => {
-    const { clip, run, audio } = build({ duration: 3, hasAudio: true });
-    let seenAtAdd = 0;
-    clip.onChange(event => { if (event.type === 'take-added') seenAtAdd = audio.length; });
+  it('takes a sound-only file in as a take with no picture', async () => {
+    const { clip, run } = build({ duration: 3, hasAudio: true });
+
+    const outcome = await run.run(file('voice.webm', 'audio/webm'));
+
+    expect(outcome.kind).toBe('imported');
+    expect(clip.takes.at(0)?.picture).toBeNull();
+    expect(clip.takes.at(0)?.hasAudio).toBe(true);
+    expect(clip.hasPicture()).toBe(false);
+    expect(clip.hasSound()).toBe(true);
+  });
+
+  it('keeps the file’s sound on the take', async () => {
+    const { clip, run } = build({ duration: 3, hasAudio: true });
 
     await run.run(file('clip.mp4', 'video/mp4'));
 
-    expect(audio).toEqual([true]);
-    expect(seenAtAdd).toBe(1);        // said before the take was announced
+    expect(clip.takes.at(0)?.hasAudio).toBe(true);
   });
 
-  it('says nothing when the file has no sound', async () => {
-    const { run, audio } = build({ duration: 3, hasAudio: false });
+  it('keeps a silent file silent', async () => {
+    const { clip, run } = build({ duration: 3, hasAudio: false });
     await run.run(file('clip.webm', 'video/webm'));
-    expect(audio).toEqual([]);
+    expect(clip.takes.at(0)?.hasAudio).toBe(false);
   });
 
   it('refuses a container the export cannot read back', async () => {

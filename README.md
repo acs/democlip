@@ -31,7 +31,7 @@ https://github.com/user-attachments/assets/81f83dc4-a036-4e10-a398-b36ceca93122
 
 The headline capabilities; the **[full list is in docs/FEATURES.md](docs/FEATURES.md)**.
 
-- **Screen, webcam and mic** — record a screen, window or tab with its audio, the camera, the microphone, or any combination of them
+- **Screen, webcam and mic** — record a screen, window or tab with its audio, the camera, the microphone, or any combination of them — **the microphone on its own records a sound-only clip**
 - **Nothing captured until you ask** — every source starts off, so the app never opens a screen picker on its own
 - **Region crop** — drag a box over the preview to record just part of the screen, and click to reset
 - **Timeline cutting** — click twice to select a section, cut it out with the scissors, and undo it

@@ -10,8 +10,8 @@ import type { Take } from './Take.js';
 import type { Picture } from './ClipSize.js';
 
 export interface TakeRepository {
-  /** A new take at the end of the clip, ready to play, with the size of its own picture when it is known. */
-  add(blob: Blob, duration: number, picture?: Picture | null): Take;
+  /** A new take at the end of the clip, ready to play, with the size of its own picture and whether it carries sound. */
+  add(blob: Blob, duration: number, picture?: Picture | null, hasAudio?: boolean): Take;
 
   /** The takes in the order they were recorded. */
   all(): readonly Take[];

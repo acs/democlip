@@ -48,7 +48,7 @@ export type Segment = { takeIndex: number; from: number; to: number };
  * reads back.
  */
 export interface ClipSnapshot {
-  takes: ReadonlyArray<{ blob: Blob; duration: number; picture?: Picture }>;
+  takes: ReadonlyArray<{ blob: Blob; duration: number; picture?: Picture; hasAudio?: boolean }>;
   cuts: ReadonlyArray<{ s: number; e: number }>;
   annotations?: ReadonlyArray<StoredAnnotation>;
   properties?: Readonly<Record<string, string>>;
@@ -158,14 +158,53 @@ export class Clip {
   }
 
   /**
+   * Do any of the clip's takes carry a picture? This is the review's question: a clip
+   * with a picture keeps its picture review, even if every picture stretch is cut away.
+   */
+  hasPicture(): boolean {
+    return this.size() !== null;
+  }
+
+  /**
+   * Do any of the **kept** stretches carry a picture? This is the export's and the
+   * publish menu's question: a clip whose pictures are all cut away writes the sound
+   * alone, even though the clip still holds a picture take.
+   */
+  keepsPicture(): boolean {
+    const end = this.total();
+    if (!(end > 0)) return false;
+    return this.segmentsIn(0, end).some(segment => !!this.repo.at(segment.takeIndex)?.picture);
+  }
+
+  /**
+   * Do any of the clip's takes carry sound? This is the waveform's question: a clip
+   * with one sound take among silent ones is a clip with sound. A picture take can be
+   * silent, so this is not the same as "a take exists".
+   */
+  hasSound(): boolean {
+    return this.repo.all().some(take => take.hasAudio);
+  }
+
+  /**
+   * Do any of the **kept** stretches carry sound? This is the export's question: a
+   * clip whose sound takes are all cut away writes a silent file, even though the
+   * recording still holds them.
+   */
+  keepsSound(): boolean {
+    const end = this.total();
+    if (!(end > 0)) return false;
+    return this.segmentsIn(0, end).some(segment => !!this.repo.at(segment.takeIndex)?.hasAudio);
+  }
+
+  /**
    * A new recording at the end. The clip is longer, and the cuts and the
    * annotations are fractions of it, so they are re-based to stay over the same
    * moments — and the last change cannot be undone across a join it was never
    * measured against.
    */
-  addTake(blob: Blob, duration: number, picture?: Picture | null): Take {
+  addTake(blob: Blob, duration: number, picture?: Picture | null, hasAudio = false): Take {
     const before = this.total();
-    const take = this.repo.add(blob, duration, picture);
+    const take = this.repo.add(blob, duration, picture, hasAudio);
     const now = this.total();
     if (before > 0 && now > before) {
       const k = before / now;
@@ -434,7 +473,12 @@ export class Clip {
    */
   snapshot(): ClipSnapshot {
     return {
-      takes: this.repo.all().map(take => ({ blob: take.blob, duration: take.duration, picture: take.picture ?? undefined })),
+      takes: this.repo.all().map(take => ({
+        blob: take.blob,
+        duration: take.duration,
+        picture: take.picture ?? undefined,
+        hasAudio: take.hasAudio,
+      })),
       cuts: this.removed.spans.map(span => ({ s: span.s, e: span.e })),
       annotations: this.notes.all.map(annotation => annotation.stored()),
       properties: this.props.toRecord(),
@@ -453,7 +497,9 @@ export class Clip {
    */
   restore(snapshot: ClipSnapshot): void {
     this.repo.clear();
-    for (const take of snapshot.takes) this.repo.add(take.blob, take.duration, take.picture ?? null);
+    for (const take of snapshot.takes) {
+      this.repo.add(take.blob, take.duration, take.picture ?? null, take.hasAudio ?? false);
+    }
     this.removed = SpanSet.of(snapshot.cuts);
     this.notes = AnnotationSet.of(
       (snapshot.annotations ?? [])

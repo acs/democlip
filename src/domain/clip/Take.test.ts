@@ -27,6 +27,12 @@ describe('Take', () => {
     expect(Take.of(1, blob, 'blob:one', 1).picture).toBeNull();
   });
 
+  it('keeps whether it carries sound, and is silent unless it is told', () => {
+    expect(Take.of(1, blob, 'blob:one', 1).hasAudio).toBe(false);
+    expect(Take.of(1, blob, 'blob:one', 1, null, true).hasAudio).toBe(true);
+    expect(Take.of(1, blob, 'blob:one', 1, { width: 640, height: 360 }, true).hasAudio).toBe(true);
+  });
+
   it('refuses a picture with no size', () => {
     expect(() => Take.of(1, blob, 'blob:one', 1, { width: 0, height: 720 })).toThrow(/picture/);
   });

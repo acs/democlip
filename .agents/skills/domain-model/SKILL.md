@@ -17,7 +17,7 @@ src/
     export/    ExportTarget — the container an export writes
     youtube/   the YouTube destination's rules: Visibility, VideoDetails,
                UploadableVideo
-    session/   Session — the sitting: the clip and the audio flag
+    session/   Session — the sitting: the clip and the capture latch
   application/ the use cases that run in node, and the ports they own
     ports/     CapturePort, WebcamPort, MicrophonePort, TakeRecorderPort,
                CompositorPort, TakeProbePort, ClockPort, EncoderPort,
