@@ -2,9 +2,10 @@
 //
 // The rule lives in node (`src/domain/clip/ClipProperties.test.ts`); what a person must
 // be able to see — the panel, the two fields, the values kept with the clip across a
-// reload, and the one undo — is here. The publish dialogs read the same values when they
-// open; the prefill itself is reasoned rather than booted, because it needs a signed-in
-// account this suite has none of.
+// reload, the card switch waiting for something to draw, and the one undo — is here. The
+// publish dialogs read the same values when they open; the prefill itself is reasoned
+// rather than booted, because it needs a signed-in account this suite has none of. An
+// agent reads and writes the same values through the surface, in `agent.spec.ts`.
 
 import { expect, test, type Page } from '@playwright/test';
 import { boot } from '../helpers/app.js';
@@ -36,7 +37,7 @@ const stored = (page: Page): Promise<Record<string, string>> =>
     return meta?.properties ?? {};
   });
 
-test('a clip is given a title and a description, and they come back after a reload', async ({ page }) => {
+test('the panel gives the clip a title and a description, kept across a reload, with the one undo', async ({ page }) => {
   const app = boot(page);
   await app.goto();
   const takes = await makeTakes(page, { width: 1280, height: 720, seconds: 2 });
@@ -49,11 +50,30 @@ test('a clip is given a title and a description, and they come back after a relo
   await page.locator('#props-btn').click();
   await expect(page.locator('#clip-prop-menu')).toHaveClass(/on/);
 
+  // The switch is the three things the card draws, and then their switch: it sits below
+  // them all, so a person reads what it will add before asking for it.
+  const ids = await page.locator('#clip-prop-menu .prop-row').evaluateAll(rows =>
+    rows.map(row => (row as HTMLElement).dataset.id));
+  expect(ids).toEqual(['title', 'description', 'logo', 'addToExport', 'size']);
+
+  // With nothing on the card, the switch is drawn disabled — and it says why, so a person
+  // reads what to do rather than guessing at the grey. The fields beside it are never
+  // disabled: they are what the switch is waiting for.
+  const hint = page.locator('#clip-prop-menu .prop-row[data-id="addToExport"] .prop-hint');
+  await expect(page.locator('#clip-prop-menu input.prop-check')).toBeDisabled();
+  await expect(hint).toHaveText('Add to export needs something to put on the card — a title, a description or a logo');
+  await expect(page.locator('#clip-prop-menu .prop-row[data-id="title"] input')).toBeEnabled();
+  await expect(page.locator('#clip-prop-menu .prop-row[data-id="logo"] select')).toBeEnabled();
+
+  // A title is enough, and the reason goes as the switch comes to life.
   await page.locator('#clip-prop-menu .prop-row[data-id="title"] input').fill('A short demo');
+  await page.locator('#clip-prop-menu .prop-row[data-id="title"] input').press('Enter');
+  await expect(page.locator('#clip-prop-menu input.prop-check')).toBeEnabled();
+  await expect(hint).toBeHidden();
+
   await page.locator('#clip-prop-menu textarea').fill('What the clip shows');
   await page.locator('#props-btn').click();
   await expect(page.locator('#clip-prop-menu')).not.toHaveClass(/on/);
-
   await expect.poll(() => properties(page)).toEqual({ title: 'A short demo', description: 'What the clip shows' });
 
   // It is kept with the clip — the write is debounced, so wait for the store — and a
@@ -64,75 +84,12 @@ test('a clip is given a title and a description, and they come back after a relo
   await page.locator('#props-btn').click();
   await expect(page.locator('#clip-prop-menu .prop-row[data-id="title"] input')).toHaveValue('A short demo');
   await expect(page.locator('#clip-prop-menu textarea')).toHaveValue('What the clip shows');
-});
-
-test('the switch to add the card sits below the logo, and waits for something to draw', async ({ page }) => {
-  const app = boot(page);
-  await app.goto();
-  const takes = await makeTakes(page, { width: 1280, height: 720, seconds: 2 });
-  await app.seed(takes);
-  await app.review();
-
-  await page.locator('#props-btn').click();
-  // The switch is the three things the card draws, and then their switch: it sits below them
-  // all, so a person reads what it will add before asking for it.
-  const ids = await page.locator('#clip-prop-menu .prop-row').evaluateAll(rows =>
-    rows.map(row => (row as HTMLElement).dataset.id));
-  expect(ids).toEqual(['title', 'description', 'logo', 'addToExport', 'size']);
-
-  // With nothing on the card, the switch is drawn disabled — and it says why, so a person
-  // reads what to do rather than guessing at the grey.
-  const hint = page.locator('#clip-prop-menu .prop-row[data-id="addToExport"] .prop-hint');
-  await expect(page.locator('#clip-prop-menu .prop-row[data-id="addToExport"] input.prop-check')).toBeDisabled();
-  await expect(hint).toBeVisible();
-  await expect(hint).toHaveText('Add to export needs something to put on the card — a title, a description or a logo');
-
-  // The fields beside it are never disabled: they are what the switch is waiting for.
-  await expect(page.locator('#clip-prop-menu .prop-row[data-id="title"] input')).toBeEnabled();
-  await expect(page.locator('#clip-prop-menu .prop-row[data-id="logo"] select')).toBeEnabled();
-
-  // A title is enough, and the reason goes as the switch comes to life.
-  await page.locator('#clip-prop-menu .prop-row[data-id="title"] input').fill('A short demo');
-  await page.locator('#clip-prop-menu .prop-row[data-id="title"] input').press('Enter');
-  await expect(page.locator('#clip-prop-menu .prop-row[data-id="addToExport"] input.prop-check')).toBeEnabled();
-  await expect(hint).toBeHidden();
-});
-
-test('the one undo takes a clip property back', async ({ page }) => {
-  const app = boot(page);
-  await app.goto();
-  const takes = await makeTakes(page, { width: 1280, height: 720, seconds: 2 });
-  await app.seed(takes);
-  await app.review();
-
-  await page.locator('#props-btn').click();
-  await page.locator('#clip-prop-menu .prop-row[data-id="title"] input').fill('A short demo');
-  await page.locator('#props-btn').click();
-  await expect.poll(() => properties(page)).toEqual({ title: 'A short demo' });
 
   // The header's one undo, which takes back whatever was last done — and says what it was.
+  await page.locator('#clip-prop-menu .prop-row[data-id="title"] input').fill('A longer demo');
+  await page.locator('#props-btn').click();
   await expect(page.locator('#cut-undo')).toBeVisible();
   await expect(page.locator('#t-cut')).toHaveText('TITLE');
   await page.locator('#cut-undo').click();
-  await expect.poll(() => properties(page)).toEqual({});
-});
-
-test('an agent sets a clip property, and reads it back, through the surface', async ({ page }) => {
-  const app = boot(page);
-  await app.gotoAgent();
-  const takes = await makeTakes(page, { width: 1280, height: 720, seconds: 2 });
-  await app.seed(takes);
-  await app.review();
-
-  const set = await page.evaluate(async () => {
-    const surface = (globalThis as { democlip?: { edit: { setClipProperty(p: string, v: string): unknown } } }).democlip;
-    return surface?.edit.setClipProperty('title', 'Set by an agent');
-  });
-  expect(set).toEqual({ ok: true, value: 'Set by an agent' });
-
-  const described = await page.evaluate(async () => {
-    const surface = (globalThis as { democlip?: { describe(): { properties: Array<{ id: string; value: string }> } } }).democlip;
-    return surface?.describe().properties;
-  });
-  expect(described?.find(property => property.id === 'title')).toMatchObject({ value: 'Set by an agent' });
+  await expect.poll(() => properties(page)).toEqual({ title: 'A short demo', description: 'What the clip shows' });
 });
