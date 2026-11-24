@@ -381,8 +381,6 @@ test('the webcam bubble is moved and resized in the live preview, and a take rec
 
   // The placement lasts the sitting and is forgotten at New: the corner again.
   await app.goto();
-  // A reload lays the page out afresh; the preview's box is not the one from before it.
-  rect = await page.locator('#preview').boundingBox() ?? rect;
   await page.locator('#webcam-btn').click();
   await expect(page.locator('#webcam-btn')).toHaveAttribute('aria-pressed', 'true');
   await page.locator('#screen-btn').click();
@@ -397,6 +395,9 @@ test('the webcam bubble is moved and resized in the live preview, and a take rec
   expect(fresh.r).toBeCloseTo(before.r, 0);
 
   // ...and, in the same way, at New: the sitting ends and the corner is where it starts.
+  // The preview's box is read now the sources are on, not while the page was idle: the
+  // layout narrows when they come on, and a drag has to map against the box it is drawn in.
+  rect = await page.locator('#preview').boundingBox() ?? rect;
   frame = fresh;
   await drag(at(fresh.cx, fresh.cy), at(fresh.w * 0.3, fresh.h * 0.3));
   await expect.poll(async () => (await previewBubble(page)).cx).toBeLessThan(fresh.w * 0.4);
