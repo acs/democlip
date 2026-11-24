@@ -95,7 +95,7 @@
           <path d="M8 21h8M12 17v4"/>
         </svg>
       </div>
-      <span class="idle-hint">Turn on Screen or Webcam, or import a video file</span>
+      <span class="idle-hint">Turn on Screen, Webcam or Mic, or import a file</span>
     </div>
 
     <div class="corner tl"></div><div class="corner tr"></div>
@@ -161,7 +161,7 @@
       <!-- Import and Export are the same mark: the tray is the app, at the foot in
            both, and only the arrow's head turns round — down into the tray for a file
            coming in, up out of it for the clip going out. -->
-      <button class="act-btn import" id="file-btn" type="button" aria-label="Import" title="Import a video file (WebM or MP4)">
+      <button class="act-btn import" id="file-btn" type="button" aria-label="Import" title="Import a video or sound file (WebM or MP4)">
         <svg class="act-ico" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
         <span class="act-lbl">Import</span>
       </button>
@@ -349,7 +349,7 @@
 <video id="sv" style="display:none" autoplay muted playsinline></video>
 <video id="rv" style="display:none" playsinline preload="auto"></video>
 <video id="wcv" style="display:none" autoplay muted playsinline></video>
-<input id="file-input" type="file" accept="video/webm,video/mp4,application/json" multiple hidden>
+<input id="file-input" type="file" accept="video/webm,video/mp4,audio/webm,audio/mp4,application/json" multiple hidden>
 
 <!-- The status is announced, not drawn: the header has no room for a chip whose word is
      mostly "Ready", and the visible feedback is the REC badge, the timeline's progress and

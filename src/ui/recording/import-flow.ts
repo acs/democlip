@@ -6,7 +6,8 @@
 //
 // A file may arrive with its **sidecar**: the annotations an export wrote beside a video
 // rather than drawing them in. They are chosen together — a page cannot look in a folder,
-// so the person hands over both and the app sorts out which is which.
+// so the person hands over both and the app sorts out which is which. A **sound-only** file
+// comes in the same way: an audio export of a sound-only clip is a take like any other.
 
 import { currentPhase, setPhase } from '../../state.js';
 import { session } from '../../session.js';
@@ -53,7 +54,7 @@ export async function onFileChosen(): Promise<void> {
   const video = chosen.find(candidate => TakeFile.of(candidate.name, candidate.type) !== null);
   if (!video) {
     setStatus('Ready');
-    toast('Only WebM and MP4 videos can be imported.');
+    toast('Only WebM and MP4 files can be imported.');
     return;
   }
   const written = chosen.find(candidate => candidate !== video && candidate.name.toLowerCase().endsWith('.json'));

@@ -1,8 +1,9 @@
 // The record flow: the source buttons, the Record button and the preview.
 //
 // It sequences the browser work and reports the outcome. The rule — a take needs a
-// picture, the sources are independent — lives in the record use case and the
-// domain value objects.
+// source, and the sources are independent — lives in the record use case and the
+// domain value objects. The microphone on its own is a **sound-only** take: the
+// preview shows what is being made instead of a picture.
 
 import { currentPhase, setPhase } from '../../state.js';
 import { session } from '../../session.js';
@@ -14,7 +15,7 @@ import { clock } from '../../infra/clock.js';
 import { RecordTake } from '../../application/record-take.js';
 import { el, setStatus, toast } from '../dom.js';
 import { refreshSourceButtons } from './source-buttons.js';
-import { drawGrid, startMirror, stopMirror } from './preview.js';
+import { drawGrid, drawSoundOnly, startMirror, stopMirror } from './preview.js';
 import { drawWebcamOverlay } from './webcam.js';
 import { liveTimeline } from './live-timeline.js';
 import { openReview } from '../clip/review-flow.js';
@@ -64,6 +65,11 @@ export function hasPicture(): boolean {
   return capture.sources.screen || capture.sources.webcam;
 }
 
+/** Is there a source to record at all — a picture, or the microphone on its own? */
+export function canRecord(): boolean {
+  return capture.sources.canRecord;
+}
+
 /**
  * Will a take carry sound? The share's own audio, or the microphone — the two the
  * compositor mixes, and the only two there are. The status line says so, so a silent
@@ -77,7 +83,7 @@ export function hasSound(): boolean {
 export function syncSources(): void {
   refreshSourceButtons();
   if (takeInFlight() || currentPhase() === 'review') return;
-  if (!hasPicture()) {
+  if (!canRecord()) {
     stopMirror();
     drawGrid();
     el.idleOv.classList.remove('gone');
@@ -85,6 +91,19 @@ export function syncSources(): void {
     el.recLbl.textContent = 'Record';
     setPhase('idle');
     setStatus('');
+    return;
+  }
+  // The microphone on its own: there is no picture to mirror, so the preview says what
+  // the take will be. Record is armed exactly as it is with a picture.
+  if (!hasPicture()) {
+    stopMirror();
+    sizePreview();
+    drawSoundOnly();
+    el.idleOv.classList.add('gone');
+    el.recBtn.disabled = false;
+    el.recLbl.textContent = 'Record';
+    setPhase('live');
+    setStatus(`Live — sound only${hasSound() ? '' : ' · no audio'}`);
     return;
   }
   sizePreview();
@@ -97,6 +116,13 @@ export function syncSources(): void {
 }
 
 function sizePreview(): void {
+  // A sound-only take has no picture, so the preview keeps the app's own 16:9 shape
+  // rather than the size the last screen left behind.
+  if (!hasPicture()) {
+    el.cv.width = 1280;
+    el.cv.height = 720;
+    return;
+  }
   // The element the picture is actually drawn from is the truth: the shared screen,
   // or the webcam when the screen is off. A display track's settings report the
   // *display's* size until the first frame of a tab or window arrives — the whole
@@ -170,8 +196,8 @@ export async function toggleRecord(): Promise<void> {
   const phase = currentPhase();
   if (phase === 'starting' || phase === 'encoding') return;
   if (phase === 'recording') { await stopRecording(); return; }
-  if (phase === 'live' || phase === 'review') { await startRecording(); return; }
-  toast('Turn on the screen or the webcam first');
+  if (canRecord()) { await startRecording(); return; }
+  toast('Turn on a source first: the screen, the webcam or the mic');
 }
 
 /**
@@ -194,10 +220,11 @@ async function startRecording(): Promise<void> {
   // the webcam's own when the screen is off, not the size the last screen left behind
   // (the review is not resized, so a take after a larger one would otherwise stretch it).
   sizePreview();
+  if (!hasPicture()) drawSoundOnly();
   el.recBtn.classList.add('recording');
   el.recLbl.textContent = 'Stop';
   el.badge.classList.add('on');
-  setStatus('Recording');
+  setStatus(hasPicture() ? 'Recording' : 'Recording — sound only');
   if (outcome.kind === 'started') liveTimeline.start(outcome.stream);
   startMirror();
 }

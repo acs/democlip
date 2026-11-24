@@ -22,10 +22,11 @@ beside it.
 | **take** | one arrival of a recording: a press of Record (one MediaRecorder WebM), or an **import**ed file. It has its own length, and the takes are played in order | `Take` — id, blob, url, duration |
 | **clip** | all the takes, in order, plus what was cut out. What everything else asks what to show and what to export | `Clip`, the aggregate |
 | **take repository** | where a clip's takes come from, and the only owner of their object URLs | `TakeRepository` (the port), `InMemoryTakeRepository` |
-| **record source** | what a take is made of: the shared **screen**, the **webcam** and the **microphone**. Three independent toggles, **all off at start** — nothing is captured until one is pressed. A take needs a picture: the screen, or the webcam when the screen is off. With the screen off nothing reaches for a share | the source buttons (`#screen-btn`, `#webcam-btn`, `#mic-btn`) |
+| **record source** | what a take is made of: the shared **screen**, the **webcam** and the **microphone**. Three independent toggles, **all off at start** — nothing is captured until one is pressed. A take needs a source: a picture — the screen, or the webcam when the screen is off — or the microphone alone, which makes a **sound-only** take. With the screen off nothing reaches for a share | the source buttons (`#screen-btn`, `#webcam-btn`, `#mic-btn`) |
+| **sound-only** | a take, or a whole clip, of sound and no picture: the microphone is the only source. Its review is the **waveform** where the strip would be; its export is a **sound file** (`audio/webm` or `audio/mp4`, with no video track); and a video service refuses it. A clip may hold sound-only takes and picture takes, with black over the sound-only stretches of a video file | `SourceSet.soundOnly`, `Clip.hasPicture()`, `Clip.keepsPicture()`, `ExportPlan.soundOnly` |
 | **join** | the seam where one take ends and the next begins — where the sound fades and the picture dissolves | `FADE_S`, `DISSOLVE_S` |
 | **import** | bringing a **take file** in as a take: its own bytes become a take, appended to the clip, and nothing is re-recorded | `ImportTake` (the use case), `ui/recording/import-flow.ts` (the flow) |
-| **take file** | a video file chosen to import — WebM or MP4, the two containers the export reads back, which is why they are the only two taken | `TakeFile` (`src/domain/clip/TakeFile.ts`) |
+| **take file** | a media file chosen to import — a video, or a **sound-only** file — WebM or MP4, the two containers the export reads back, which is why they are the only two taken | `TakeFile` (`src/domain/clip/TakeFile.ts`) |
 
 A clip's length is **the sum of its takes** — derived, never a field beside them.
 
@@ -201,7 +202,7 @@ is holding.
 |---|---|---|
 | **segment** | a kept stretch of **one take**, in seconds: `{ takeIndex, from, to }`. What an export is made of | `Clip.segmentsIn()` |
 | **export plan** | the kept stretches placed on the output timeline, with the joins marked where they fall — decided before a frame is encoded, so it can be read and tested without a browser | `ExportPlan`, with `ExportPiece` and `ExportStep` |
-| **export** | writing the kept clip as a single file — WebM for the download, MP4 (H.264/AAC) for Bluesky — with the joins faded and dissolved | `planExport()` (use case), `exportOffline()` (adapter), driven by `doExport()` (flow) |
+| **export** | writing the kept clip as a single file — WebM for the download, MP4 (H.264/AAC) for Bluesky — with the joins faded and dissolved. A clip whose kept stretches have no picture writes the **sound alone**, in the same two containers, with no video track | `planExport()` (use case), `exportOffline()` (adapter), driven by `doExport()` (flow) |
 | **export target** | which container an export writes — `webm` for the download, `mp4` for Bluesky — the codecs that follow from it, and **the picture** the encoder is given, which is the crop's own except that H.264 refuses an odd edge and is taken down to even | `ExportTarget`, `specFor()`, `evenPicture()` |
 | **fade** | the sound going down over the last 80 ms of a take and back up as the next begins | `FADE_S` |
 | **dissolve** | the picture blending from the last frame of a take into the first frames of the next, over the same 80 ms — and, the same way, an annotation blending onto the picture over the first and last moments of its stretch | `DISSOLVE_S`, `Span.fadeAt()` |
@@ -250,7 +251,9 @@ would point at other moments.
 Publishing takes the export one step further: the kept clip is written as **MP4**,
 handed to Bluesky's video service, and a post is written that carries the finished
 video. Bluesky takes `video/mp4` and nothing else, so this path does not reuse the
-WebM download — it encodes its own MP4. Everything that needs the network or an
+WebM download — it encodes its own MP4. A **sound-only** clip has no picture to
+write one from, so it is refused before a frame is encoded: its sound is a file,
+not a post. Everything that needs the network or an
 access token sits behind a port, so the sequencing is tested in node. The client
 that holds the session is loaded only when a sign-in comes back or a clip is
 published, so a normal load carries none of it.
@@ -272,7 +275,8 @@ export's bitrate gives way to the size limit rather than the file growing past i
 ## Publishing to YouTube
 
 The second destination, and the Bluesky one's shape a second time: write the kept clip, hand
-it on, wait for the service to finish with it. Almost nothing else is shared. The sign-in is
+it on, wait for the service to finish with it. A **sound-only** clip is refused here too, for
+the same reason: YouTube takes a video. Almost nothing else is shared. The sign-in is
 Google's **token model** — a popup consent that needs a press, with a token that is
 short-lived and never written down, where Bluesky's is a trip to a server and back. The video
 travels as a **resumable session**, watched by the byte. And the app is allowed **one call**:
@@ -348,7 +352,7 @@ browser capability sits behind a port; the adapter that implements it lives in
 | **use case** | a sequence that delivers an outcome — record a take, export a clip, publish a clip, keep a clip, restore a clip. It runs in node with fakes behind its ports | `src/application/` |
 | **view flow** | the composition of a use case with the view and the browser: the button, the status line, the phase and the sequencing. It sequences and reports; it holds no rule | `src/ui/*/*-flow.ts` |
 | **phase** | the session's state — idle, starting, live, recording, review, encoding. The one piece of genuinely shared state: one owner and one change event | `src/state.ts` |
-| **source set** | which of the three record sources are on: screen, webcam, microphone. A take needs a picture: screen or webcam | `SourceSet` (`src/domain/capture/SourceSet.ts`) |
+| **source set** | which of the three record sources are on: screen, webcam, microphone. A take needs a source: a picture (screen or webcam), or the microphone alone for a **sound-only** take | `SourceSet` (`src/domain/capture/SourceSet.ts`) |
 | **session** | one sitting of the app: the clip and the audio flag. It ends on one event — New, an export, a publish, or a share that went away | `Session` (`src/domain/session/Session.ts`) |
 
 `ui/` is grouped by the concept it serves: `shell/` the frame, `recording/` a

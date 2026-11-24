@@ -55,6 +55,22 @@ export async function probeFile(
   }, { base64: bytes.toString('base64'), type: mime });
 }
 
+/** Whether a file's sound can be decoded — a sound-only export has one, a picture-only file does not. */
+export async function hasSound(page: Page, bytes: Buffer): Promise<boolean> {
+  return page.evaluate(async (base64) => {
+    const binary = atob(base64);
+    const data = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) data[i] = binary.charCodeAt(i);
+    const context = new OfflineAudioContext(1, 1, 48_000);
+    try {
+      await context.decodeAudioData(data.buffer);
+      return true;
+    } catch {
+      return false;
+    }
+  }, bytes.toString('base64'));
+}
+
 /**
  * Decode a file at a moment and count the pixels of a band of the frame: `light`, the
  * near-white ones (the words a card draws), and `painted`, the ones the picture put

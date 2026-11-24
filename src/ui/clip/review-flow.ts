@@ -28,8 +28,17 @@ export async function openReview(loadIndex: number, park: number): Promise<void>
   renderMarks();
   renderLane();
   el.idleOv.classList.add('gone');
+  // A sound-only clip has no pictures to take for the strip: the timeline shows its sound
+  // instead, filling the room the strip would have taken.
+  const hasPicture = session.clip.hasPicture();
+  el.timeline.classList.toggle('sound-only', !hasPicture);
   void waveform.build(session.clip.takes.all());
-  void strip.build().then(() => playback.seek(park));
+  if (hasPicture) {
+    void strip.build().then(() => playback.seek(park));
+  } else {
+    el.thumbs.replaceChildren();
+    playback.seek(park);
+  }
   el.timeline.classList.add('on');
   el.btnExp.style.display = '';
   el.propsBtn.style.display = '';

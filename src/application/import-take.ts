@@ -1,10 +1,11 @@
-// The import use case: a video file becomes a take.
+// The import use case: a media file becomes a take — one with a picture, or one with only
+// sound.
 //
 // The file is already a finished recording, so there is nothing to record: it is read for
-// its length and its sound, and it is appended to the clip as a take, exactly as a pressed
-// Record appends one — same addTake, same events, same kept copy. A take needs a length,
-// so a file that has none is refused. A refusal is a value, not an exception; the flow
-// reports it.
+// its length, its sound and its picture, and it is appended to the clip as a take, exactly
+// as a pressed Record appends one — same addTake, same events, same kept copy. A take needs
+// a length, so a file that has none is refused. A refusal is a value, not an exception; the
+// flow reports it.
 //
 // A file may also arrive with its **sidecar**: the annotations an export wrote beside the
 // video rather than drawing them in. They are fractions of the file, and the file becomes
@@ -54,15 +55,15 @@ export class ImportTake {
 
   async run(file: ImportInput, sidecar?: AnnotationSidecar | null): Promise<ImportOutcome> {
     if (!TakeFile.of(file.name, file.type)) {
-      return { kind: 'refused', reason: 'Only WebM and MP4 videos can be imported.' };
+      return { kind: 'refused', reason: 'Only WebM and MP4 files can be imported.' };
     }
     let info;
     try {
       info = await this.deps.files.inspect(file.blob);
     } catch {
-      return { kind: 'failed', reason: 'The file could not be read as a video.' };
+      return { kind: 'failed', reason: 'The file could not be read as a recording.' };
     }
-    if (!(info.duration > 0)) return { kind: 'refused', reason: 'That video has no length.' };
+    if (!(info.duration > 0)) return { kind: 'refused', reason: 'That file has no length.' };
 
     // A sidecar's annotations are fractions of the file it was written for, so they are
     // taken on only when this is that file: a frame's drift is nothing, another length is

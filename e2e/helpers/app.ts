@@ -16,7 +16,7 @@ import type { FixtureTake } from '../fixtures/takes.js';
 const HOOKS = pageModule('e2e/support/app-hooks.ts');
 
 interface PageWindow {
-  __e2eTakes?: Array<{ blob: Blob; seconds: number; shape: string }>;
+  __e2eTakes?: Array<{ blob: Blob; seconds: number; shape: string; hasAudio: boolean }>;
 }
 
 export interface Booted {
@@ -63,6 +63,9 @@ export function boot(page: Page): Booted {
         const { session } = await import(/* @vite-ignore */ url);
         session.clip.clear();
         const store = (window as unknown as PageWindow).__e2eTakes ?? [];
+        // A seeded take with sound makes the session one with sound, as a recording or an
+        // import does; a sound-only clip has no picture but its file still holds the sound.
+        if (indices.some(index => store[index]?.hasAudio)) session.audio = true;
         for (const index of indices) {
           const take = store[index];
           if (!take) continue;
@@ -78,6 +81,7 @@ export function boot(page: Page): Booted {
       await page.evaluate(async ({ url, indices }) => {
         const { session } = await import(/* @vite-ignore */ url);
         const store = (window as unknown as PageWindow).__e2eTakes ?? [];
+        if (indices.some(index => store[index]?.hasAudio)) session.audio = true;
         for (const index of indices) {
           const take = store[index];
           if (!take) continue;

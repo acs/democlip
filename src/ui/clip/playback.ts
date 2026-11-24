@@ -17,7 +17,7 @@
 import { currentPhase } from '../../state.js';
 import { session } from '../../session.js';
 import { ctx, el } from '../dom.js';
-import { drawClipFrame } from '../recording/preview.js';
+import { drawClipFrame, drawSoundOnly } from '../recording/preview.js';
 import { drawAnnotations } from '../annotating/annotation-layer.js';
 import { clampToClip, typingIn } from '../../util.js';
 import { keptLengthNow, keptOf, player, reviewFrame } from './clip.js';
@@ -226,13 +226,22 @@ export class Playback {
       return;
     }
 
-    try { drawClipFrame(el.rv, reviewFrame(el.rv)); } catch { /* a frame still decoding — keep the loop alive */ }
+    const hasPicture = session.clip.hasPicture();
+    try {
+      // A sound-only clip has no picture to play: the preview keeps saying what the file
+      // holds while its sound comes from the element.
+      if (hasPicture) drawClipFrame(el.rv, reviewFrame(el.rv));
+      else drawSoundOnly();
+    } catch { /* a frame still decoding — keep the loop alive */ }
     // What is drawn over the picture, at the moment the playhead holds. An annotation
     // comes in and goes out over DISSOLVE_S of its stretch, as a take does at a join.
-    const at = player.time();
-    drawAnnotations(ctx, el.cv.width, el.cv.height, session.clip.annotationsAt(at), null, {
-      at, total: session.clip.total(), seconds: DISSOLVE_S,
-    });
+    // A sound-only clip has no picture for one to be drawn on, and its export holds none.
+    if (hasPicture) {
+      const at = player.time();
+      drawAnnotations(ctx, el.cv.width, el.cv.height, session.clip.annotationsAt(at), null, {
+        at, total: session.clip.total(), seconds: DISSOLVE_S,
+      });
+    }
     this.updatePlayhead();          // video frames on the preview canvas
     this.playRaf = requestAnimationFrame(() => this.loop());   // audio comes from the (unmuted) element
   }

@@ -9,6 +9,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { boot } from '../helpers/app.js';
 import { makeTakes } from '../fixtures/takes.js';
+import { exportFile, hasSound, probeFile } from '../helpers/exports.js';
 import { askedFor, installStandInShare, installSuspendedAudio } from '../helpers/stand-ins.js';
 import { pageModule } from '../helpers/page-module.js';
 import { watchBubble, previewBubble, lastWebcamDraw, compositedBubble, type BubbleArc } from '../helpers/bubble.js';
@@ -469,4 +470,96 @@ test('the first frame of a composited take is the picture, not a blank canvas', 
   expect(q?.topRight ?? 0).toBeGreaterThan(0);
   expect(q?.bottomLeft ?? 0).toBeGreaterThan(0);
   expect(q?.bottomRight ?? 0).toBeGreaterThan(0);
+});
+
+test('the microphone alone records a sound-only take', async ({ page }) => {
+  // No picture source at all: the microphone is the whole take, so the review is a
+  // waveform and the timeline has no thumbnails to show.
+  const app = boot(page);
+  await app.goto();
+  await expect(page.locator('#mic-btn')).toBeEnabled();
+  await page.locator('#mic-btn').click();
+  await expect(page.locator('#mic-btn')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('#s-text')).toContainText('sound only');
+
+  await page.locator('#rec-btn').click();
+  await expect(page.locator('#s-text')).toHaveText('Recording — sound only');
+  await expect(page.locator('#t-live-time')).not.toHaveText('00:00');
+  await page.locator('#rec-btn').click();
+  await expect.poll(() => app.clipLength(), { timeout: 10_000 }).toBeGreaterThan(0.2);
+
+  // The review is the sound: the waveform has the strip's room, and the estimate is the
+  // audio's rather than a picture's.
+  await expect(page.locator('#timeline')).toHaveClass(/sound-only/);
+  await expect(page.locator('#waveform')).toBeVisible();
+  await expect(page.locator('#t-size')).toContainText('audio');
+
+  // The transport plays the sound: the sound-only clip is a clip like any other, and
+  // the element it plays from has no picture to draw.
+  await page.locator('#play-btn').click();
+  await expect(page.locator('#play-btn')).toHaveAttribute('aria-label', 'Pause');
+  await page.waitForTimeout(200);
+  await page.locator('#play-btn').click();
+  await expect(page.locator('#play-btn')).toHaveAttribute('aria-label', 'Play');
+
+  // The waveform is the track: two clicks mark a section and the scissors cut the sound,
+  // exactly as they do over a picture.
+  const kept = async (): Promise<number> =>
+    Number((await page.locator('#t-clip').textContent())?.replace('s', '') ?? 0);
+  const beforeCut = await kept();
+  const wave = await page.locator('#waveform').boundingBox();
+  if (!wave) throw new Error('the sound-only timeline has no waveform to click');
+  await page.mouse.click(wave.x + wave.width * 0.25, wave.y + wave.height / 2);
+  await page.mouse.click(wave.x + wave.width * 0.6, wave.y + wave.height / 2);
+  await expect(page.locator('#t-cut')).toContainText('CUT');
+  // There is no picture to annotate, so the section offers the cut and no annotation tool.
+  await expect(page.locator('#tl-marks .tl-act.ann')).toHaveCount(0);
+  await page.locator('#tl-marks .tl-act.ok').click();
+  await expect.poll(kept).toBeLessThan(beforeCut);
+  const cutLength = await kept();
+
+  // The clip is kept like any other: a reload brings it back in the sound-only review,
+  // with the cut.
+  await page.waitForTimeout(500);            // the store's write is serialized behind the take
+  await page.reload();
+  await expect(page.locator('#timeline')).toHaveClass(/sound-only/, { timeout: 10_000 });
+  await expect(page.locator('#waveform')).toBeVisible();
+  await expect.poll(kept).toBeGreaterThan(0.2);
+  expect(Math.abs((await kept()) - cutLength)).toBeLessThan(0.05);   // the cut came back too
+
+  // The file is the sound alone: no video track, and a sound track that decodes. The
+  // blob's own type is `audio/webm`, and a `<video>` asked for its picture reports none.
+  const webmBytes = await exportFile(page, '#exp-webm');
+  const webm = await probeFile(page, webmBytes, 'audio/webm');
+  expect(webm.duration).toBeGreaterThan(0.2);
+  expect({ width: webm.width, height: webm.height }).toEqual({ width: 0, height: 0 });
+  expect(await hasSound(page, webmBytes)).toBe(true);
+
+  // MP4 is the same sound in the other container, where the browser can write AAC.
+  const canEncodeAac = await page.evaluate(async () => {
+    if (typeof AudioEncoder !== 'function') return false;
+    const result = await AudioEncoder.isConfigSupported({
+      codec: 'mp4a.40.2', sampleRate: 48_000, numberOfChannels: 2, bitrate: 128_000,
+    });
+    return !!result.supported;
+  });
+  if (canEncodeAac) {
+    const mp4 = await probeFile(page, await exportFile(page, '#exp-mp4'), 'audio/mp4');
+    expect(mp4.duration).toBeGreaterThan(0.2);
+    expect({ width: mp4.width, height: mp4.height }).toEqual({ width: 0, height: 0 });
+  }
+
+  // A video service takes a video: its two entries are out for a clip with no picture.
+  await page.locator('#btn-exp').click();
+  await expect(page.locator('#exp-bluesky')).toBeDisabled();
+  await expect(page.locator('#exp-youtube')).toBeDisabled();
+
+  // The sound file comes back through Import: the same bytes become a take with no
+  // picture, appended to the clip and opened in the sound-only review.
+  const chooser = page.waitForEvent('filechooser');
+  await page.locator('#file-btn').click();
+  await (await chooser).setFiles({ name: 'voice.webm', mimeType: 'audio/webm', buffer: webmBytes });
+  await expect.poll(kept, { timeout: 15_000 }).toBeGreaterThan(cutLength);
+  await expect(page.locator('#timeline')).toHaveClass(/sound-only/);
+  await expect(page.locator('#waveform')).toBeVisible();
 });

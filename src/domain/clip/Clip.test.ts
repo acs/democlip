@@ -556,6 +556,27 @@ describe('Clip size', () => {
     rebuilt.restore(clip.snapshot());
     expect(rebuilt.size()?.toString()).toBe('1920x1080');
   });
+
+  it('says whether the clip has a picture at all — a sound-only clip has none', () => {
+    expect(clipOf(2).hasPicture()).toBe(false);                 // a take with no picture
+    expect(clipSized({ width: 1280, height: 720 }).hasPicture()).toBe(true);
+
+    // One picture among sound-only takes is enough: the export is a video, with black
+    // over the stretches that have no picture.
+    const mixed = clipOf(2);
+    mixed.addTake(new Blob(['x']), 2, { width: 1280, height: 720 });
+    expect(mixed.hasPicture()).toBe(true);
+  });
+
+  it('knows when the kept stretches have no picture, though a take has one', () => {
+    const mixed = clipOf(2);
+    mixed.addTake(new Blob(['x']), 2, { width: 1280, height: 720 });
+    expect(mixed.keepsPicture()).toBe(true);
+
+    mixed.approve(Span.of(0.5, 1));            // the whole picture take, of a 4s clip
+    expect(mixed.hasPicture()).toBe(true);     // the clip still holds the picture take
+    expect(mixed.keepsPicture()).toBe(false);  // but nothing kept prints it
+  });
 });
 
 // Applying what a **profile** fixes: announced, so every view follows it, and deliberately

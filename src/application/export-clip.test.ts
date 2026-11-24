@@ -13,8 +13,8 @@ import type { TakeRepository } from '../domain/clip/TakeRepository.js';
 class FakeTakes implements TakeRepository {
   private takes: Take[] = [];
 
-  add(blob: Blob, duration: number): Take {
-    const take = Take.of(this.takes.length + 1, blob, `blob:${this.takes.length + 1}`, duration);
+  add(blob: Blob, duration: number, picture?: { width: number; height: number } | null): Take {
+    const take = Take.of(this.takes.length + 1, blob, `blob:${this.takes.length + 1}`, duration, picture ?? null);
     this.takes.push(take);
     return take;
   }
@@ -31,9 +31,11 @@ class FakeTakes implements TakeRepository {
   clear() { this.takes = []; }
 }
 
+// Takes with a picture, as a recorded or imported take carries: a sound-only clip has a
+// helper of its own for the plan that says so.
 const clipOf = (...durations: number[]): Clip => {
   const clip = Clip.empty(new FakeTakes());
-  for (const seconds of durations) clip.addTake(new Blob(['x']), seconds);
+  for (const seconds of durations) clip.addTake(new Blob(['x']), seconds, { width: 1280, height: 720 });
   return clip;
 };
 
@@ -62,6 +64,14 @@ describe('planExport', () => {
 
   it('carries whether the clip has sound', () => {
     expect(planExport(clipOf(4), { audio: true, fadeSeconds: 0.08, annotations: 'drawn' })?.audio).toBe(true);
+  });
+
+  it('plans a sound-only clip as the sound alone', () => {
+    const clip = Clip.empty(new FakeTakes());
+    clip.addTake(new Blob(['x']), 4);
+
+    expect(planExport(clip, { ...settings, audio: true })?.soundOnly).toBe(true);
+    expect(planExport(clipOf(4), settings)?.soundOnly).toBe(false);
   });
 
   it('puts a title card at the head of the file when the export has one', () => {

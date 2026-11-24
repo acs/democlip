@@ -63,6 +63,12 @@ export class ExportPlan {
     readonly intro: IntroCard | null,
     /** How long that card is, which is how far the clip's own frames are pushed along. */
     readonly introSeconds: number,
+    /**
+     * No kept take carries a picture: the file the export writes holds the sound and
+     * no picture at all. The clip's own fact — a **sound-only** file — and what tells the
+     * encoder to write an audio track without a video one, and a video service to refuse it.
+     */
+    readonly soundOnly: boolean,
   ) {}
 
   /**
@@ -83,7 +89,12 @@ export class ExportPlan {
     annotations: AnnotationSet = AnnotationSet.EMPTY,
     intro: IntroCard | null = null,
   ): ExportPlan {
-    const offset = intro?.seconds ?? 0;
+    // The kept takes' own pictures decide whether the file has one: a sound-only take is a
+    // take whose blob the browser measured no picture for. A sound-only file has no picture
+    // for a **title card** to be drawn on, so the card is not part of the plan at all.
+    const soundOnly = !segments.some(seg => !!takes[seg.takeIndex]?.picture);
+    const card = soundOnly ? null : intro;
+    const offset = card?.seconds ?? 0;
     const starts: number[] = [];
     let running = 0;
     for (const take of takes) { starts.push(running); running += take.duration; }
@@ -114,7 +125,7 @@ export class ExportPlan {
 
     return new ExportPlan(
       pieces, steps, takes, to, offset + total, settings.audio, settings.fadeSeconds,
-      annotations, map, starts, intro, offset,
+      annotations, map, starts, card, offset, soundOnly,
     );
   }
 

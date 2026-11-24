@@ -87,6 +87,17 @@ describe('ImportTake', () => {
     expect(clip.takes.at(0)?.duration).toBe(12.5);
   });
 
+  it('takes a sound-only file in as a take with no picture', async () => {
+    const { clip, run, audio } = build({ duration: 3, hasAudio: true });
+
+    const outcome = await run.run(file('voice.webm', 'audio/webm'));
+
+    expect(outcome.kind).toBe('imported');
+    expect(clip.takes.at(0)?.picture).toBeNull();
+    expect(clip.hasPicture()).toBe(false);
+    expect(audio).toEqual([true]);
+  });
+
   it('tells the session the file has sound before the take is added', async () => {
     const { clip, run, audio } = build({ duration: 3, hasAudio: true });
     let seenAtAdd = 0;

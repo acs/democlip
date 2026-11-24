@@ -8,12 +8,16 @@ import type { Page } from '@playwright/test';
 import { pageModule } from '../helpers/page-module.js';
 
 export interface FixtureSpec {
-  width: number;
-  height: number;
+  width?: number;
+  height?: number;
   seconds: number;
   fps?: number;
   hasAudio?: boolean;
   pattern?: string;
+  /** A take with sound and no picture. */
+  soundOnly?: boolean;
+  /** Which container to write for a file; the page encoder only. */
+  container?: 'webm' | 'mp4';
 }
 
 /** A take built in the page: its metadata, and where its blob is kept. */

@@ -24,7 +24,7 @@ import type { ClipEvent } from '../../domain/clip/Clip.js';
 import { el } from '../dom.js';
 import { Span } from '../../domain/clip/Span.js';
 import { updateSizeUI } from '../clip/timeline-ui.js';
-import { fractionAtX as fractionAt, keptLengthNow, keptOf, player } from '../clip/clip.js';
+import { fractionAtX as fractionAt, keptLengthNow, keptOf, player, timelineTrack } from '../clip/clip.js';
 import { playback } from '../clip/playback.js';
 import { typingIn } from '../../util.js';
 import { MIN_SECTION, selection } from './selection.js';
@@ -112,10 +112,14 @@ export function renderMarks(): void {
           + `<button class="tl-act ok" data-act="cut" title="Cut this section out" aria-label="Cut this section out">`
           + `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4L8.12 15.88"/><path d="M14.47 14.48L20 20"/><path d="M8.12 8.12L12 12"/></svg></button>`
           // One button per kind, from the plugin register: adding a kind adds its own
-          // button here, and nothing in this module names a kind.
-          + plugins().map(plugin =>
-              `<button class="tl-act ann" data-act="add" data-kind="${plugin.id}" title="${plugin.action.title}" aria-label="${plugin.action.title}">${plugin.action.icon}</button>`
-            ).join('')
+          // button here, and nothing in this module names a kind. A **sound-only** clip
+          // has no picture to draw one on, and its file holds none, so the buttons are
+          // not offered at all.
+          + (session.clip.hasPicture()
+            ? plugins().map(plugin =>
+                `<button class="tl-act ann" data-act="add" data-kind="${plugin.id}" title="${plugin.action.title}" aria-label="${plugin.action.title}">${plugin.action.icon}</button>`
+              ).join('')
+            : '')
           + `<button class="tl-act no" data-act="keep" title="Undo the selection" aria-label="Undo the selection">`
           + `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-5"/></svg></button>`
           + `</span>`;
@@ -406,9 +410,10 @@ function canEdit(): boolean {
   return currentPhase() === 'review' && el.rv.readyState >= 1;   // metadata is enough; a seek in flight must not drop a click
 }
 
-// The track is what the marks are laid out against; a click x maps onto it.
+// The track is what the marks are laid out against; a click x maps onto it. A sound-only
+// clip's strip is hidden, so its track is the waveform standing in its room.
 function track(): DOMRect {
-  return el.thumbs.getBoundingClientRect();
+  return timelineTrack();
 }
 
 // Where on the recording a screen x sits lives in clip.ts (fractionAtX), because the

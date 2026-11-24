@@ -15,8 +15,8 @@ import type { TakeRepository } from '../domain/clip/TakeRepository.js';
 class FakeTakes implements TakeRepository {
   private takes: Take[] = [];
 
-  add(blob: Blob, duration: number): Take {
-    const take = Take.of(this.takes.length + 1, blob, `blob:${this.takes.length + 1}`, duration);
+  add(blob: Blob, duration: number, picture?: { width: number; height: number } | null): Take {
+    const take = Take.of(this.takes.length + 1, blob, `blob:${this.takes.length + 1}`, duration, picture ?? null);
     this.takes.push(take);
     return take;
   }
@@ -33,9 +33,17 @@ class FakeTakes implements TakeRepository {
   clear() { this.takes = []; }
 }
 
+// Takes with a picture, since a video service takes a video: the sound-only refusal has
+// a clip of its own below.
 const clipOf = (...durations: number[]): Clip => {
   const clip = Clip.empty(new FakeTakes());
-  for (const seconds of durations) clip.addTake(new Blob(['x']), seconds);
+  for (const seconds of durations) clip.addTake(new Blob(['x']), seconds, { width: 1280, height: 720 });
+  return clip;
+};
+
+const soundOnlyClipOf = (seconds: number): Clip => {
+  const clip = Clip.empty(new FakeTakes());
+  clip.addTake(new Blob(['x']), seconds);
   return clip;
 };
 
@@ -90,6 +98,17 @@ describe('publishToYouTube', () => {
     await expect(publishToYouTube(clipOf(VIDEO_MAX_SECONDS + 100), settings(), deps(service, undefined, {
       encode: async () => { encodes++; return new Blob(['mp4'], { type: 'video/mp4' }); },
     }))).rejects.toThrow(/up to 15 minutes/);
+    expect(encodes).toBe(0);
+    expect(service.uploads).toHaveLength(0);
+  });
+
+  it('refuses a sound-only clip, because YouTube takes a video and not a sound file', async () => {
+    const service = new FakeService();
+    let encodes = 0;
+
+    await expect(publishToYouTube(soundOnlyClipOf(4), settings(), deps(service, undefined, {
+      encode: async () => { encodes++; return new Blob(['mp4'], { type: 'video/mp4' }); },
+    }))).rejects.toThrow(/picture/i);
     expect(encodes).toBe(0);
     expect(service.uploads).toHaveLength(0);
   });

@@ -8,8 +8,13 @@ import { Span } from './Span.js';
 import { AnnotationSet } from '../annotation/AnnotationSet.js';
 import { Arrow } from '../annotation/Arrow.js';
 
-// Two 5s takes, so the clip is 10s and a join falls halfway along it.
+// Two 5s takes, so the clip is 10s and a join falls halfway along it. They carry a
+// picture, as a recorded or imported take does; the sound-only case has takes of its own.
 const takes = [
+  Take.of(1, new Blob(['x']), 'blob:1', 5, { width: 1280, height: 720 }),
+  Take.of(2, new Blob(['x']), 'blob:2', 5, { width: 1280, height: 720 }),
+];
+const soundOnlyTakes = [
   Take.of(1, new Blob(['x']), 'blob:1', 5),
   Take.of(2, new Blob(['x']), 'blob:2', 5),
 ];
@@ -83,6 +88,21 @@ describe('ExportPlan', () => {
     expect(plan.fadeSeconds).toBe(0.5);
   });
 
+  it('says whether the file holds a picture — a sound-only clip holds none', () => {
+    expect(planOf().soundOnly).toBe(false);
+
+    const soundOnly = ExportPlan.of(parts().segments, soundOnlyTakes, 10, parts().map,
+      { audio: true, fadeSeconds: 0.08, annotations: 'drawn' });
+    expect(soundOnly.soundOnly).toBe(true);
+
+    // One take with a picture among sound-only ones is enough: the stretch with no
+    // picture is written as black.
+    const mixed = [Take.of(1, new Blob(['x']), 'blob:1', 5), takes[1]];
+    const plan = ExportPlan.of(parts().segments, mixed, 10, parts().map,
+      { audio: true, fadeSeconds: 0.08, annotations: 'drawn' });
+    expect(plan.soundOnly).toBe(false);
+  });
+
   it('pushes the clip along by the title card at the head', () => {
     const { map, segments } = parts();
     const intro = IntroCard.of('A demo', 'What it shows', new Date(2026, 0, 2, 12), 3)!;
@@ -100,6 +120,19 @@ describe('ExportPlan', () => {
     const plan = planOf();
     expect(plan.intro).toBeNull();
     expect(plan.introSeconds).toBe(0);
+    expect(plan.total).toBeCloseTo(9);
+  });
+
+  it('puts no card on a sound-only file, which has no picture to draw it on', () => {
+    const { map, segments } = parts();
+    const intro = IntroCard.of('A demo', 'What it shows', new Date(2026, 0, 2, 12), 3)!;
+    const plan = ExportPlan.of(segments, soundOnlyTakes, 10, map,
+      { audio: true, fadeSeconds: 0.08, annotations: 'drawn' }, AnnotationSet.EMPTY, intro);
+
+    expect(plan.soundOnly).toBe(true);
+    expect(plan.intro).toBeNull();
+    expect(plan.introSeconds).toBe(0);
+    expect(plan.pieces[0].at).toBe(0);          // the sound is not pushed along
     expect(plan.total).toBeCloseTo(9);
   });
 

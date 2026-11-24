@@ -21,7 +21,7 @@
 import { session } from '../../session.js';
 import { currentPhase } from '../../state.js';
 import { ctx, el } from '../dom.js';
-import { drawFrame, seekTo } from '../recording/preview.js';
+import { drawFrame, drawSoundOnly, seekTo } from '../recording/preview.js';
 import { drawAnnotations } from '../annotating/annotation-layer.js';
 import type { Frame } from '../../domain/clip/ClipSize.js';
 
@@ -48,11 +48,19 @@ export function sourceOf(kept: number): number {
   return session.clip.timeline().sourceOf(kept);
 }
 
+// The band the timeline is laid out against. A picture clip has the thumbnail strip; a
+// sound-only clip hides it and shows the waveform in its room, so the waveform is the
+// track there — the marks and the playhead still need something to be clicked against.
+export function timelineTrack(): DOMRect {
+  const thumbs = el.thumbs.getBoundingClientRect();
+  return thumbs.width > 0 ? thumbs : el.waveform.getBoundingClientRect();
+}
+
 // Where on the recording a screen x sits, 0..1. The timeline is drawn in timeline
 // time, so this is that mapping back the other way — in one place, because the marks
 // and the annotation lane must not disagree about where a click landed.
 export function fractionAtX(clientX: number): number {
-  const track = el.thumbs.getBoundingClientRect();
+  const track = timelineTrack();
   if (track.width <= 0 || !(session.clip.total() > 0)) return 0;
   const kept = Math.max(0, Math.min(1, (clientX - track.left) / track.width));
   return Math.max(0, Math.min(1, sourceOf(kept * keptLengthNow()) / session.clip.total()));
@@ -82,9 +90,11 @@ export class Player {
   }
 
   // Bring the video to a time and paint that frame on the preview, with whatever
-  // is drawn over it.
+  // is drawn over it. A clip with no picture has nothing to paint: its review is what
+  // the file is, a waveform and the words that say so.
   seekAndDraw(time: number): Promise<void> {
     return this.seek(time).then(() => {
+      if (!session.clip.hasPicture()) { drawSoundOnly(); return; }
       drawFrame(el.rv, reviewFrame(el.rv));
       drawAnnotations(ctx, el.cv.width, el.cv.height, session.clip.annotationsAt(time));
     });
@@ -165,11 +175,18 @@ export function reviewFrame(vid: HTMLVideoElement): Frame | undefined {
 export function resizeReview(): void {
   if (currentPhase() !== 'review') return;
   const size = session.clip.size();
-  const width = size?.width ?? el.rv.videoWidth;
-  const height = size?.height ?? el.rv.videoHeight;
-  if (!(width > 0) || !(height > 0)) return;
-  if (el.cv.width === width && el.cv.height === height) return;
-  el.cv.width = width;
-  el.cv.height = height;
+  // A sound-only clip has no size: the canvas keeps the app's own 16:9 shape, which is
+  // what the sound-only preview is drawn on.
+  if (!size) {
+    if (el.cv.width !== 1280 || el.cv.height !== 720) {
+      el.cv.width = 1280;
+      el.cv.height = 720;
+    }
+    drawSoundOnly();
+    return;
+  }
+  if (el.cv.width === size.width && el.cv.height === size.height) return;
+  el.cv.width = size.width;
+  el.cv.height = size.height;
   void player.seekAndDraw(player.time()).catch(() => {});
 }

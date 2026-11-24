@@ -113,7 +113,9 @@ async function seedWithLength(page: Page, seconds: number): Promise<void> {
     const { session } = await import(/* @vite-ignore */ url);
     session.clip.clear();
     const take = store[0];
-    if (take) session.clip.addTake(take.blob, seconds);
+    // The take carries its own picture, as a recorded one does: a take with no measured
+    // picture is a sound-only take, and a video service takes a video.
+    if (take) session.clip.addTake(take.blob, seconds, { width: 640, height: 360 });
   }, { url: HOOKS, seconds });
 }
 

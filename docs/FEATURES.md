@@ -9,10 +9,10 @@ round trip, and for the app itself, named as [`GLOSSARY.md`](GLOSSARY.md) names 
 ## Record
 
 - **Nothing captured until you ask** — every source starts off, so the app never opens a screen picker on its own; press **Screen** or **Webcam** to start one, and Record with nothing on says so
-- **Record sources in one row** — Screen, Webcam and Mic sit on the left, the record button is centred in the bar, and the sources are out while a take is being set up or records. They are independent toggles, **all off at start**: press Screen to share, and press it again to let the share go — nothing reaches for the screen after that — or Webcam, which carries the picture on its own when the screen is off. The recording's duration is read off the timeline rather than a separate clock
+- **Record sources in one row** — Screen, Webcam and Mic sit on the left, the record button is centred in the bar, and the sources are out while a take is being set up or records. They are independent toggles, **all off at start**: press Screen to share, and press it again to let the share go — nothing reaches for the screen after that — or Webcam, which carries the picture on its own when the screen is off. **Mic on its own records a sound-only take** — no picture at all — reviewed as a waveform where the thumbnails would be; a clip can mix sound-only takes with picture takes, and the picture takes stay what they were. The recording's duration is read off the timeline rather than a separate clock
 - **Region crop** — a red box over the preview always shows what will be recorded: the whole screen by default, drag to record just part of it, click to reset; while recording the box breathes (red ↔ background)
 - **Webcam** — a source button adds a mirrored bubble in the corner of the recording (disabled when no camera is present), or is **the whole recording** when the screen is off; when the device has more than one camera, a picker beside the button chooses which one
-- **Microphone** — a source button (disabled when no mic) with a live level meter; its audio is **mixed with the tab/system audio** in the recording
+- **Microphone** — a source button (disabled when no mic) with a live level meter; its audio is **mixed with the tab/system audio** in the recording, and on its own it makes a **sound-only** clip
 - **Tab / system audio** — requested on every capture (`audio: true` plus Chrome's `systemAudio: 'include'` hint, so the audio option is offered); the browser owns that checkbox, so the app says so when a share comes back silent, and **New** returns to the picker to redo it
 - **Add more takes** — pressing Record after a recording appends the new one to the end of the clip; the share is kept between takes, so there is no second picker and **every take in a clip comes from the same source** (the same tab, window or screen). **A short fade either side of the join, and a dissolve across it**, soften the change from one take to the next. New starts a new clip; if a source ends, turn it back on and the next take still adds on
 - **Live timeline** — the timeline is there while a take records, filling in with the picture and the sound as they are captured (drawn from the live preview and the recorded stream's own levels, never by decoding the half-written file), and it becomes the timeline you cut on when you stop
@@ -20,7 +20,7 @@ round trip, and for the app itself, named as [`GLOSSARY.md`](GLOSSARY.md) names 
 
 ## Import
 
-- **Import a video file** — press **Import** to bring a **WebM or MP4** already on your machine in as a take: it joins the clip to cut, annotate, export and publish like a recording. Nothing is re-recorded — the file's own bytes become the take, and its own length and sound are read from the file — and it is read back by the same decoder the export writes with, so the two containers an export can read are the two an import takes
+- **Import a file** — press **Import** to bring a **WebM or MP4** already on your machine in as a take — a video, or a sound-only file, which is what an audio export writes: it joins the clip to cut, annotate, export and publish like a recording. Nothing is re-recorded — the file's own bytes become the take, and its own length, sound and picture are read from the file — and it is read back by the same decoder the export writes with, so the two containers an export can read are the two an import takes
 
 ## Keep
 
@@ -51,7 +51,7 @@ round trip, and for the app itself, named as [`GLOSSARY.md`](GLOSSARY.md) names 
 
 ## Export
 
-- **Export to WebM or MP4, encoded offline** — WebM is VP9 (VP8 fallback) with Opus audio, MP4 is H.264 with AAC; both are written straight from the decoded frames by WebCodecs: about **10× faster than the clip**, it keeps going while the tab is in the background, and the file carries a duration and cue points, so any player can scrub it
+- **Export to WebM or MP4, encoded offline** — WebM is VP9 (VP8 fallback) with Opus audio, MP4 is H.264 with AAC; both are written straight from the decoded frames by WebCodecs: about **10× faster than the clip**, it keeps going while the tab is in the background, and the file carries a duration and cue points, so any player can scrub it. A **sound-only clip** exports the sound alone, in the same two containers, with no video track — so an audio export comes back in through **Import** like any other file; a video service needs a picture, and is offered only for a clip that keeps one
 - **Export progress on the timeline** — the playhead travels across the clip as it is written, with the frames shown on the preview and how much of the clip is left to write counted down; nothing runs off a bottom bar
 
 ## A clip that leaves and comes back

@@ -61,8 +61,9 @@ export async function doExport(target: ExportTarget = 'webm', annotations: Annot
   await images.ready();
   // Whether the clip asks for a title card at the head of the file — its own property,
   // read once here and handed to the export, which carries it in the plan. Its logo, if it
-  // wears one, is decoded before the first frame rather than during it.
-  const intro = introFor(session.clip);
+  // wears one, is decoded before the first frame rather than during it. A clip whose kept
+  // stretches have no picture has no card to draw, and its file is the sound alone.
+  const intro = session.clip.keepsPicture() ? introFor(session.clip) : null;
   await frameRenderer.prepare(intro);
   const outcome = await exportVideo.run(target, {
     annotations,

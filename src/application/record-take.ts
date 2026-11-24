@@ -1,7 +1,9 @@
 // The record use case: one press of Record.
 //
 // It owns the sequence of a take — sources, mix, record, stop, take added — and
-// draws nothing. A refusal is a value, not an exception; the flow reports it.
+// draws nothing. A take needs a source: a picture, or the microphone alone, which
+// gives a **sound-only** take. A refusal is a value, not an exception; the flow
+// reports it.
 
 import type { Clip } from '../domain/clip/Clip.js';
 import type { Take } from '../domain/clip/Take.js';
@@ -46,22 +48,29 @@ export class RecordTake {
 
   start(): RecordOutcome {
     const sources = this.deps.sources();
-    if (!sources.screen && !sources.webcam) {
-      return { kind: 'refused', reason: 'A take needs a picture: turn on the screen or the webcam.' };
+    if (!sources.canRecord) {
+      return { kind: 'refused', reason: 'A take needs a source: turn on the screen, the webcam or the microphone.' };
     }
     const screen = this.deps.capture.current();
     const webcam = this.deps.webcam.current();
     const mic = this.deps.mic.current();
+    // A take with no picture is the microphone's: there is no canvas to draw on and no
+    // element to take a first frame from, so the compositor is handed neither.
+    const picture = sources.hasPicture ? this.deps.picture?.() : undefined;
     const composed = this.deps.compositor.open({
       screen: screen?.stream ?? null,
       webcam,
       mic,
       region: this.deps.region(),
       audio: true,
-      picture: this.deps.picture?.(),
-      pictureElement: this.deps.pictureElement?.(),
-      drawBubble: this.deps.drawBubble,
+      picture,
+      pictureElement: picture ? this.deps.pictureElement?.() : undefined,
+      drawBubble: picture ? this.deps.drawBubble : undefined,
     });
+    if (!composed.stream.getTracks().length) {
+      this.deps.compositor.close();
+      return { kind: 'refused', reason: 'Nothing came from the sources: check the microphone and try again.' };
+    }
     this.deps.recorder.start(composed.stream);
     this.startedAt = this.deps.clock.now();
     this.deps.setAudio?.(composed.hasAudio);

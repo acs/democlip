@@ -158,6 +158,25 @@ export class Clip {
   }
 
   /**
+   * Do any of the clip's takes carry a picture? This is the review's question: a clip
+   * with a picture keeps its picture review, even if every picture stretch is cut away.
+   */
+  hasPicture(): boolean {
+    return this.size() !== null;
+  }
+
+  /**
+   * Do any of the **kept** stretches carry a picture? This is the export's and the
+   * publish menu's question: a clip whose pictures are all cut away writes the sound
+   * alone, even though the clip still holds a picture take.
+   */
+  keepsPicture(): boolean {
+    const end = this.total();
+    if (!(end > 0)) return false;
+    return this.segmentsIn(0, end).some(segment => !!this.repo.at(segment.takeIndex)?.picture);
+  }
+
+  /**
    * A new recording at the end. The clip is longer, and the cuts and the
    * annotations are fractions of it, so they are re-based to stay over the same
    * moments — and the last change cannot be undone across a join it was never

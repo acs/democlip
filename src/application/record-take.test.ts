@@ -35,7 +35,9 @@ class FakeTakes implements TakeRepository {
   clear() { this.takes = []; }
 }
 
-const stream = {} as MediaStream;
+// A stream with one track: enough for the use case's "something came from the sources"
+// check, and all the fake ports need of it.
+const stream = { getTracks: () => [{}] } as unknown as MediaStream;
 
 const capture = (held: boolean): CapturePort => ({
   start: async () => ({ stream, hasAudio: false }) as CaptureSession,
@@ -85,7 +87,13 @@ const probe = (seconds: number, picture: { width: number; height: number } | nul
 
 const clock = (): ClockPort => ({ now: () => 1000, setTimeout: () => ({ cancel: () => {} }) });
 
-const build = (options: { screen?: boolean; webcam?: boolean; duration?: number; picture?: { width: number; height: number } } = {}) => {
+const build = (options: {
+  screen?: boolean;
+  webcam?: boolean;
+  mic?: boolean;
+  duration?: number;
+  picture?: { width: number; height: number };
+} = {}) => {
   const clip = Clip.empty(new FakeTakes());
   const audio: boolean[] = [];
   const comp = compositor();
@@ -94,12 +102,12 @@ const build = (options: { screen?: boolean; webcam?: boolean; duration?: number;
     clip,
     capture: capture(options.screen ?? true),
     webcam: webcam(options.webcam ?? false),
-    mic: microphone(false),
+    mic: microphone(options.mic ?? false),
     compositor: comp,
     recorder: rec,
     probe: probe(options.duration ?? 2.5, options.picture ?? null),
     clock: clock(),
-    sources: () => SourceSet.of(options.screen ?? true, options.webcam ?? false, false),
+    sources: () => SourceSet.of(options.screen ?? true, options.webcam ?? false, options.mic ?? false),
     region: () => CropRegion.FULL,
     setAudio: hasAudio => audio.push(hasAudio),
   });
@@ -151,13 +159,13 @@ describe('RecordTake', () => {
     expect(clip.takes.at(0)?.duration).toBeCloseTo(0.1);   // the clock stands still, so the floor
   });
 
-  it('refuses a take with no picture, and says why', () => {
-    const { take, comp, rec } = build({ screen: false, webcam: false });
+  it('refuses a take with no source at all, and says why', () => {
+    const { take, comp, rec } = build({ screen: false, webcam: false, mic: false });
 
     const outcome = take.start();
 
     expect(outcome.kind).toBe('refused');
-    if (outcome.kind === 'refused') expect(outcome.reason).toMatch(/picture/i);
+    if (outcome.kind === 'refused') expect(outcome.reason).toMatch(/source/i);
     expect(comp.opened).toHaveLength(0);
     expect(rec.started).toHaveLength(0);
   });
@@ -165,6 +173,49 @@ describe('RecordTake', () => {
   it('starts when only the webcam is on', () => {
     const { take } = build({ screen: false, webcam: true });
     expect(take.start().kind).toBe('started');
+  });
+
+  it('starts on the microphone alone, and asks the compositor for no picture', () => {
+    const { take, comp, audio } = build({ screen: false, webcam: false, mic: true });
+
+    const outcome = take.start();
+
+    expect(outcome.kind).toBe('started');
+    expect(comp.opened).toHaveLength(1);
+    expect(comp.opened[0].screen).toBeNull();
+    expect(comp.opened[0].webcam).toBeNull();
+    expect(comp.opened[0].mic).toBe(stream);
+    // Nothing to crop, no first frame to take, and no bubble to draw: there is no picture.
+    expect(comp.opened[0].picture).toBeUndefined();
+    expect(comp.opened[0].pictureElement).toBeUndefined();
+    expect(comp.opened[0].drawBubble).toBeUndefined();
+    expect(audio).toEqual([true]);
+  });
+
+  it('refuses to record when the sources hand back an empty stream', () => {
+    const clip = Clip.empty(new FakeTakes());
+    const comp: CompositorPort = {
+      open: () => ({ stream: { getTracks: () => [] } as unknown as MediaStream, hasAudio: false }),
+      close: () => {},
+    };
+    const take = new RecordTake({
+      clip,
+      capture: capture(true),
+      webcam: webcam(false),
+      mic: microphone(true),
+      compositor: comp,
+      recorder: recorder(),
+      probe: probe(1),
+      clock: clock(),
+      sources: () => SourceSet.of(false, false, true),
+      region: () => CropRegion.FULL,
+    });
+
+    const outcome = take.start();
+
+    expect(outcome.kind).toBe('refused');
+    if (outcome.kind === 'refused') expect(outcome.reason).toMatch(/nothing came/i);
+    expect(clip.takes.isEmpty()).toBe(true);
   });
 
   it('composes the held sources with the region the view set', () => {
