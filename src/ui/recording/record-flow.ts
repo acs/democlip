@@ -78,7 +78,7 @@ export function syncSources(): void {
     el.recBtn.disabled = false;
     el.recLbl.textContent = 'Record';
     setPhase('idle');
-    setStatus('ready', '');
+    setStatus('');
     return;
   }
   sizePreview();
@@ -87,7 +87,7 @@ export function syncSources(): void {
   el.recBtn.disabled = false;
   el.recLbl.textContent = 'Record';
   setPhase('live');
-  setStatus('ready', `Live — ${capture.width}×${capture.height}${hasSound() ? '' : ' · no audio shared'}`);
+  setStatus(`Live — ${capture.width}×${capture.height}${hasSound() ? '' : ' · no audio shared'}`);
 }
 
 function sizePreview(): void {
@@ -135,7 +135,7 @@ export async function toggleScreen(): Promise<void> {
     return;
   }
   setPhase('starting');
-  setStatus('ready', 'Select a screen…');
+  setStatus('Select a screen…');
   try {
     const captureSession = await capture.start();
     // Only silent if the microphone is off too: with it on, the take has the mic and
@@ -150,7 +150,7 @@ export async function toggleScreen(): Promise<void> {
     syncSources();
   } catch (error) {
     setPhase('idle');
-    setStatus('ready', '');
+    setStatus('');
     refreshSourceButtons();
     // The share was not had, but the webcam, if it is on, still is: let the one
     // place that decides the preview and the phase settle them.
@@ -191,7 +191,7 @@ async function startRecording(): Promise<void> {
   el.recBtn.classList.add('recording');
   el.recLbl.textContent = 'Stop';
   el.badge.classList.add('on');
-  setStatus('rec', 'Recording');
+  setStatus('Recording');
   if (outcome.kind === 'started') liveTimeline.start(outcome.stream);
   startMirror();
 }
@@ -206,7 +206,7 @@ export async function stopRecording(): Promise<void> {
   if (outcome.kind === 'stopped') {
     const index = session.clip.takes.count() - 1;
     await openReview(index, 0);
-    setStatus('ready', 'Ready');
+    setStatus('Ready');
   }
 }
 
@@ -219,7 +219,7 @@ export function onScreenEnded(): void {
     stopMirror();
     refreshSourceButtons();
     setPhase('review');
-    setStatus('ready', 'Ready to export · turn a source on to record again');
+    setStatus('Ready to export · turn a source on to record again');
     return;
   }
   syncSources();             // the webcam, if it is on, keeps the preview

@@ -54,7 +54,7 @@ export async function doExport(target: ExportTarget = 'webm', annotations: Annot
   el.btnExp.disabled = true;
   el.btnNew.disabled = true;
   el.playBtn.disabled = true;
-  setStatus('proc', 'Encoding…');
+  setStatus('Encoding…');
   const wasCut = beginEncoding();
   // The export draws frames in a tight loop, so it waits once, here, for every picture
   // an image annotation needs to be decoded. A picture not decoded draws nothing.
@@ -75,15 +75,15 @@ export async function doExport(target: ExportTarget = 'webm', annotations: Annot
     // them. Written before the clip is forgotten, since the pictures travel too.
     if (annotations === 'carried') await saveSidecar(outcome.filename, intro?.seconds ?? 0);
     keep.forget();
-    setStatus('ready', 'Export complete');
+    setStatus('Export complete');
     toast(annotations === 'carried'
       ? `Saved ${Math.round(outcome.stats.bytes / 1024)} KB, and the annotations beside it`
       : `Saved ${Math.round(outcome.stats.bytes / 1024)} KB`);
   } else if (outcome.kind === 'refused') {
-    setStatus('ready', 'Cannot encode here');
+    setStatus('Cannot encode here');
     toast(outcome.reason);
   } else {
-    setStatus('ready', 'Export failed');
+    setStatus('Export failed');
     toast(outcome.reason);
   }
   setPhase('review');

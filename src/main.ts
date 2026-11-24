@@ -54,7 +54,7 @@ function init(): void {
   // said plainly in the status.
   const hasMedia = !!navigator.mediaDevices;
   const canShare = typeof navigator.mediaDevices?.getDisplayMedia === 'function';
-  setStatus(hasMedia ? 'ready' : '', hasMedia ? 'Ready' : 'Not supported');
+  setStatus(hasMedia ? 'Ready' : 'Not supported');
 
   // Apply persisted preferences.
   const prefs = loadPrefs();
