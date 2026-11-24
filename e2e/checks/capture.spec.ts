@@ -326,3 +326,65 @@ test('the webcam bubble is a whole, undistorted circle, inset from the corner �
   expect(drawn.sw).not.toBe(drawn.sh);
   expect(drawn.dw / drawn.dh).toBeCloseTo(drawn.sw / drawn.sh, 2);
 });
+
+test('the first frame of a composited take is the picture, not a blank canvas', async ({ page }) => {
+  // A screen with a webcam bubble is drawn on a canvas. The compositor's own element has
+  // no frame when the take opens, so the canvas used to start on its blank self and the
+  // bubble alone: the first frame — the review's first thumbnail and the title card's
+  // background — was an artificial blank screen. The picture the app is already showing
+  // is the frame the capture starts on.
+  const app = boot(page);
+  await installStandInShare(page, { width: 1280, height: 720 });
+  await app.goto();
+
+  await page.locator('#webcam-btn').click();
+  await expect(page.locator('#webcam-btn')).toHaveAttribute('aria-pressed', 'true');
+  await page.locator('#screen-btn').click();
+  await expect(page.locator('#s-text')).toContainText('Live');
+
+  await page.locator('#rec-btn').click();
+  await expect(page.locator('#s-text')).toHaveText('Recording');
+  await page.waitForTimeout(1200);
+  await page.locator('#rec-btn').click();
+  await expect.poll(() => app.clipLength(), { timeout: 10_000 }).toBeGreaterThan(0.2);
+  await expect(page.locator('#thumbs canvas')).toHaveCount(22);
+
+  // The review's first cell is the clip's first frame. The webcam bubble sits in the
+  // bottom-right, so a blank screen with only the bubble leaves the other quadrants empty.
+  const quadrants = (): Promise<{ topLeft: number; topRight: number; bottomLeft: number; bottomRight: number } | null> =>
+    page.evaluate(() => {
+      const canvas = document.querySelector('#thumbs canvas') as HTMLCanvasElement | null;
+      if (!canvas) return null;
+      const { data } = canvas.getContext('2d')!.getImageData(0, 0, canvas.width, canvas.height);
+      const painted = (x0: number, y0: number, x1: number, y1: number) => {
+        let n = 0;
+        for (let y = y0; y < y1; y++) {
+          for (let x = x0; x < x1; x++) {
+            const i = (y * canvas.width + x) * 4;
+            if (Math.max(data[i], data[i + 1], data[i + 2]) > 40) n++;
+          }
+        }
+        return n;
+      };
+      const w = canvas.width, h = canvas.height;
+      return {
+        topLeft: painted(0, 0, w >> 1, h >> 1),
+        topRight: painted(w >> 1, 0, w, h >> 1),
+        bottomLeft: painted(0, h >> 1, w >> 1, h),
+        bottomRight: painted(w >> 1, h >> 1, w, h),
+      };
+    });
+
+  // Wait for the strip's first cell to be drawn; the bubble alone is enough to pass this,
+  // so the quadrants below are what prove the screen is there.
+  await expect.poll(async () => {
+    const q = await quadrants();
+    return q ? q.topLeft + q.topRight + q.bottomLeft + q.bottomRight : 0;
+  }).toBeGreaterThan(0);
+
+  const q = await quadrants();
+  expect(q?.topLeft ?? 0).toBeGreaterThan(0);
+  expect(q?.topRight ?? 0).toBeGreaterThan(0);
+  expect(q?.bottomLeft ?? 0).toBeGreaterThan(0);
+  expect(q?.bottomRight ?? 0).toBeGreaterThan(0);
+});

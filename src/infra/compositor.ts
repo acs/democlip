@@ -7,6 +7,7 @@
 // view module.
 
 import type { CompositorInput, CompositorPort, CompositorSession } from '../application/ports/CompositorPort.js';
+import type { CropRegion } from '../domain/capture/CropRegion.js';
 
 const SYSTEM_GAIN = 0.8;
 const MIC_GAIN = 1.0;
@@ -80,20 +81,41 @@ export class CompositorAdapter implements CompositorPort {
     const height = Math.max(2, Math.round(region.h * sourceHeight));
     canvas.width = width;
     canvas.height = height;
+    // The picture the app is already showing is a real frame, so the capture starts on
+    // it rather than on the blank canvas its own element would leave while it waits for
+    // its first frame. The element's own frame takes over as soon as it arrives.
+    const first = input.pictureElement;
+    if (first && first.readyState >= 2 && first.videoWidth > 0 && first.videoHeight > 0) {
+      this.paint(context, first, first.videoWidth, first.videoHeight, canvas, region, withBubble, input);
+    }
     const draw = () => {
       if (!this.context || !this.video) return;
       const vw = this.video.videoWidth || canvas.width;
       const vh = this.video.videoHeight || canvas.height;
-      const sx = region.x * vw;
-      const sy = region.y * vh;
-      const sw = region.w * vw;
-      const sh = region.h * vh;
-      this.context.drawImage(this.video, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
-      if (withBubble) input.drawBubble?.(this.context, canvas.width, canvas.height);
+      this.paint(this.context, this.video, vw, vh, canvas, region, withBubble, input);
       this.frame = requestAnimationFrame(draw);
     };
     draw();
     return canvas.captureStream().getVideoTracks();
+  }
+
+  /** Draw one frame of the picture, cropped to the region, with the bubble over it. */
+  private paint(
+    context: CanvasRenderingContext2D,
+    image: CanvasImageSource,
+    imageWidth: number,
+    imageHeight: number,
+    canvas: HTMLCanvasElement,
+    region: CropRegion,
+    withBubble: boolean,
+    input: CompositorInput,
+  ): void {
+    const sx = region.x * imageWidth;
+    const sy = region.y * imageHeight;
+    const sw = region.w * imageWidth;
+    const sh = region.h * imageHeight;
+    context.drawImage(image, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
+    if (withBubble) input.drawBubble?.(context, canvas.width, canvas.height);
   }
 
   private audioTracks(input: CompositorInput): MediaStreamTrack[] {
