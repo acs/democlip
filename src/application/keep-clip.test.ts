@@ -5,7 +5,7 @@ import { Clip } from '../domain/clip/Clip.js';
 import { Take } from '../domain/clip/Take.js';
 import { Span } from '../domain/clip/Span.js';
 import type { TakeRepository } from '../domain/clip/TakeRepository.js';
-import type { KeptClipPort, StoredClip } from './ports/KeptClipPort.js';
+import type { KeptClipPort } from './ports/KeptClipPort.js';
 import type { ClockPort } from './ports/ClockPort.js';
 
 class FakeTakes implements TakeRepository {
@@ -28,15 +28,15 @@ class FakeTakes implements TakeRepository {
   clear() { this.takes = []; }
 }
 
-interface Call { kind: 'take' | 'meta' | 'clip' | 'clear'; index?: number; audio?: boolean }
+interface Call { kind: 'take' | 'meta' | 'clip' | 'clear'; index?: number }
 
 const store = (): KeptClipPort & { calls: Call[] } => {
   const calls: Call[] = [];
   return {
     calls,
-    saveTake: async (_clip, index, audio) => { calls.push({ kind: 'take', index, audio }); },
-    saveMeta: async (_clip, audio) => { calls.push({ kind: 'meta', audio }); },
-    saveClip: async (_clip, audio) => { calls.push({ kind: 'clip', audio }); },
+    saveTake: async (_clip, index) => { calls.push({ kind: 'take', index }); },
+    saveMeta: async () => { calls.push({ kind: 'meta' }); },
+    saveClip: async () => { calls.push({ kind: 'clip' }); },
     load: async () => null,
     clear: async () => { calls.push({ kind: 'clear' }); },
   };
@@ -60,14 +60,13 @@ const clipWith = (...durations: number[]): Clip => {
   return clip;
 };
 
-const build = (clip: Clip, audio = false) => {
+const build = (clip: Clip) => {
   const kept = store();
   const time = clock();
   const keep = new KeepClip({
     clip,
     store: kept,
     clock: time,
-    audio: () => audio,
   });
   keep.watch();
   return { keep, kept, time };
@@ -76,12 +75,12 @@ const build = (clip: Clip, audio = false) => {
 describe('KeepClip', () => {
   it('saves a take as it arrives, at once', async () => {
     const clip = clipWith();
-    const { kept } = build(clip, true);
+    const { kept } = build(clip);
 
     clip.addTake(new Blob(['x']), 2);
     await Promise.resolve();
 
-    expect(kept.calls).toEqual([{ kind: 'take', index: 0, audio: true }]);
+    expect(kept.calls).toEqual([{ kind: 'take', index: 0 }]);
   });
 
   it('puts the metadata write off a moment, so a drag is one write', async () => {
@@ -94,17 +93,17 @@ describe('KeepClip', () => {
     time.flush();
     await Promise.resolve();
 
-    expect(kept.calls).toEqual([{ kind: 'meta', audio: false }]);
+    expect(kept.calls).toEqual([{ kind: 'meta' }]);
   });
 
   it('saves the whole clip before a sign-in, and waits for it', async () => {
     const clip = clipWith(2);
-    const { keep, kept } = build(clip, true);
+    const { keep, kept } = build(clip);
 
     const outcome = await keep.persist();
 
     expect(outcome).toEqual({ kind: 'saved' });
-    expect(kept.calls).toEqual([{ kind: 'clip', audio: true }]);
+    expect(kept.calls).toEqual([{ kind: 'clip' }]);
   });
 
   it('skips the sign-in write when there is nothing to keep', async () => {
@@ -132,10 +131,10 @@ describe('KeepClip', () => {
       saveTake: async () => {},
       saveMeta: async () => {},
       saveClip: async () => { throw new Error('the store is full'); },
-      load: async () => null as StoredClip | null,
+      load: async () => null,
       clear: async () => {},
     };
-    const keep = new KeepClip({ clip, store: kept, clock: clock(), audio: () => false });
+    const keep = new KeepClip({ clip, store: kept, clock: clock() });
 
     const outcome = await keep.persist();
 

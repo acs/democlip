@@ -44,7 +44,6 @@ const record = new RecordTake({
   },
   pictureElement,
   drawBubble: context => drawWebcamOverlay(context, 0, 0, context.canvas.width, context.canvas.height),
-  setAudio: audio => { session.audio = audio; },
 });
 
 // A take in flight owns the preview and the phase, so nothing else may move them.

@@ -517,6 +517,7 @@ test('the microphone alone records a sound-only take', async ({ page }) => {
   await page.locator('#tl-marks .tl-act.ok').click();
   await expect.poll(kept).toBeLessThan(beforeCut);
   const cutLength = await kept();
+  expect(cutLength).toBeGreaterThan(0.2);
 
   // The clip is kept like any other: a reload brings it back in the sound-only review,
   // with the cut.
@@ -562,4 +563,40 @@ test('the microphone alone records a sound-only take', async ({ page }) => {
   await expect.poll(kept, { timeout: 15_000 }).toBeGreaterThan(cutLength);
   await expect(page.locator('#timeline')).toHaveClass(/sound-only/);
   await expect(page.locator('#waveform')).toBeVisible();
+});
+
+test('a silent picture take after a sound take does not lose the sound', async ({ page }) => {
+  // The clip's sound is a fact of its takes, not of the last take: a sound-only take
+  // followed by a webcam take with the mic off is still a clip with sound.
+  const app = boot(page);
+  await app.goto();
+  await page.locator('#mic-btn').click();
+  await expect(page.locator('#mic-btn')).toHaveAttribute('aria-pressed', 'true');
+  await page.locator('#rec-btn').click();
+  await expect(page.locator('#s-text')).toHaveText('Recording — sound only');
+  await expect(page.locator('#t-live-time')).not.toHaveText('00:00');
+  await page.locator('#rec-btn').click();
+  await expect.poll(() => app.clipLength(), { timeout: 10_000 }).toBeGreaterThan(0.2);
+  const firstLength = await app.clipLength();
+
+  // The second take has a picture and no sound at all.
+  await page.locator('#mic-btn').click();
+  await expect(page.locator('#mic-btn')).toHaveAttribute('aria-pressed', 'false');
+  await page.locator('#webcam-btn').click();
+  await expect(page.locator('#webcam-btn')).toHaveAttribute('aria-pressed', 'true');
+  await page.locator('#rec-btn').click();
+  await expect(page.locator('#s-text')).toHaveText('Recording');
+  await expect(page.locator('#t-live-time')).not.toHaveText('00:00');
+  await page.locator('#rec-btn').click();
+  await expect.poll(() => app.clipLength(), { timeout: 10_000 }).toBeGreaterThan(firstLength + 0.2);
+
+  // The review has a picture and a waveform: the sound take is still heard.
+  await expect(page.locator('#thumbs canvas').first()).toBeVisible();
+  await expect(page.locator('#waveform')).toBeVisible();
+
+  // The file is a video, and it carries the sound-only take's audio.
+  const bytes = await exportFile(page, '#exp-webm');
+  const file = await probeFile(page, bytes, 'video/webm');
+  expect(file.width).toBeGreaterThan(0);
+  expect(await hasSound(page, bytes)).toBe(true);
 });

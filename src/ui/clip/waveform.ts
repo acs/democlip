@@ -41,7 +41,7 @@ export class Waveform {
   }
 
   async build(takes: readonly Take[]): Promise<void> {
-    if (!takes.length || !session.audio) { this.clear(); return; }
+    if (!takes.length || !takes.some(take => take.hasAudio)) { this.clear(); return; }
     const Ctx = window.AudioContext || window.webkitAudioContext;
     if (!Ctx) { this.clear(); return; }
 

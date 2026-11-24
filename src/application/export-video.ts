@@ -23,7 +23,6 @@ export interface ExportDeps {
   readonly renderer: FrameRendererPort;
   readonly download: DownloadPort;
   readonly clock: ClockPort;
-  readonly audio: () => boolean;
   readonly fadeSeconds: number;
   /** The picture the preview shows; the export takes its size from it. */
   readonly picture: () => { readonly width: number; readonly height: number };
@@ -51,7 +50,6 @@ export class ExportVideo {
       return { kind: 'refused', reason: 'This browser cannot write video — it needs Chrome 94+ or Firefox 130+.' };
     }
     const plan = planExport(this.deps.clip, {
-      audio: this.deps.audio(),
       fadeSeconds: this.deps.fadeSeconds,
       annotations: options.annotations ?? 'drawn',
       intro: options.intro ?? null,

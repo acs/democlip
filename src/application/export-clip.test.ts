@@ -13,8 +13,8 @@ import type { TakeRepository } from '../domain/clip/TakeRepository.js';
 class FakeTakes implements TakeRepository {
   private takes: Take[] = [];
 
-  add(blob: Blob, duration: number, picture?: { width: number; height: number } | null): Take {
-    const take = Take.of(this.takes.length + 1, blob, `blob:${this.takes.length + 1}`, duration, picture ?? null);
+  add(blob: Blob, duration: number, picture?: { width: number; height: number } | null, hasAudio = false): Take {
+    const take = Take.of(this.takes.length + 1, blob, `blob:${this.takes.length + 1}`, duration, picture ?? null, hasAudio);
     this.takes.push(take);
     return take;
   }
@@ -39,7 +39,16 @@ const clipOf = (...durations: number[]): Clip => {
   return clip;
 };
 
-const settings = { audio: false, fadeSeconds: 0.08, annotations: 'drawn' as const };
+/** A picture clip whose takes carry sound. */
+const clipWithSound = (...durations: number[]): Clip => {
+  const clip = Clip.empty(new FakeTakes());
+  for (const seconds of durations) {
+    clip.addTake(new Blob(['x']), seconds, { width: 1280, height: 720 }, true);
+  }
+  return clip;
+};
+
+const settings = { fadeSeconds: 0.08, annotations: 'drawn' as const };
 
 describe('planExport', () => {
   it('plans the whole clip', () => {
@@ -62,15 +71,16 @@ describe('planExport', () => {
     expect(planExport(clipOf(), settings)).toBeNull();     // no takes at all
   });
 
-  it('carries whether the clip has sound', () => {
-    expect(planExport(clipOf(4), { audio: true, fadeSeconds: 0.08, annotations: 'drawn' })?.audio).toBe(true);
+  it('carries whether the kept clip has sound', () => {
+    expect(planExport(clipWithSound(4), settings)?.audio).toBe(true);
+    expect(planExport(clipOf(4), settings)?.audio).toBe(false);
   });
 
   it('plans a sound-only clip as the sound alone', () => {
     const clip = Clip.empty(new FakeTakes());
-    clip.addTake(new Blob(['x']), 4);
+    clip.addTake(new Blob(['x']), 4, null, true);
 
-    expect(planExport(clip, { ...settings, audio: true })?.soundOnly).toBe(true);
+    expect(planExport(clip, settings)?.soundOnly).toBe(true);
     expect(planExport(clipOf(4), settings)?.soundOnly).toBe(false);
   });
 

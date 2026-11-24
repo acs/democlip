@@ -49,7 +49,7 @@ src/
   domain/       pure rules — no DOM, no browser. Span, SpanSet, TimelineMap, Take,
                 Clip (the aggregate), ExportPlan, the annotation family (the base,
                 its kinds, and the register),
-                CropRegion and SourceSet, Session (the clip and the audio flag),
+                CropRegion and SourceSet, Session (the clip and the capture latch),
                 and the YouTube family (Visibility, VideoDetails, UploadableVideo)
   application/ the use cases that run in node, and the ports they own:
                 record a take, export a clip, publish (to Bluesky or YouTube), keep

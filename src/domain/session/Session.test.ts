@@ -27,37 +27,35 @@ class FakeTakes implements TakeRepository {
   clear() { this.takes = []; }
 }
 
-const sessionWith = (durations: number[], audio = false): Session => {
+const sessionWith = (durations: number[]): Session => {
   const clip = Clip.empty(new FakeTakes());
   for (const seconds of durations) clip.addTake(new Blob(['x']), seconds);
-  return new Session(clip, audio);
+  return new Session(clip);
 };
 
 describe('Session', () => {
-  it('holds the clip and the audio flag', () => {
-    const session = sessionWith([2], true);
+  it('holds the clip', () => {
+    const session = sessionWith([2]);
 
     expect(session.clip.takes.count()).toBe(1);
-    expect(session.audio).toBe(true);
   });
 
-  it('ends by clearing the clip and the audio, as one event', () => {
-    const session = sessionWith([2], true);
+  it('ends by clearing the clip, as one event', () => {
+    const session = sessionWith([2]);
     const seen: ClipEvent[] = [];
     session.clip.onChange(event => seen.push(event));
 
     session.end();
 
     expect(session.clip.takes.isEmpty()).toBe(true);
-    expect(session.audio).toBe(false);
     expect(seen.map(event => event.type)).toEqual(['cleared']);
   });
 
   it('holds no view state: ending it needs no view', () => {
     const session = sessionWith([2]);
-    // Nothing but the session's own state is on it: the clip, the audio flag, and
-    // whether it has begun to capture. None of them is a view's.
-    expect(Object.keys(session).sort()).toEqual(['audio', 'captured', 'clip']);
+    // Nothing but the session's own state is on it: the clip and whether it has begun
+    // to capture. Neither is a view's.
+    expect(Object.keys(session).sort()).toEqual(['captured', 'clip']);
   });
 
   // The capture latch: what a **profile** is fixed by. Raised by a take that really

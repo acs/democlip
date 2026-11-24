@@ -24,9 +24,6 @@ const importTake = new ImportTake({
   clip: session.clip,
   files: takeFile,
   pictures: images,
-  // A take with sound makes the clip one with sound — and a silent file never makes it
-  // silent, since an earlier take may have carried the sound.
-  setAudio: has => { if (has) session.audio = true; },
 });
 
 // A take in flight owns the clip, and an export is reading it: neither may be interrupted

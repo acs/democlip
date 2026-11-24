@@ -42,6 +42,18 @@ For a sound-only take:
 Silence is not a refusal. A quiet stretch of a working microphone is a take; only a
 stream with no audio track is refused.
 
+## The clip's sound is a fact of its takes
+
+Every take carries **`hasAudio`**: whether it has an audio track. A picture take may be
+silent; a sound-only take always has sound. The clip answers **`hasSound()`** (any take)
+and **`keepsSound()`** (any kept stretch), and the export plan derives **`audio`** from
+the kept takes. There is no `Session.audio` and no `ExportSettings.audio`: the waveform
+asks `hasSound()`, the export and the kept copy ask the clip, and a caller cannot give a
+different answer from the takes themselves.
+
+A sound take followed by a silent picture take therefore keeps its waveform and its sound
+in the file; the regression check records that order with the fake microphone and camera.
+
 ## What a person sees
 
 | surface | sound-only behaviour |
@@ -66,11 +78,12 @@ stream with no audio track is refused.
 | annotations | not drawn; there is no picture to draw them on |
 
 A **mixed** clip writes a video, as today, with the picture black over each kept stretch
-of a sound-only take. The picture of a picture take is unchanged.
+of a sound-only take, and with the audio of every kept take that has it — a silent picture
+stretch contributes silence, not a missing sound.
 
 The **file is sound-only** when `Clip.keepsPicture()` is false for the kept stretches,
 even if the recording holds a picture take that was cut away
-(`ExportPlan.soundOnly === true`).
+(`ExportPlan.soundOnly === true`). It is **silent** when `Clip.keepsSound()` is false.
 
 ## Import
 

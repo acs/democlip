@@ -37,9 +37,8 @@ export interface ExportStep {
 /** Where an export puts a clip's annotations: drawn into the picture, or carried beside it. */
 export type AnnotationExport = 'drawn' | 'carried';
 
-/** What an export needs that is not the clip: whether there is sound, how a join fades. */
+/** What an export needs that is not the clip: how a join fades and where annotations go. */
 export interface ExportSettings {
-  audio: boolean;
   fadeSeconds: number;
   /** Drawn in for a file to watch, carried in a **sidecar** for a file to work on. */
   annotations: AnnotationExport;
@@ -89,10 +88,11 @@ export class ExportPlan {
     annotations: AnnotationSet = AnnotationSet.EMPTY,
     intro: IntroCard | null = null,
   ): ExportPlan {
-    // The kept takes' own pictures decide whether the file has one: a sound-only take is a
-    // take whose blob the browser measured no picture for. A sound-only file has no picture
-    // for a **title card** to be drawn on, so the card is not part of the plan at all.
+    // The kept takes' own facts decide what the file holds: a picture from any take that
+    // has one, and sound from any take that carries an audio track. A sound-only file has
+    // no picture for a **title card** to be drawn on, so the card is not part of the plan.
     const soundOnly = !segments.some(seg => !!takes[seg.takeIndex]?.picture);
+    const audio = segments.some(seg => !!takes[seg.takeIndex]?.hasAudio);
     const card = soundOnly ? null : intro;
     const offset = card?.seconds ?? 0;
     const starts: number[] = [];
@@ -124,7 +124,7 @@ export class ExportPlan {
     });
 
     return new ExportPlan(
-      pieces, steps, takes, to, offset + total, settings.audio, settings.fadeSeconds,
+      pieces, steps, takes, to, offset + total, audio, settings.fadeSeconds,
       annotations, map, starts, card, offset, soundOnly,
     );
   }

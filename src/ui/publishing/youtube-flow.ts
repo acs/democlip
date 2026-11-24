@@ -103,7 +103,7 @@ export async function uploadClip(settings: YouTubeSettings, handlers: YouTubeHan
     const intro = introFor(session.clip);
     await frameRenderer.prepare(intro);
     const video = await publishToYouTube(session.clip, {
-      export: { audio: session.audio, fadeSeconds: FADE_S, annotations: 'drawn', intro },
+      export: { fadeSeconds: FADE_S, annotations: 'drawn', intro },
       details,
     }, {
       service,

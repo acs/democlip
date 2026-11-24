@@ -13,16 +13,19 @@ The source rule moves from "a take needs a picture" to "a take needs a source", 
 review and export ask whether the clip — and, for the file, the **kept** stretches — carry
 a picture.
 
-The review of a sound-only clip shows its **waveform** where the picture strip would be,
-with an audio size estimate and a sound-only preview. Its export is a **sound file** in
-the app's two containers — WebM/Opus or MP4/AAC — with the kept stretches, cuts and fades,
-and **no video track**. A clip with a picture still exports a video; a sound-only stretch
-inside it is a plain **black picture** with its sound, so every stretch keeps its place on
-the timeline. The plan decides the file from the kept stretches, so a clip whose picture
-takes are all cut away exports as sound, and the video-service destinations are not
-offered for it. A sound file in WebM or MP4 is importable as a take; a sound-only clip is
-kept and restored like any other; the automation surface and the MCP server use the same
-source rule and the same operations.
+Every take carries its own **picture** and **sound**, and the clip answers both from its
+takes — `hasPicture()`/`keepsPicture()` and `hasSound()`/`keepsSound()` — so a picture take
+can be silent and a sound take can be followed by one. The review of a sound-only clip
+shows its **waveform** where the picture strip would be, with an audio size estimate and a
+sound-only preview. Its export is a **sound file** in the app's two containers —
+WebM/Opus or MP4/AAC — with the kept stretches, cuts and fades, and **no video track**. A
+clip with a picture still exports a video; a sound-only stretch inside it is a plain
+**black picture** with its sound, so every stretch keeps its place on the timeline. The
+plan decides both the picture and the sound from the kept stretches, so a clip whose
+picture takes are all cut away exports as sound, and the video-service destinations are
+not offered for it. A sound file in WebM or MP4 is importable as a take; a sound-only clip
+is kept and restored like any other; the automation surface and the MCP server use the
+same source rule and the same operations.
 
 Out of scope, per the clarification and assumptions: any audio-only mode for a shared
 screen, any container other than WebM and MP4, a dedicated "extract audio" menu item, and
@@ -134,19 +137,23 @@ src/
 │   │   ├── SourceSet.ts             # canRecord, soundOnly; hasPicture stays
 │   │   └── SourceSet.test.ts        # the source rule and the microphone-alone state
 │   ├── clip/
-│   │   ├── Clip.ts                  # hasPicture() (any take), keepsPicture() (kept stretches)
-│   │   ├── Clip.test.ts             # both questions, and a cut-away picture
-│   │   ├── ExportPlan.ts            # soundOnly; no card and no offset for a sound-only plan
+│   │   ├── Take.ts                  # hasAudio: whether the take carries an audio track
+│   │   ├── Clip.ts                  # hasPicture()/keepsPicture(), hasSound()/keepsSound()
+│   │   ├── Clip.test.ts             # the four questions, and a cut-away picture or sound
+│   │   ├── ExportPlan.ts            # soundOnly and audio, both from the kept takes
 │   │   ├── ExportPlan.test.ts       # both kinds of plan; the card dropped; mixed keeps it
 │   │   ├── TakeFile.ts              # media kind; audio/webm and audio/mp4 accepted
 │   │   └── TakeFile.test.ts         # audio accepted, mp3/wav refused
-│   └── (Take.ts, ClipSnapshot: no change; the picture is already optional)
+│   ├── session/Session.ts           # the clip and the capture latch; no audio flag
+│   └── (ClipSnapshot: the takes carry hasAudio)
 ├── application/
 │   ├── record-take.ts               # canRecord, no picture deps, a stream with no tracks refuses
 │   ├── record-take.test.ts          # mic-only starts; no source refuses; empty stream refuses
-│   ├── export-clip.ts               # unchanged; the plan derives soundOnly
-│   ├── export-clip.test.ts          # a sound-only plan and a picture plan
+│   ├── export-clip.ts               # unchanged; the plan derives soundOnly and audio
+│   ├── export-clip.test.ts          # a sound-only plan, a picture plan, and sound
 │   ├── export-video.test.ts         # the fake takes carry a picture, as real ones do
+│   ├── keep-clip.ts                 # no audio argument; the store asks the clip
+│   ├── restore-clip.ts              # returns the snapshot, not an audio flag
 │   ├── publish-to-bluesky.ts        # refuse plan.soundOnly before encoding
 │   ├── publish-to-bluesky.test.ts   # the refusal and zero encodes/uploads
 │   ├── publish-to-youtube.ts        # the same refusal
@@ -161,6 +168,7 @@ src/
 │   ├── compositor.ts                # comment/guard: no picture source => the sound alone
 │   ├── take-probe.ts                # unchanged: an audio blob gives a duration and 0×0
 │   ├── take-file.ts                 # a file with sound and no video track is a take
+│   ├── clip-store.ts                # stores each take's hasAudio; measures a missing one
 │   └── offline-encoder.ts           # audio-only output; black frames for a sound-only step;
 │                                    #   firstStill walks to a picture for the card
 └── ui/
@@ -172,6 +180,7 @@ src/
     │   ├── clip.ts                  # seekAndDraw/resizeReview for a clip with no picture
     │   ├── review-flow.ts           # sound-only timeline; skip the strip; waveform
     │   ├── playback.ts              # drawSoundOnly for a sound-only clip
+    │   ├── waveform.ts              # builds when the clip's takes have sound
     │   ├── timeline-ui.ts           # rebuild/estimate by the clip's picture
     │   ├── size-estimate.ts         # estimateSoundText (128 kbps)
     │   ├── size-estimate.test.ts    # the audio estimate

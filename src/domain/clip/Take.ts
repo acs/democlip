@@ -9,7 +9,9 @@
 // zero-length take would make every position after it wrong, so it cannot be
 // constructed. Its picture may be known when it arrives, and may not: it is what the
 // clip's own size is derived from, so a take that carries one is a take the clip can
-// size itself by.
+// size itself by. Whether it carries sound is known at arrival too — a take with no
+// audio track is a picture take that is silent, or a sound-only take with no sound,
+// which is refused — and it is what the clip's own sound is derived from.
 
 import type { Picture } from './ClipSize.js';
 
@@ -25,14 +27,26 @@ export class Take {
      * carries it; null is a take whose picture has not been measured.
      */
     readonly picture: Picture | null,
+    /**
+     * Does this take carry an audio track? It is what the clip's own sound is derived
+     * from: a picture take can be silent, and a sound-only take always carries sound.
+     */
+    readonly hasAudio: boolean,
   ) {}
 
-  static of(id: number, blob: Blob, url: string, duration: number, picture: Picture | null = null): Take {
+  static of(
+    id: number,
+    blob: Blob,
+    url: string,
+    duration: number,
+    picture: Picture | null = null,
+    hasAudio = false,
+  ): Take {
     if (!(duration > 0)) throw new Error(`a take needs a length, got ${duration}`);
     if (picture && !(picture.width > 0 && picture.height > 0)) {
       throw new Error(`a take's picture needs a size, got ${picture.width}x${picture.height}`);
     }
-    return new Take(id, blob, url, duration, picture ?? null);
+    return new Take(id, blob, url, duration, picture ?? null, hasAudio);
   }
 
   /** Two takes are the same take when they are the same recording, not the same bytes. */

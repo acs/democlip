@@ -18,8 +18,9 @@ beside it.
 
 | word | what it is | in the code |
 |---|---|---|
-| **session** | one sitting of the app: the clip and the audio flag. Over at **New**, when the clip is exported, or when the share ends | `Session` (`src/domain/session/Session.ts`, `session.end()`) |
-| **take** | one arrival of a recording: a press of Record (one MediaRecorder WebM), or an **import**ed file. It has its own length, and the takes are played in order | `Take` — id, blob, url, duration |
+| **session** | one sitting of the app: the clip, and whether it has begun to capture. Over at **New**, when the clip is exported, or when the share ends | `Session` (`src/domain/session/Session.ts`, `session.end()`) |
+| **take** | one arrival of a recording: a press of Record (one MediaRecorder WebM), or an **import**ed file. It has its own length, its picture and its sound, and the takes are played in order | `Take` — id, blob, url, duration, picture, hasAudio |
+| **sound** | what a take carries beside its picture: the recorded audio track. A clip **has sound** when any of its takes does, and **keeps sound** when any kept stretch does; a picture take may be silent, and a **sound-only** take always has it | `Take.hasAudio`, `Clip.hasSound()`, `Clip.keepsSound()` |
 | **clip** | all the takes, in order, plus what was cut out. What everything else asks what to show and what to export | `Clip`, the aggregate |
 | **take repository** | where a clip's takes come from, and the only owner of their object URLs | `TakeRepository` (the port), `InMemoryTakeRepository` |
 | **record source** | what a take is made of: the shared **screen**, the **webcam** and the **microphone**. Three independent toggles, **all off at start** — nothing is captured until one is pressed. A take needs a source: a picture — the screen, or the webcam when the screen is off — or the microphone alone, which makes a **sound-only** take. With the screen off nothing reaches for a share | the source buttons (`#screen-btn`, `#webcam-btn`, `#mic-btn`) |
@@ -353,7 +354,7 @@ browser capability sits behind a port; the adapter that implements it lives in
 | **view flow** | the composition of a use case with the view and the browser: the button, the status line, the phase and the sequencing. It sequences and reports; it holds no rule | `src/ui/*/*-flow.ts` |
 | **phase** | the session's state — idle, starting, live, recording, review, encoding. The one piece of genuinely shared state: one owner and one change event | `src/state.ts` |
 | **source set** | which of the three record sources are on: screen, webcam, microphone. A take needs a source: a picture (screen or webcam), or the microphone alone for a **sound-only** take | `SourceSet` (`src/domain/capture/SourceSet.ts`) |
-| **session** | one sitting of the app: the clip and the audio flag. It ends on one event — New, an export, a publish, or a share that went away | `Session` (`src/domain/session/Session.ts`) |
+| **session** | one sitting of the app: the clip, and whether it has begun to capture. It ends on one event — New, an export, a publish, or a share that went away | `Session` (`src/domain/session/Session.ts`) |
 
 `ui/` is grouped by the concept it serves: `shell/` the frame, `recording/` a
 take, `clip/` the clip and its review, `cutting/` a stretch and its cut,

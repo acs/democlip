@@ -16,7 +16,7 @@ democlip/
 │       └── branding/     # Logo (with background, transparent, dark), icon-only mark, app icons
 ├── src/                  # TypeScript source
 │   ├── main.ts           # Composition root — the only module importing all four layers
-│   ├── session.ts        # The single Session: the clip and the audio, and the one place that ends it
+│   ├── session.ts        # The single Session: the clip and the capture latch, and the one place that ends it
 │   ├── state.ts          # The phase: its one owner and its change event
 │   ├── prefs.ts          # User preferences (localStorage)
 │   ├── util.ts           # Tiny shared helpers (clampToClip)
@@ -46,8 +46,8 @@ democlip/
 │   │   ├── AnnotationColour.ts # The colours an annotation may be drawn in, and how one is read back
 │   │   ├── AnnotationSet.ts # The clip's annotations: identified, and free to overlap
 │   │   └── kinds.ts        # The register: how a written-down annotation is read back
-│   ├── domain/session/   # The sitting: the clip and the audio flag
-│   │   └── Session.ts      # The sitting's one rule: ending it clears the clip and the audio
+│   ├── domain/session/   # The sitting: the clip and the capture latch
+│   │   └── Session.ts      # The sitting's one rule: ending it clears the clip
 │   ├── domain/bluesky/   # Pure logic for publishing: what a Bluesky post may hold
 │   │   ├── AspectRatio.ts  # width:height, whole numbers, reducible to smallest terms
 │   │   ├── PublishableVideo.ts # the MP4 Bluesky takes, up to 300 MB

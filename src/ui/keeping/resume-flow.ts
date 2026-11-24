@@ -19,7 +19,6 @@ export async function resumeClip(): Promise<boolean> {
   // the app serves itself, so the watermark that wears it is put back and decoded here.
   await images.load();
   await syncWatermark('picture');
-  session.audio = outcome.audio;
   setPhase('review');
   await openReview(0, 0);
   toast('Your recording was restored');

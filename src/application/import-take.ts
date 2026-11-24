@@ -46,8 +46,6 @@ export interface ImportDeps {
   readonly files: TakeFilePort;
   /** Where the pictures a sidecar carries are put back. Without it they stay in the file. */
   readonly pictures?: ImageStorePort;
-  /** Told the file's sound *before* the take is added, so the kept copy carries it. */
-  readonly setAudio?: (hasAudio: boolean) => void;
 }
 
 export class ImportTake {
@@ -70,8 +68,7 @@ export class ImportTake {
     // another clip.
     const carried = sidecar?.forLength(info.duration) ?? null;
 
-    this.deps.setAudio?.(info.hasAudio);
-    const take = this.deps.clip.addTake(file.blob, info.duration, info.picture);
+    const take = this.deps.clip.addTake(file.blob, info.duration, info.picture, info.hasAudio);
 
     const annotations = !sidecar ? undefined
       : carried ? await this.carryThem(sidecar, carried, info.duration)

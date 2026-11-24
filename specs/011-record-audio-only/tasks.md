@@ -33,14 +33,14 @@ constraint when it adds to or narrows the canonical rule.
 | Field | Cited by |
 |---|---|
 | `SourceSet.canRecord`, `SourceSet.soundOnly`, `SourceSet.hasPicture` (data-model.md `SourceSet.canRecord`, `SourceSet.soundOnly`, `SourceSet.hasPicture`) | T002 |
-| `Take.picture`, `Take.duration`, `Take.blob` (data-model.md `Take.picture`, `Take.duration`, `Take.blob`) | T004, T011, T012, T032 |
-| `Clip.size`, `Clip.hasPicture`, `Clip.keepsPicture` (data-model.md `Clip.size`, `Clip.hasPicture`, `Clip.keepsPicture`) | T003 |
-| `ExportPlan.soundOnly`, `ExportPlan.intro`, `ExportPlan.introSeconds` (data-model.md `ExportPlan.soundOnly`, `ExportPlan.intro`, `ExportPlan.introSeconds`) | T005, T033, T040 |
+| `Take.picture`, `Take.hasAudio`, `Take.duration`, `Take.blob` (data-model.md `Take.picture`, `Take.hasAudio`, `Take.duration`, `Take.blob`) | T004, T011, T012, T032, T050 |
+| `Clip.size`, `Clip.hasPicture`, `Clip.keepsPicture`, `Clip.hasSound`, `Clip.keepsSound` (data-model.md `Clip.size`, `Clip.hasPicture`, `Clip.keepsPicture`, `Clip.hasSound`, `Clip.keepsSound`) | T003, T050 |
+| `ExportPlan.soundOnly`, `ExportPlan.audio`, `ExportPlan.intro`, `ExportPlan.introSeconds` (data-model.md `ExportPlan.soundOnly`, `ExportPlan.audio`, `ExportPlan.intro`, `ExportPlan.introSeconds`) | T005, T033, T050 |
 | `TakeFile.media`, `TakeFile.container` (data-model.md `TakeFile.media`, `TakeFile.container`) | T030 |
 | `TakeFileInfo.duration`, `TakeFileInfo.hasAudio`, `TakeFileInfo.picture` (data-model.md `TakeFileInfo.duration`, `TakeFileInfo.hasAudio`, `TakeFileInfo.picture`) | T031, T032 |
 | `ClipProperties.addToExport` (data-model.md `ClipProperties` and the `Add to export` paragraph) | T035 |
 | `ClipSnapshot.takes` (data-model.md `ClipSnapshot`) | T029 |
-| `Session.audio` (data-model.md `Session`) | T011 |
+| `Session` — the audio flag removed (data-model.md `Session`) | T050 |
 | The sound-only file's `tracks`, `type` and `name` (data-model.md `The sound-only file`) | T033, T029 |
 
 ---
@@ -92,7 +92,7 @@ and ▶ plays the recorded sound.
 
 ### Implementation for User Story 1
 
-- [X] T011 [US1] Record a take with no picture in `src/application/record-take.ts`: refuse only when `!sources.canRecord`, pass no picture, picture element or bubble when there is no picture source, refuse a composed stream with no tracks, and keep the audio flag through `setAudio` (data-model.md `SourceSet.canRecord`, `Take.picture`, `Take.duration`, `Session.audio`).
+- [X] T011 [US1] Record a take with no picture in `src/application/record-take.ts`: refuse only when `!sources.canRecord`, pass no picture, picture element or bubble when there is no picture source, refuse a composed stream with no tracks, and keep whether the take has sound on the take itself (data-model.md `SourceSet.canRecord`, `Take.picture`, `Take.hasAudio`, `Take.duration`).
 - [X] T012 [P] [US1] Choose the recording type from the stream in `src/infra/codecs.ts` and `src/infra/take-recorder.ts`: `audio/webm;codecs=opus` (then `audio/webm`) when there is no video track, and the blob keeps that type (data-model.md `Take.blob`, the sound-only file's `type`).
 - [X] T013 [P] [US1] Confirm and document the audio-only stream in `src/infra/compositor.ts`: no picture source yields the mixed microphone sound alone, with no video track.
 - [X] T014 [P] [US1] Draw the sound-only preview in `src/ui/recording/preview.ts`: `drawSoundOnly()` paints the app's panel on the canvas; `drawFrame`/`drawClipFrame` fill the background when a take has no picture instead of throwing.
@@ -293,6 +293,15 @@ Task: "Disable the publish entries in src/ui/exporting/export-menu.ts"
 
 ---
 
+## Review Follow-up: the clip's sound identity
+
+Found in review: the picture became two derived facts, but sound stayed a `Session.audio`
+flag that held the last take, so a sound take followed by a silent picture take lost its
+sound in the export and its waveform.
+
+- [X] T050 [US3] Make sound a fact of the takes: add `Take.hasAudio`, carry it through `TakeRepository`/`Clip.addTake`/`ClipSnapshot`, add `Clip.hasSound()`/`keepsSound()`, derive `ExportPlan.audio` from the kept takes, remove `Session.audio` and `ExportSettings.audio`, and make the waveform, keep/restore and publish flows ask the clip (data-model.md `Take.hasAudio`, `Clip.hasSound`, `Clip.keepsSound`, `ExportPlan.audio`).
+- [X] T051 [US3] Add the regression check to `e2e/checks/capture.spec.ts`: a microphone take followed by a webcam take with the mic off keeps the waveform and an audio track in the exported video.
+
 ## Notes
 
 - Tests are required by the constitution, not optional here.
@@ -300,6 +309,8 @@ Task: "Disable the publish entries in src/ui/exporting/export-menu.ts"
   kept.
 - The review asks `Clip.hasPicture()` (the clip's takes); the file and the publish menu
   ask `Clip.keepsPicture()` (the kept stretches). Keep the two apart.
+- The sound is the same shape: `Clip.hasSound()` for the waveform, `Clip.keepsSound()` for
+  the file. There is no session-level sound flag left to disagree with the clip.
 - The existing `e2e/checks/publishing.spec.ts` seeder must get its picture (T006) or the
   publishing checks become sound-only and fail for the wrong reason.
 - Do not bump `package.json`; CI owns the version.

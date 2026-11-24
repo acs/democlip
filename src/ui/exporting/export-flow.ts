@@ -28,7 +28,6 @@ const exportVideo = new ExportVideo({
   renderer: frameRenderer,
   download: downloadPort,
   clock,
-  audio: () => session.audio,
   fadeSeconds: FADE_S,
   // The clip's own size: the export canvas is this, and each take is drawn fitted
   // into it. Falls back to the preview canvas if the clip somehow has no size yet.

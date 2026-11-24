@@ -67,7 +67,7 @@ class FakeService implements YouTubeService {
 
 const when = new Date('2026-01-02T03:04:05.000Z');
 const details = VideoDetails.of({ title: 'A demo' }, when);
-const settings = () => ({ export: { audio: true, fadeSeconds: 0.08, annotations: 'drawn' as const }, details });
+const settings = () => ({ export: { fadeSeconds: 0.08, annotations: 'drawn' as const }, details });
 
 const deps = (service: YouTubeService, onProgress?: (progress: YouTubePublicationProgress) => void, over: Partial<YouTubeDeps> = {}): YouTubeDeps => ({
   service,

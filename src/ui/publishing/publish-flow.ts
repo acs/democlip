@@ -74,7 +74,7 @@ export async function publishClip(
     const intro = introFor(session.clip);
     await frameRenderer.prepare(intro);
     const { uri } = await publishToBluesky(session.clip, {
-      export: { audio: session.audio, fadeSeconds: FADE_S, annotations: 'drawn', intro },
+      export: { fadeSeconds: FADE_S, annotations: 'drawn', intro },
       text,
       alt,
       aspectRatio: AspectRatio.of(picture.width, picture.height).reduced(),

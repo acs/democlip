@@ -18,7 +18,6 @@ export interface KeepDeps {
   readonly clip: Clip;
   readonly store: KeptClipPort;
   readonly clock: ClockPort;
-  readonly audio: () => boolean;
   readonly warn?: (error: unknown) => void;
 }
 
@@ -38,7 +37,7 @@ export class KeepClip {
       }
       if (event.type === 'take-added') {
         void this.deps.store
-          .saveTake(this.deps.clip, event.index, this.deps.audio())
+          .saveTake(this.deps.clip, event.index)
           .catch(error => this.deps.warn?.(error));
         return;
       }
@@ -52,7 +51,7 @@ export class KeepClip {
     this.timer = undefined;
     if (this.deps.clip.takes.isEmpty()) return { kind: 'skipped' };
     try {
-      await this.deps.store.saveClip(this.deps.clip, this.deps.audio());
+      await this.deps.store.saveClip(this.deps.clip);
       return { kind: 'saved' };
     } catch (error) {
       return { kind: 'failed', reason: why(error) };
@@ -71,7 +70,7 @@ export class KeepClip {
     this.timer = this.deps.clock.setTimeout(() => {
       this.timer = undefined;
       void this.deps.store
-        .saveMeta(this.deps.clip, this.deps.audio())
+        .saveMeta(this.deps.clip)
         .catch(error => this.deps.warn?.(error));
     }, SAVE_DELAY_MS);
   }

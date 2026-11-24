@@ -38,11 +38,11 @@ export interface RecordDeps {
   /** The element the picture is already shown in, for the compositor's first frame. */
   readonly pictureElement?: () => HTMLVideoElement;
   readonly drawBubble?: (context: CanvasRenderingContext2D) => void;
-  readonly setAudio?: (hasAudio: boolean) => void;
 }
 
 export class RecordTake {
   private startedAt = 0;
+  private hasAudio = false;
 
   constructor(private readonly deps: RecordDeps) {}
 
@@ -73,7 +73,7 @@ export class RecordTake {
     }
     this.deps.recorder.start(composed.stream);
     this.startedAt = this.deps.clock.now();
-    this.deps.setAudio?.(composed.hasAudio);
+    this.hasAudio = composed.hasAudio;
     return { kind: 'started', stream: composed.stream };
   }
 
@@ -85,7 +85,7 @@ export class RecordTake {
     // A blob the browser would not measure comes back as a length of 0, not as a
     // failure — and a take cannot be built without a length, so the wall clock stands in.
     const duration = measured && measured.duration > 0 ? measured.duration : wall;
-    const take = this.deps.clip.addTake(blob, duration, measured?.picture ?? null);
+    const take = this.deps.clip.addTake(blob, duration, measured?.picture ?? null, this.hasAudio);
     return { kind: 'stopped', take };
   }
 }

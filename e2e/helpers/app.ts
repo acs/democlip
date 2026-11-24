@@ -63,16 +63,18 @@ export function boot(page: Page): Booted {
         const { session } = await import(/* @vite-ignore */ url);
         session.clip.clear();
         const store = (window as unknown as PageWindow).__e2eTakes ?? [];
-        // A seeded take with sound makes the session one with sound, as a recording or an
-        // import does; a sound-only clip has no picture but its file still holds the sound.
-        if (indices.some(index => store[index]?.hasAudio)) session.audio = true;
         for (const index of indices) {
           const take = store[index];
           if (!take) continue;
-          // The take carries its own picture size, as a recorded take does, so the clip
-          // sizes itself by it.
+          // The take carries its own picture size and sound, as a recorded take does, so
+          // the clip sizes itself by it and knows whether it has sound.
           const [width, height] = take.shape.split(/[x×]/).map(Number);
-          session.clip.addTake(take.blob, take.seconds, width > 0 && height > 0 ? { width, height } : null);
+          session.clip.addTake(
+            take.blob,
+            take.seconds,
+            width > 0 && height > 0 ? { width, height } : null,
+            take.hasAudio,
+          );
         }
       }, { url: HOOKS, indices: takes.map(take => take.index) });
     },
@@ -81,12 +83,16 @@ export function boot(page: Page): Booted {
       await page.evaluate(async ({ url, indices }) => {
         const { session } = await import(/* @vite-ignore */ url);
         const store = (window as unknown as PageWindow).__e2eTakes ?? [];
-        if (indices.some(index => store[index]?.hasAudio)) session.audio = true;
         for (const index of indices) {
           const take = store[index];
           if (!take) continue;
           const [width, height] = take.shape.split(/[x×]/).map(Number);
-          session.clip.addTake(take.blob, take.seconds, width > 0 && height > 0 ? { width, height } : null);
+          session.clip.addTake(
+            take.blob,
+            take.seconds,
+            width > 0 && height > 0 ? { width, height } : null,
+            take.hasAudio,
+          );
         }
       }, { url: HOOKS, indices: takes.map(take => take.index) });
     },

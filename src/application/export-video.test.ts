@@ -83,7 +83,6 @@ const build = (
     renderer,
     download: dl,
     clock,
-    audio: () => false,
     fadeSeconds: 0.25,
     picture: () => options.picture ?? { width: 1280, height: 720 },
   });

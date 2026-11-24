@@ -187,6 +187,30 @@ named questions say which is which.
 make one of the two answers wrong. Store the fact — rejected: it changes with every cut
 and every take, and the clip already knows both.
 
+## The clip's sound is a fact of its takes
+
+**Decision**: every take carries **`hasAudio`** — whether it has an audio track — and a
+clip answers **`hasSound()`** (any take) and **`keepsSound()`** (any kept stretch), exactly
+as it answers its picture. `ExportPlan.audio` is derived from the kept takes, and
+`ExportSettings.audio` is removed. `Session.audio` is removed: the waveform, the export,
+the publish flows, the kept copy and the restore all ask the clip. A stored take keeps
+`hasAudio`; the store measures a missing one, with the small half's old `audio` flag as
+the fallback.
+
+**Why**: a picture take can be silent, and a sound-only take always has sound, so "the
+last take had audio" was never the clip's sound. A sound take followed by a webcam take
+with the mic off made `Session.audio` false: the waveform disappeared, the kept copy was
+marked silent, and the exported video dropped the sound take's audio. Making the fact
+travel with the take is the same shape as the picture, so the two cannot disagree, and
+the plan no longer takes a caller's word for whether there is sound.
+
+**Alternatives considered**: a one-line latch on `Session.audio` (never set it false) —
+it stops the loss but leaves a session flag that can still disagree with the kept
+stretches, and a sound take cut away would still be counted. Probing the blob at export —
+rejected: the fact is known when the take arrives, and the export should not re-read the
+recording to find it. A `Clip.hasSound` without `Take.hasAudio` — rejected: a picture
+take can be silent, so the clip would have to guess.
+
 ## The card, the annotations and the clip's properties
 
 **Decision**: a **sound-only clip** has no picture for a **title card** or a **watermark**,

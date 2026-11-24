@@ -17,8 +17,8 @@ import type { ClockPort } from './ports/ClockPort.js';
 
 class FakeTakes implements TakeRepository {
   private takes: Take[] = [];
-  add(blob: Blob, duration: number, picture?: Picture | null): Take {
-    const take = Take.of(this.takes.length + 1, blob, `blob:${this.takes.length + 1}`, duration, picture ?? null);
+  add(blob: Blob, duration: number, picture?: Picture | null, hasAudio = false): Take {
+    const take = Take.of(this.takes.length + 1, blob, `blob:${this.takes.length + 1}`, duration, picture ?? null, hasAudio);
     this.takes.push(take);
     return take;
   }
@@ -95,7 +95,6 @@ const build = (options: {
   picture?: { width: number; height: number };
 } = {}) => {
   const clip = Clip.empty(new FakeTakes());
-  const audio: boolean[] = [];
   const comp = compositor();
   const rec = recorder();
   const take = new RecordTake({
@@ -109,21 +108,19 @@ const build = (options: {
     clock: clock(),
     sources: () => SourceSet.of(options.screen ?? true, options.webcam ?? false, options.mic ?? false),
     region: () => CropRegion.FULL,
-    setAudio: hasAudio => audio.push(hasAudio),
   });
-  return { clip, take, comp, rec, audio };
+  return { clip, take, comp, rec };
 };
 
 describe('RecordTake', () => {
   it('starts a take on the composed stream and reports it', () => {
-    const { take, comp, rec, audio } = build({ screen: true });
+    const { take, comp, rec } = build({ screen: true });
 
     const outcome = take.start();
 
     expect(outcome).toEqual({ kind: 'started', stream });
     expect(comp.opened).toHaveLength(1);
     expect(rec.started).toEqual([stream]);
-    expect(audio).toEqual([true]);
   });
 
   it('stops with the take added to the clip and its real length', async () => {
@@ -135,6 +132,7 @@ describe('RecordTake', () => {
     expect(outcome.kind).toBe('stopped');
     expect(clip.takes.count()).toBe(1);
     expect(clip.takes.at(0)?.duration).toBe(2.5);
+    expect(clip.takes.at(0)?.hasAudio).toBe(true);   // the composed stream carried sound
     expect(comp.closed).toBe(1);
   });
 
@@ -176,7 +174,7 @@ describe('RecordTake', () => {
   });
 
   it('starts on the microphone alone, and asks the compositor for no picture', () => {
-    const { take, comp, audio } = build({ screen: false, webcam: false, mic: true });
+    const { take, comp } = build({ screen: false, webcam: false, mic: true });
 
     const outcome = take.start();
 
@@ -189,7 +187,6 @@ describe('RecordTake', () => {
     expect(comp.opened[0].picture).toBeUndefined();
     expect(comp.opened[0].pictureElement).toBeUndefined();
     expect(comp.opened[0].drawBubble).toBeUndefined();
-    expect(audio).toEqual([true]);
   });
 
   it('refuses to record when the sources hand back an empty stream', () => {
