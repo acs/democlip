@@ -73,6 +73,12 @@ export async function publishToBluesky(
 ): Promise<Publication> {
   const plan = planExport(clip, settings.export);
   if (!plan) throw new Error('nothing to publish');
+  // Bluesky takes a video, and a clip whose kept stretches have no picture is sound only.
+  // Refuse here — before a frame is encoded or a byte is uploaded — rather than let a
+  // sound file reach a video service and be turned away there.
+  if (plan.soundOnly) {
+    throw new Error('Bluesky takes a video, and this clip is sound only — it has no picture to write. Export it as a file instead');
+  }
   // Bluesky's ceiling: ten minutes. Refuse here rather than after encoding, where
   // the video service would say it anyway, having spent the upload.
   if (plan.total > VIDEO_MAX_SECONDS) {

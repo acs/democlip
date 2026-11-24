@@ -9,6 +9,5 @@ export const keep = new KeepClip({
   clip: session.clip,
   store: keptClip,
   clock,
-  audio: () => session.audio,
   warn: error => console.warn('DemoClip: could not keep the clip —', error),
 });

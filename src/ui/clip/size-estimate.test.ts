@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { estimateWebmText } from './size-estimate.js';
+import { estimateSoundText, estimateWebmText } from './size-estimate.js';
 
 describe('estimateWebmText', () => {
   it('gives a range, because the size depends on how much moves', () => {
@@ -13,5 +13,15 @@ describe('estimateWebmText', () => {
 
   it('says nothing was measured as nothing', () => {
     expect(estimateWebmText(0)).toBe('~0.0–0.0 MB (WebM)');
+  });
+});
+
+describe('estimateSoundText', () => {
+  it('sizes the audio a sound-only clip exports, with no picture in it', () => {
+    expect(estimateSoundText(10)).toBe('~0.1–0.2 MB (audio)');
+  });
+
+  it('says nothing was measured as nothing', () => {
+    expect(estimateSoundText(0)).toBe('~0.0–0.0 MB (audio)');
   });
 });

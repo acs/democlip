@@ -31,6 +31,13 @@ export function drawThumb(
   source: CanvasImageSource,
   sx: number, sy: number, sw: number, sh: number,
 ): HTMLCanvasElement {
+  // A take with no picture — a **sound-only** stretch — has no frame to draw; its cell
+  // is left empty rather than throwing over the zero it has no size for.
+  if (!(sw > 0) || !(sh > 0)) {
+    const blank = canvas.getContext('2d');
+    if (blank) blank.clearRect(0, 0, canvas.width, canvas.height);
+    return canvas;
+  }
   const { w, h } = thumbBox(sw, sh);
   if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
   const ctx = canvas.getContext('2d');

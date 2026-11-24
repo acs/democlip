@@ -1,9 +1,10 @@
 // Which record sources are on: the screen, the webcam and the microphone.
 //
-// Three independent toggles, all off at start. A take needs a picture — the
-// screen or the webcam — and the microphone may be on with either. The set holds
-// the intent; the capture adapter holds the device. A source is on only while its
-// device is held, so the adapter reports a set that matches what it has.
+// Three independent toggles, all off at start. A take needs a **source**: a
+// picture — the screen or the webcam — or the microphone alone, which makes a
+// **sound-only** take. The set holds the intent; the capture adapter holds the
+// device. A source is on only while its device is held, so the adapter reports a
+// set that matches what it has.
 
 export class SourceSet {
   static readonly NONE = new SourceSet(false, false, false);
@@ -19,9 +20,19 @@ export class SourceSet {
     return new SourceSet(screen, webcam, mic);
   }
 
-  /** A take needs a picture: the screen or the webcam. */
+  /** Is there a picture to record — the screen or the webcam? */
   get hasPicture(): boolean {
     return this.screen || this.webcam;
+  }
+
+  /** Is there a source to record at all: a picture, or the microphone on its own? */
+  get canRecord(): boolean {
+    return this.screen || this.webcam || this.mic;
+  }
+
+  /** The microphone alone: a take with sound and no picture. */
+  get soundOnly(): boolean {
+    return this.mic && !this.hasPicture;
   }
 
   get any(): boolean {

@@ -16,8 +16,8 @@ import type { Picture } from './ClipSize.js';
 class FakeTakes implements TakeRepository {
   private takes: Take[] = [];
 
-  add(blob: Blob, duration: number, picture?: Picture | null): Take {
-    const take = Take.of(this.takes.length + 1, blob, `blob:${this.takes.length + 1}`, duration, picture ?? null);
+  add(blob: Blob, duration: number, picture?: Picture | null, hasAudio = false): Take {
+    const take = Take.of(this.takes.length + 1, blob, `blob:${this.takes.length + 1}`, duration, picture ?? null, hasAudio);
     this.takes.push(take);
     return take;
   }
@@ -555,6 +555,64 @@ describe('Clip size', () => {
     const rebuilt = Clip.empty(new FakeTakes());
     rebuilt.restore(clip.snapshot());
     expect(rebuilt.size()?.toString()).toBe('1920x1080');
+  });
+
+  it('says whether the clip has a picture at all — a sound-only clip has none', () => {
+    expect(clipOf(2).hasPicture()).toBe(false);                 // a take with no picture
+    expect(clipSized({ width: 1280, height: 720 }).hasPicture()).toBe(true);
+
+    // One picture among sound-only takes is enough: the export is a video, with black
+    // over the stretches that have no picture.
+    const mixed = clipOf(2);
+    mixed.addTake(new Blob(['x']), 2, { width: 1280, height: 720 });
+    expect(mixed.hasPicture()).toBe(true);
+  });
+
+  it('knows when the kept stretches have no picture, though a take has one', () => {
+    const mixed = clipOf(2);
+    mixed.addTake(new Blob(['x']), 2, { width: 1280, height: 720 });
+    expect(mixed.keepsPicture()).toBe(true);
+
+    mixed.approve(Span.of(0.5, 1));            // the whole picture take, of a 4s clip
+    expect(mixed.hasPicture()).toBe(true);     // the clip still holds the picture take
+    expect(mixed.keepsPicture()).toBe(false);  // but nothing kept prints it
+  });
+
+  it('says whether the clip has sound — a picture take can be silent', () => {
+    expect(clipOf(2).hasSound()).toBe(false);
+    expect(clipSized({ width: 1280, height: 720 }).hasSound()).toBe(false);
+
+    const withSound = clipSized({ width: 1280, height: 720 });
+    withSound.addTake(new Blob(['x']), 2, { width: 1280, height: 720 }, true);
+    expect(withSound.hasSound()).toBe(true);
+
+    const soundOnly = Clip.empty(new FakeTakes());
+    soundOnly.addTake(new Blob(['x']), 2, null, true);
+    expect(soundOnly.hasSound()).toBe(true);
+    expect(soundOnly.hasPicture()).toBe(false);
+  });
+
+  it('knows when the kept stretches have no sound, though a take has some', () => {
+    const clip = Clip.empty(new FakeTakes());
+    clip.addTake(new Blob(['x']), 1, { width: 1280, height: 720 }, true);
+    clip.addTake(new Blob(['x']), 1, { width: 1280, height: 720 }, false);
+    expect(clip.keepsSound()).toBe(true);
+
+    clip.approve(Span.of(0, 0.5));             // the whole sound take, of a 2s clip
+    expect(clip.hasSound()).toBe(true);        // the clip still holds the sound take
+    expect(clip.keepsSound()).toBe(false);     // but nothing kept plays it
+  });
+
+  it('carries each take’s sound into a snapshot and back', () => {
+    const clip = Clip.empty(new FakeTakes());
+    clip.addTake(new Blob(['x']), 2, { width: 1280, height: 720 }, true);
+    clip.addTake(new Blob(['x']), 2);
+
+    const rebuilt = Clip.empty(new FakeTakes());
+    rebuilt.restore(clip.snapshot());
+
+    expect(rebuilt.takes.at(0)?.hasAudio).toBe(true);
+    expect(rebuilt.takes.at(1)?.hasAudio).toBe(false);
   });
 });
 

@@ -8,7 +8,7 @@ import {
   AudioBufferSource, BufferSource, BufferTarget, CanvasSource, Input, MP4, Mp4OutputFormat, Output,
   Quality, VideoSampleSink, WEBM, WebMOutputFormat,
 } from 'mediabunny';
-import type { ExportPlan } from '../domain/clip/ExportPlan.js';
+import type { ExportPlan, ExportStep } from '../domain/clip/ExportPlan.js';
 import type { Take } from '../domain/clip/Take.js';
 import { ClipSize } from '../domain/clip/ClipSize.js';
 import type { Frame } from '../domain/clip/ClipSize.js';
@@ -26,6 +26,8 @@ const SAMPLE_RATE = 48_000;
 const REPORT_EVERY = 8;
 /** The card at the head of a file is drawn at this rate — a still, so it costs little. */
 const INTRO_FPS = 30;
+/** The rate a sound-only stretch is filled at in a file that has a picture elsewhere. */
+const BLACK_FPS = 30;
 
 export class EncoderAdapter implements EncoderPort {
   available(): boolean {
@@ -50,6 +52,10 @@ export class EncoderAdapter implements EncoderPort {
     const started = performance.now();
     const takes = plan.takes;
     if (!plan.pieces.length) throw new Error('nothing to export');
+
+    // A clip of sound-only takes is written as a sound file: no canvas, no video codec,
+    // and no title card, which is a picture drawn over another picture.
+    if (plan.soundOnly) return encodeSound(plan, target, spec, started, options.onProgress);
 
     const canvas = document.createElement('canvas');
     const picture = spec.picture(options.width ?? 1280, options.height ?? 720);
@@ -118,7 +124,13 @@ export class EncoderAdapter implements EncoderPort {
       });
       try {
         const track = await input.getPrimaryVideoTrack();
-        if (!track) throw new Error('a take has no video track');
+        // A sound-only take in a clip that has a picture elsewhere: its stretch is
+        // written as black, the way a video player with no frame would show it, and its
+        // sound still comes through the audio track.
+        if (!track) {
+          frames += await addBlackFrames(plan, context, video, renderer, step);
+          continue;
+        }
         const first = await input.getFirstTimestamp();
         const to = step.localTo + first;
 
@@ -176,6 +188,84 @@ export class EncoderAdapter implements EncoderPort {
 }
 
 /**
+ * A **sound-only** clip written as a sound file: the audio track alone, in the
+ * container the target names — WebM's Opus, or MP4's AAC — and no video track at all.
+ * The file is what a person hears, which is the whole of the clip.
+ */
+async function encodeSound(
+  plan: ExportPlan,
+  target: ExportTarget,
+  spec: ReturnType<typeof specFor>,
+  started: number,
+  onProgress?: (source: number) => void,
+): Promise<EncodedVideo> {
+  if (!plan.audio) throw new Error('this clip has no sound to write');
+  const audio = await renderAudio(plan);
+  if (!audio) throw new Error('the sound could not be read back from the takes');
+
+  const output = new Output({
+    format: target === 'mp4' ? new Mp4OutputFormat() : new WebMOutputFormat(),
+    target: new BufferTarget(),
+  });
+  const sound = new AudioBufferSource({ codec: spec.audio, quality: new Quality({ bitrate: AUDIO_BITRATE }) });
+  output.addAudioTrack(sound);
+  await output.start();
+  await sound.add(audio);
+  await output.finalize();
+  onProgress?.(plan.to);
+
+  const buffer = output.target.buffer;
+  if (!buffer) throw new Error('the encoder wrote no file');
+  const blob = new Blob([buffer], { type: target === 'mp4' ? 'audio/mp4' : 'audio/webm' });
+  const ms = performance.now() - started;
+  return {
+    blob,
+    stats: {
+      bytes: blob.size,
+      seconds: plan.total,
+      frames: 0,
+      realtime: plan.total > 0 ? plan.total * 1000 / ms : 0,
+    },
+  };
+}
+
+/**
+ * A stretch of a **sound-only** take, inside a file that has a picture elsewhere: black
+ * frames at the take's place on the output timeline, with whatever is drawn over the
+ * clip, so the file's picture and sound stay in step across the join.
+ */
+async function addBlackFrames(
+  plan: ExportPlan,
+  context: CanvasRenderingContext2D,
+  video: CanvasSource,
+  renderer: FrameRendererPort,
+  step: ExportStep,
+): Promise<number> {
+  let frames = 0;
+  for (const piece of plan.pieces) {
+    if (piece.takeIndex !== step.takeIndex) continue;
+    const end = piece.at + (piece.to - piece.from);
+    for (let at = piece.at; at < end - 0.0001; at += 1 / BLACK_FPS) {
+      const duration = Math.min(1 / BLACK_FPS, end - at);
+      const source = piece.from + (at - piece.at);
+      context.globalAlpha = 1;
+      context.fillStyle = '#000';
+      context.fillRect(0, 0, context.canvas.width, context.canvas.height);
+      renderer.draw(context, {
+        sourceTime: source,
+        outputTime: at,
+        annotations: plan.annotationsAt(source),
+        recordingLength: plan.recordingLength,
+      });
+      renderer.preview(context);
+      await video.add(at, duration);
+      frames++;
+    }
+  }
+  return frames;
+}
+
+/**
  * The rectangle a sample is drawn into for the export's picture: the whole of it,
  * scaled and centred, with the clip's background around it. The picture edge is the
  * one that runs out first, so nothing is cropped and nothing is stretched.
@@ -187,9 +277,10 @@ function fitIn(width: number, height: number, picture: { width: number; height: 
 
 /**
  * The first kept frame of the export, held on a canvas of the export's own size — what
- * the title card draws as its background. Null when the first take has no picture to take
- * one from. A detached canvas rather than the decoder's own sample, so it stays valid
- * after the input is disposed.
+ * the title card draws as its background. Null when no kept take has a picture to take one
+ * from. The stretches are walked until one has a picture, since a **sound-only** take may
+ * be the first and the card is drawn on the first picture the clip holds. A detached canvas
+ * rather than the decoder's own sample, so it stays valid after the input is disposed.
  */
 async function firstStill(
   plan: ExportPlan,
@@ -197,32 +288,33 @@ async function firstStill(
   width: number,
   height: number,
 ): Promise<HTMLCanvasElement | null> {
-  const piece = plan.pieces[0];
-  if (!piece) return null;
-  const input = new Input({
-    source: new BufferSource(await takes[piece.takeIndex].blob.arrayBuffer()),
-    formats: [WEBM, MP4],
-  });
-  try {
-    const track = await input.getPrimaryVideoTrack();
-    if (!track) return null;
-    const first = await input.getFirstTimestamp();
-    const sample = await firstPresentedSample(new VideoSampleSink(track), first + piece.from);
-    if (!sample) return null;
-    const still = document.createElement('canvas');
-    still.width = width;
-    still.height = height;
-    const stillContext = still.getContext('2d');
-    if (!stillContext) { sample.close(); return null; }
-    stillContext.fillStyle = '#000';
-    stillContext.fillRect(0, 0, width, height);
-    const fit = fitIn(width, height, { width: sample.displayWidth, height: sample.displayHeight });
-    sample.draw(stillContext, fit.x, fit.y, fit.width, fit.height);
-    sample.close();
-    return still;
-  } finally {
-    input.dispose();
+  for (const piece of plan.pieces) {
+    const input = new Input({
+      source: new BufferSource(await takes[piece.takeIndex].blob.arrayBuffer()),
+      formats: [WEBM, MP4],
+    });
+    try {
+      const track = await input.getPrimaryVideoTrack();
+      if (!track) continue;
+      const first = await input.getFirstTimestamp();
+      const sample = await firstPresentedSample(new VideoSampleSink(track), first + piece.from);
+      if (!sample) continue;
+      const still = document.createElement('canvas');
+      still.width = width;
+      still.height = height;
+      const stillContext = still.getContext('2d');
+      if (!stillContext) { sample.close(); continue; }
+      stillContext.fillStyle = '#000';
+      stillContext.fillRect(0, 0, width, height);
+      const fit = fitIn(width, height, { width: sample.displayWidth, height: sample.displayHeight });
+      sample.draw(stillContext, fit.x, fit.y, fit.width, fit.height);
+      sample.close();
+      return still;
+    } finally {
+      input.dispose();
+    }
   }
+  return null;
 }
 
 async function pickVideoCodec(

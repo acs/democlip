@@ -6,7 +6,8 @@
 //
 // A file may arrive with its **sidecar**: the annotations an export wrote beside a video
 // rather than drawing them in. They are chosen together — a page cannot look in a folder,
-// so the person hands over both and the app sorts out which is which.
+// so the person hands over both and the app sorts out which is which. A **sound-only** file
+// comes in the same way: an audio export of a sound-only clip is a take like any other.
 
 import { currentPhase, setPhase } from '../../state.js';
 import { session } from '../../session.js';
@@ -23,9 +24,6 @@ const importTake = new ImportTake({
   clip: session.clip,
   files: takeFile,
   pictures: images,
-  // A take with sound makes the clip one with sound — and a silent file never makes it
-  // silent, since an earlier take may have carried the sound.
-  setAudio: has => { if (has) session.audio = true; },
 });
 
 // A take in flight owns the clip, and an export is reading it: neither may be interrupted
@@ -53,7 +51,7 @@ export async function onFileChosen(): Promise<void> {
   const video = chosen.find(candidate => TakeFile.of(candidate.name, candidate.type) !== null);
   if (!video) {
     setStatus('Ready');
-    toast('Only WebM and MP4 videos can be imported.');
+    toast('Only WebM and MP4 files can be imported.');
     return;
   }
   const written = chosen.find(candidate => candidate !== video && candidate.name.toLowerCase().endsWith('.json'));

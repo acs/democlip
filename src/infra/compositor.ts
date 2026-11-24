@@ -1,10 +1,11 @@
 // The compositor: what a take actually records.
 //
 // It draws the crop of the screen and the webcam bubble onto a canvas, and mixes
-// the system audio with the microphone. It owns the canvas, the audio graph and the
-// hidden video elements it draws from, and releases them when the take ends. The
-// bubble's drawing is injected by the composition root; the compositor imports no
-// view module.
+// the system audio with the microphone. With no picture source it draws nothing:
+// the stream is the mixed sound alone, which is what a **sound-only** take is. It
+// owns the canvas, the audio graph and the hidden video elements it draws from, and
+// releases them when the take ends. The bubble's drawing is injected by the
+// composition root; the compositor imports no view module.
 
 import type { CompositorInput, CompositorPort, CompositorSession } from '../application/ports/CompositorPort.js';
 import type { CropRegion } from '../domain/capture/CropRegion.js';

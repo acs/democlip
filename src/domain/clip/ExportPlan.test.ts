@@ -8,8 +8,13 @@ import { Span } from './Span.js';
 import { AnnotationSet } from '../annotation/AnnotationSet.js';
 import { Arrow } from '../annotation/Arrow.js';
 
-// Two 5s takes, so the clip is 10s and a join falls halfway along it.
+// Two 5s takes, so the clip is 10s and a join falls halfway along it. They carry a
+// picture, as a recorded or imported take does; the sound-only case has takes of its own.
 const takes = [
+  Take.of(1, new Blob(['x']), 'blob:1', 5, { width: 1280, height: 720 }, true),
+  Take.of(2, new Blob(['x']), 'blob:2', 5, { width: 1280, height: 720 }, true),
+];
+const soundOnlyTakes = [
   Take.of(1, new Blob(['x']), 'blob:1', 5),
   Take.of(2, new Blob(['x']), 'blob:2', 5),
 ];
@@ -25,7 +30,7 @@ const parts = () => ({
   ],
 });
 
-const planOf = (settings = { audio: false, fadeSeconds: 0.08, annotations: 'drawn' as const }): ExportPlan =>
+const planOf = (settings = { fadeSeconds: 0.08, annotations: 'drawn' as const }): ExportPlan =>
   ExportPlan.of(parts().segments, takes, 10, parts().map, settings);
 
 const arrow = (id: string, s: number, e: number): Arrow => {
@@ -69,7 +74,7 @@ describe('ExportPlan', () => {
     const { map } = parts();
     const plan = ExportPlan.of(
       [{ takeIndex: 1, from: 5, to: 8 }], takes, 8, map,
-      { audio: false, fadeSeconds: 0.08, annotations: 'drawn' });
+      { fadeSeconds: 0.08, annotations: 'drawn' });
     expect(plan.pieces.map(p => p.at)).toEqual([0]);
     expect(plan.total).toBeCloseTo(3);
     expect(plan.steps[0].joinAt).toBeNull();          // one take only: nothing to join to
@@ -78,15 +83,32 @@ describe('ExportPlan', () => {
   });
 
   it('carries what an export needs that is not the clip', () => {
-    const plan = planOf({ audio: true, fadeSeconds: 0.5, annotations: 'drawn' });
-    expect(plan.audio).toBe(true);
+    const plan = planOf({ fadeSeconds: 0.5, annotations: 'drawn' });
+    expect(plan.audio).toBe(true);          // the kept takes carry sound
     expect(plan.fadeSeconds).toBe(0.5);
+  });
+
+  it('says whether the file holds a picture — a sound-only clip holds none', () => {
+    expect(planOf().soundOnly).toBe(false);
+
+    const soundOnly = ExportPlan.of(parts().segments, soundOnlyTakes, 10, parts().map,
+      { fadeSeconds: 0.08, annotations: 'drawn' });
+    expect(soundOnly.soundOnly).toBe(true);
+    expect(soundOnly.audio).toBe(false);
+
+    // One take with a picture among sound-only ones is enough: the stretch with no
+    // picture is written as black.
+    const mixed = [Take.of(1, new Blob(['x']), 'blob:1', 5), takes[1]];
+    const plan = ExportPlan.of(parts().segments, mixed, 10, parts().map,
+      { fadeSeconds: 0.08, annotations: 'drawn' });
+    expect(plan.soundOnly).toBe(false);
+    expect(plan.audio).toBe(true);
   });
 
   it('pushes the clip along by the title card at the head', () => {
     const { map, segments } = parts();
     const intro = IntroCard.of('A demo', 'What it shows', new Date(2026, 0, 2, 12), 3)!;
-    const plan = ExportPlan.of(segments, takes, 10, map, { audio: false, fadeSeconds: 0.08, annotations: 'drawn' }, AnnotationSet.EMPTY, intro);
+    const plan = ExportPlan.of(segments, takes, 10, map, { fadeSeconds: 0.08, annotations: 'drawn' }, AnnotationSet.EMPTY, intro);
 
     expect(plan.intro).toBe(intro);
     expect(plan.introSeconds).toBe(3);
@@ -103,12 +125,25 @@ describe('ExportPlan', () => {
     expect(plan.total).toBeCloseTo(9);
   });
 
+  it('puts no card on a sound-only file, which has no picture to draw it on', () => {
+    const { map, segments } = parts();
+    const intro = IntroCard.of('A demo', 'What it shows', new Date(2026, 0, 2, 12), 3)!;
+    const plan = ExportPlan.of(segments, soundOnlyTakes, 10, map,
+      { fadeSeconds: 0.08, annotations: 'drawn' }, AnnotationSet.EMPTY, intro);
+
+    expect(plan.soundOnly).toBe(true);
+    expect(plan.intro).toBeNull();
+    expect(plan.introSeconds).toBe(0);
+    expect(plan.pieces[0].at).toBe(0);          // the sound is not pushed along
+    expect(plan.total).toBeCloseTo(9);
+  });
+
   it('shows the annotations through the same mapping the review uses', () => {
     const { map, segments } = parts();                    // 3s-4s cut out of 10s
     // Added in the reverse of their draw order, so the order asserted below is the
     // set's (by where each stretch starts) and not the order they were added in.
     const annotations = AnnotationSet.EMPTY.add(arrow('b', 0.5, 0.9)).add(arrow('a', 0.1, 0.6));
-    const plan = ExportPlan.of(segments, takes, 10, map, { audio: false, fadeSeconds: 0.08, annotations: 'drawn' }, annotations);
+    const plan = ExportPlan.of(segments, takes, 10, map, { fadeSeconds: 0.08, annotations: 'drawn' }, annotations);
 
     expect(plan.annotationsAt(5.5).map(a => a.id)).toEqual(['a', 'b']);   // 5s-6s: both
     expect(plan.annotationsAt(3.5)).toEqual([]);                          // inside the cut

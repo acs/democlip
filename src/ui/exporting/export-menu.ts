@@ -11,6 +11,7 @@
 // the target the person picked, knowing nothing about the menu.
 
 import { el } from '../dom.js';
+import { session } from '../../session.js';
 import type { ExportTarget } from '../../infra/export-target.js';
 
 /** Where the Export menu sends a clip: a file in one of the two containers, a file to work on, or a video service. */
@@ -56,6 +57,15 @@ class ExportMenu {
   }
 
   open(): void {
+    // A video service takes a video, and a clip whose kept stretches have no picture has
+    // none to write one from: its two entries are out, saying why, so a person is not sent
+    // to sign in for a publish that cannot happen. The file entries stay: a sound file is
+    // an export.
+    const hasPicture = session.clip.keepsPicture();
+    for (const [item, destination] of [[el.expBluesky, 'Bluesky'], [el.expYoutube, 'YouTube']] as const) {
+      item.disabled = !hasPicture;
+      item.title = hasPicture ? '' : `${destination} takes a video — this clip is sound only`;
+    }
     // The menu keeps its layout while hidden, so it can be measured and placed
     // without a flicker. The Export button sits in the control row under the
     // preview: the menu opens downward when it fits, upward otherwise, and stays

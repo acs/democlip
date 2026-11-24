@@ -182,7 +182,7 @@ const seek: Tool = {
 const startTake: Tool = {
   name: 'start_take',
   description:
-    'Start recording a take. Needs a picture: turn the screen or the webcam on first. The take is appended to the end of the clip.',
+    'Start recording a take. Needs a source: turn the screen, the webcam or the microphone on first — the microphone alone records a sound-only take. The take is appended to the end of the clip.',
   inputSchema: objectSchema(),
   run: session => callSurface(session, 'takes.start'),
 };

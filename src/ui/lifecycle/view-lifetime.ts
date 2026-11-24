@@ -42,7 +42,7 @@ export function initViewLifetime(): void {
     // The element was holding a take that no longer exists.
     if (el.rv.src) el.rv.src = '';
     player.forget();
-    el.timeline.classList.remove('on');
+    el.timeline.classList.remove('on', 'sound-only');
     el.idleOv.classList.remove('gone');
     el.btnExp.style.display = 'none';
     el.propsBtn.style.display = 'none';

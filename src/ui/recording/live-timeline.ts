@@ -22,7 +22,7 @@ import { currentPhase } from '../../state.js';
 import { session } from '../../session.js';
 import { capture } from '../../infra/capture.js';
 import { clock, el } from '../dom.js';
-import { estimateWebmText } from '../clip/size-estimate.js';
+import { estimateSoundText, estimateWebmText } from '../clip/size-estimate.js';
 import { drawWebcamOverlay } from './webcam.js';
 import { keptLengthNow, keptOf } from '../clip/clip.js';
 import { waveform } from '../clip/waveform.js';
@@ -60,6 +60,9 @@ export class LiveTimeline {
     this.samples = [];
     this.startMeter(recStream);
     buildStrip();
+    // A sound-only take has no pictures to fill the cells with: the waveform takes the
+    // room the strip would have had, as it does in the review.
+    el.timeline.classList.toggle('sound-only', !capture.sources.screen && !capture.sources.webcam);
     el.timeline.classList.add('on', 'recording');
     el.tlLabel.textContent = 'Timeline';
     el.tLive.classList.add('on');
@@ -105,7 +108,9 @@ export class LiveTimeline {
     this.paintWave(span);
     el.playhead.style.left = ((head / span) * 100).toFixed(2) + '%';
     el.tLiveTime.textContent = clock(elapsed);
-    el.tSize.textContent = estimateWebmText(head, el.cv.width, el.cv.height);
+    el.tSize.textContent = capture.sources.screen || capture.sources.webcam
+      ? estimateWebmText(head, el.cv.width, el.cv.height)
+      : estimateSoundText(head);
   }
 
   private elapsedSeconds(): number {

@@ -12,8 +12,8 @@ import type { ClockPort } from './ports/ClockPort.js';
 
 class FakeTakes implements TakeRepository {
   private takes: Take[] = [];
-  add(blob: Blob, duration: number): Take {
-    const take = Take.of(this.takes.length + 1, blob, `blob:${this.takes.length + 1}`, duration);
+  add(blob: Blob, duration: number, picture?: { width: number; height: number } | null): Take {
+    const take = Take.of(this.takes.length + 1, blob, `blob:${this.takes.length + 1}`, duration, picture ?? null);
     this.takes.push(take);
     return take;
   }
@@ -30,9 +30,10 @@ class FakeTakes implements TakeRepository {
   clear() { this.takes = []; }
 }
 
+// Takes with a picture, as a recorded or imported take carries.
 const clipOf = (...durations: number[]): Clip => {
   const clip = Clip.empty(new FakeTakes());
-  for (const seconds of durations) clip.addTake(new Blob(['x']), seconds);
+  for (const seconds of durations) clip.addTake(new Blob(['x']), seconds, { width: 1280, height: 720 });
   return clip;
 };
 
@@ -82,7 +83,6 @@ const build = (
     renderer,
     download: dl,
     clock,
-    audio: () => false,
     fadeSeconds: 0.25,
     picture: () => options.picture ?? { width: 1280, height: 720 },
   });

@@ -172,13 +172,13 @@ test('the surface is published only on a page that asked, and refuses what a han
   expect((await page.locator('#ver').textContent()) ?? '').toBe(`v${version}`);
 
   // What a person must do by hand is refused, with the reason: choosing what is shared is a
-  // hand's, in the browser's own picker, and a take needs a picture.
+  // hand's, in the browser's own picker, and a take needs a source.
   const shared = await call<{ ok: boolean; reason: string }>(page, 'takes.turnSourceOn', 'screen');
   expect(shared.ok).toBe(false);
   expect(shared.reason).toContain('picker');
   const started = await call<{ ok: boolean; reason: string }>(page, 'takes.start');
   expect(started.ok).toBe(false);
-  expect(started.reason).toContain('picture');
+  expect(started.reason).toContain('microphone');
 
   // A publish with nobody signed in is a result an agent can read, and nothing is sent: no
   // post was attempted at all.

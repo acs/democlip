@@ -164,10 +164,16 @@ registerClipProperty({
   with: (properties, value) => properties.with('addToExport', value === 'true' ? 'true' : ''),
   // A switch already **on** stays movable: the person may always take the card back off, even
   // after clearing the last word from it. It is only switching it *on* that needs something to
-  // switch on.
-  blocked: properties => (hasCardContent(properties) || properties.get('addToExport') === 'true'
-    ? null
-    : 'Add to export needs something to put on the card — a title, a description or a logo'),
+  // switch on. A **sound-only** clip has no picture for the card to be drawn on, so the
+  // switch says why it cannot apply rather than accepting a request the file cannot honour.
+  blocked: (properties, clip) => {
+    if (clip && clip.takes.count() > 0 && !clip.hasPicture()) {
+      return 'A sound-only clip has no picture for the card — record a take with a picture, or export the sound';
+    }
+    return hasCardContent(properties) || properties.get('addToExport') === 'true'
+      ? null
+      : 'Add to export needs something to put on the card — a title, a description or a logo';
+  },
 });
 
 /** Whether the clip has anything for a **title card** to draw: a title, a description or a logo. */

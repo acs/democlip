@@ -82,6 +82,11 @@ export async function signOutOfYouTube(): Promise<void> {
  */
 export async function uploadClip(settings: YouTubeSettings, handlers: YouTubeHandlers): Promise<void> {
   try {
+    // A video service takes a video, and the use case refuses a sound-only clip too; said
+    // here first, so nothing is loaded or signed in for an upload that cannot happen.
+    if (!session.clip.keepsPicture()) {
+      throw new Error('YouTube takes a video, and this clip is sound only — it has no picture to write. Export it as a file instead');
+    }
     const details = VideoDetails.of({
       title: settings.title,
       description: settings.description,
@@ -98,7 +103,7 @@ export async function uploadClip(settings: YouTubeSettings, handlers: YouTubeHan
     const intro = introFor(session.clip);
     await frameRenderer.prepare(intro);
     const video = await publishToYouTube(session.clip, {
-      export: { audio: session.audio, fadeSeconds: FADE_S, annotations: 'drawn', intro },
+      export: { fadeSeconds: FADE_S, annotations: 'drawn', intro },
       details,
     }, {
       service,

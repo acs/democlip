@@ -18,12 +18,12 @@ export const SOURCE_NAMES: readonly SourceName[] = ['screen', 'webcam', 'microph
 
 /** What the surface needs of the app's recording flow. */
 export interface Recording {
-  /** Start a take; refused by the app when there is no picture. */
+  /** Start a take; refused by the app when no source is on. */
   readonly start: () => void;
   /** Stop the take in flight; the app opens the review when it lands. */
   readonly stop: () => Promise<void>;
-  /** Is there a picture to record? */
-  readonly hasPicture: () => boolean;
+  /** Is there a source to record — a picture, or the microphone on its own? */
+  readonly canRecord: () => boolean;
   /** Which of the three sources are on. */
   readonly sources: () => SourceState;
   /** Turn a source off, through the app's own toggle. */
@@ -45,8 +45,8 @@ export function createTakes(clip: Clip, recording: Recording): Takes {
     sources: () => recording.sources(),
 
     start() {
-      if (!recording.hasPicture()) {
-        return { ok: false, reason: 'turn on the screen or the webcam first — a take needs a picture' };
+      if (!recording.canRecord()) {
+        return { ok: false, reason: 'turn on the screen, the webcam or the microphone first — a take needs a source' };
       }
       recording.start();
       return { ok: true };
