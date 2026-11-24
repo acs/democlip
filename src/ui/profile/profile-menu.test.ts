@@ -57,8 +57,8 @@ describe('defineRows', () => {
     expect(rows[0].choices.map(choice => choice.value)).toEqual(['', 'democlip', 'graditone']);
     expect(rows[1]).toMatchObject({ label: 'Add to export', control: 'toggle', free: false, value: 'true', editable: true });
     // The colour a new annotation is made in: another list, its own entries, free until fixed.
-    expect(rows[2]).toMatchObject({ label: 'Annotation colour', control: 'choice', free: true, value: '', editable: true });
-    expect(rows[2].choices.map(choice => choice.label)).toEqual(['Red', 'White', 'Yellow', 'Green', 'Blue', 'Black']);
+    expect(rows[2]).toMatchObject({ label: 'Annotation colour', control: 'colour', free: true, value: '', editable: true });
+    expect(rows[2].choices.map(choice => choice.label)).toEqual(['Red', 'Orange', 'White', 'Yellow', 'Green', 'Blue', 'Black']);
   });
 
   it('says an item is free when the profile does not control it', () => {

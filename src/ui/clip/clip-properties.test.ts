@@ -15,7 +15,7 @@ describe('the clip property register', () => {
     expect(clipProperty('title')?.label).toBe('Title');
     expect(clipProperty('description')?.control).toBe('long-text');
     expect(clipProperty('addToExport')?.control).toBe('toggle');
-    expect(clipProperty('annotationColour')?.control).toBe('choice');
+    expect(clipProperty('annotationColour')?.control).toBe('colour');
     expect(clipProperty('size')?.readOnly).toBe(true);
   });
 
@@ -100,9 +100,10 @@ describe('the clip property register', () => {
 
   it('offers the palette as a list, by name, and refuses a colour it does not hold', () => {
     const colour = clipProperty('annotationColour')!;
-    expect(colour.control).toBe('choice');
+    expect(colour.control).toBe('colour');
     expect(colour.choices).toEqual([
       { value: '#e53e3e', label: 'Red' },
+      { value: '#ff6c23', label: 'Orange' },
       { value: '#ffffff', label: 'White' },
       { value: '#f6e05e', label: 'Yellow' },
       { value: '#38a169', label: 'Green' },

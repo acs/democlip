@@ -13,7 +13,7 @@
 // (`ui/clip/clip-properties.ts`), which is `DEFAULT_ANNOTATION_COLOUR` until the clip
 // or a profile says otherwise.
 
-export const COLOURS = ['#e53e3e', '#ffffff', '#f6e05e', '#38a169', '#3182ce', '#111827'] as const;
+export const COLOURS = ['#e53e3e', '#ff6c23', '#ffffff', '#f6e05e', '#38a169', '#3182ce', '#111827'] as const;
 
 export type AnnotationColour = (typeof COLOURS)[number];
 
@@ -23,6 +23,7 @@ export const DEFAULT_ANNOTATION_COLOUR: AnnotationColour = '#e53e3e';
 /** What each colour is called where a person picks one from a list rather than a swatch. */
 export const COLOUR_LABELS: Readonly<Record<AnnotationColour, string>> = {
   '#e53e3e': 'Red',
+  '#ff6c23': 'Orange',
   '#ffffff': 'White',
   '#f6e05e': 'Yellow',
   '#38a169': 'Green',

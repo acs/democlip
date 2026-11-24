@@ -21,7 +21,7 @@ import {
 import { LOGOS, logoFile } from '../logos.js';
 
 /** Which shared control edits a clip property. */
-export type ClipPropertyControl = 'text' | 'long-text' | 'toggle' | 'choice';
+export type ClipPropertyControl = 'text' | 'long-text' | 'toggle' | 'choice' | 'colour';
 
 /** One of the values a property whose control is a list offers. */
 export interface PropertyChoice {
@@ -41,11 +41,12 @@ export interface ClipProperty {
   readonly id: string;
   /** What the control is called: 'Title', 'Description'. */
   readonly label: string;
-  /** Which shared control renders it: one line, a paragraph, a switch, or a list. */
+  /** Which shared control renders it: one line, a paragraph, a switch, a list, or the palette. */
   readonly control: ClipPropertyControl;
   /**
-   * The values a **list** control offers, in order, and nothing for any other kind. The panel
-   * and a profile's sheet both draw them without naming the property they belong to.
+   * The values a **list** or **colour** control offers, in order, and nothing for any other kind.
+   * The panel, a profile's sheet and the automation surface all draw or read them without naming
+   * the property they belong to.
    */
   readonly choices?: readonly PropertyChoice[];
   /**
@@ -183,15 +184,15 @@ export function annotationColour(properties: ClipProperties): AnnotationColour {
   return colourOf(properties.get('annotationColour'), DEFAULT_ANNOTATION_COLOUR);
 }
 
-// And the colour every new arrow and text is made in — a list, because the palette is the
-// app's own and a free-form picker could not promise a colour that reads over any picture. It
-// is the clip's own answer, and a **profile** may fix it, so every annotation made under that
-// profile starts in its colour. Changing it recolours nothing already placed: an annotation
-// carries the colour it was made in, and its own settings change that one.
+// And the colour every new arrow and text is made in — the palette itself, because a free-form
+// picker could not promise a colour that reads over any picture. It is the clip's own answer, and
+// a **profile** may fix it, so every annotation made under that profile starts in its colour.
+// Changing it recolours nothing already placed: an annotation carries the colour it was made in,
+// and its own settings change that one.
 registerClipProperty({
   id: 'annotationColour',
   label: 'Annotation colour',
-  control: 'choice',
+  control: 'colour',
   seedable: true,
   choices: COLOURS.map(colour => ({ value: colour, label: COLOUR_LABELS[colour] })),
   value: annotationColour,

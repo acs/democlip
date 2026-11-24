@@ -12,6 +12,7 @@
 import { el } from '../dom.js';
 import { Profile } from '../../domain/profile/Profile.js';
 import { Profiles } from '../../domain/profile/Profiles.js';
+import { colourChoices } from '../clip/colour-choices.js';
 import { defineRows, type DefineRow } from './profile-rows.js';
 
 export interface ProfileDefHandlers {
@@ -144,6 +145,21 @@ class ProfileDef {
         seg.append(button);
       }
       host.append(seg);
+      return host;
+    }
+
+    // A colour: the palette as buttons, each showing the colour itself beside its name, with
+    // **Not fixed** above them — the same control the clip's own panel draws. The colour is part
+    // of the choice, so a person is not left reading names to tell one from another.
+    if (row.control === 'colour') {
+      host.append(colourChoices({
+        label: row.label,
+        choices: row.choices,
+        value: row.value,
+        free: row.free,
+        disabled: !row.editable,
+        pick: value => this.declare(profileId, row.id, value),
+      }));
       return host;
     }
 

@@ -154,6 +154,7 @@ test('an annotation colour a profile fixes is the colour a new arrow and text ar
   await page.locator('#props-btn').click();
   const row = page.locator('#clip-prop-menu .prop-row[data-id="annotationColour"]');
   await expect(row.locator('.prop-value')).toHaveText('Blue');
+  await expect(row.locator('.colour-choice-dot')).toHaveCSS('background-color', 'rgb(49, 130, 206)');
   await expect(row.locator('.prop-lock')).toHaveAttribute('title', 'Set by DemoClipTV');
   await expect(row.locator('input, select')).toHaveCount(0);
   await page.locator('#props-btn').click();
@@ -207,6 +208,17 @@ test('a profile is made in the selector, defined in its own sheet, chosen, kept 
   await expect(row.locator('.profile-ico[data-act="rename"]')).toHaveCount(0);
   await defineIn(page, 'DemoClipTV', 'addToExport', 'on');
 
+  // And a colour, from the palette the sheet draws with each colour beside its name — so red and
+  // orange are told apart by looking, not by reading.
+  await row.locator('.profile-ico[data-act="define"]').click();
+  const palette = page.locator('.pdef-row[data-id="annotationColour"] .colour-choice');
+  await expect(palette).toHaveText(['Not fixed', 'Red', 'Orange', 'White', 'Yellow', 'Green', 'Blue', 'Black']);
+  await expect(page.locator('.pdef-row[data-id="annotationColour"] .colour-choice[data-value="#ff6c23"] .colour-choice-dot'))
+    .toHaveCSS('background-color', 'rgb(255, 108, 35)');
+  await page.locator('.pdef-row[data-id="annotationColour"] .colour-choice[data-value="#ff6c23"]').click();
+  await expect(page.locator('.pdef-row[data-id="annotationColour"] .colour-choice[aria-pressed="true"]')).toHaveText('Orange');
+  await page.locator('#profile-def-done').click();
+
   // Choose it: the clip is made under it.
   await row.locator('.profile-pick').click();
   await expect(page.locator('#profile-initials')).toHaveText('Dem');
@@ -217,7 +229,10 @@ test('a profile is made in the selector, defined in its own sheet, chosen, kept 
   await expect(page.locator('#profile-initials')).toHaveText('Dem');
   const saved = await readBook(page);
   expect(saved?.activeId).not.toBe('default');
-  expect(saved?.profiles.find(profile => profile.name === 'DemoClipTV')?.controls).toEqual({ addToExport: 'true' });
+  expect(saved?.profiles.find(profile => profile.name === 'DemoClipTV')?.controls).toEqual({
+    addToExport: 'true',
+    annotationColour: '#ff6c23',
+  });
 
   // The built-in default offers no pencil mark and no bin.
   await page.locator('#profile-btn').click();
@@ -249,6 +264,9 @@ test('a profile is made in the selector, defined in its own sheet, chosen, kept 
   await app.review();
   await page.locator('#props-btn').click();
   await expect(page.locator('#clip-prop-menu .prop-lock')).toHaveCount(0);
+  // The colour the profile fixed is still the clip's, now the person's to move, and it reads as
+  // the colour itself beside its name.
+  await expect(page.locator('#clip-prop-menu .prop-row[data-id="annotationColour"] .colour-choice[aria-pressed="true"]')).toHaveText('Orange');
   await expect(page.locator('#clip-prop-menu input.prop-check')).toBeChecked();
   await page.locator('#clip-prop-menu input.prop-check').uncheck();
   await expect(page.locator('#clip-prop-menu input.prop-check')).not.toBeChecked();

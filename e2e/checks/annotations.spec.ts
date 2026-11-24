@@ -40,12 +40,13 @@ test('each annotation kind — arrow, image and text — is placed over a sectio
   await app.seed(takes);
   await app.review();
 
-  // The clip's own panel offers the colour every new annotation is made in, and starts at the
-  // app's red.
+  // The clip's own panel offers the colour every new annotation is made in, each one drawn with
+  // its swatch and its name, and starts at the app's red.
   await page.locator('#props-btn').click();
-  const colour = page.locator('#clip-prop-menu .prop-row[data-id="annotationColour"] select');
-  await expect(colour).toHaveValue('#e53e3e');
-  await colour.selectOption('#38a169');
+  const palette = page.locator('#clip-prop-menu .prop-row[data-id="annotationColour"] .colour-choice');
+  await expect(palette).toHaveText(['Red', 'Orange', 'White', 'Yellow', 'Green', 'Blue', 'Black']);
+  await expect(page.locator('#clip-prop-menu .prop-row[data-id="annotationColour"] .colour-choice[aria-pressed="true"]')).toHaveText('Red');
+  await page.locator('#clip-prop-menu .prop-row[data-id="annotationColour"] .colour-choice[data-value="#38a169"]').click();
   await page.locator('#props-btn').click();
 
   // An arrow, drawn across the picture — and in the clip's colour, not the kind's own red.
@@ -75,7 +76,7 @@ test('each annotation kind — arrow, image and text — is placed over a sectio
   // clip's panel is left holding: neither the white a text used to fall back to nor the
   // arrow's.
   await page.locator('#props-btn').click();
-  await colour.selectOption('#3182ce');
+  await page.locator('#clip-prop-menu .prop-row[data-id="annotationColour"] .colour-choice[data-value="#3182ce"]').click();
   await page.locator('#props-btn').click();
   await section(page);
   await page.locator('[data-act="add"][data-kind="text"]').click();
