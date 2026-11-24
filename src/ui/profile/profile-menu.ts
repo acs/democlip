@@ -184,8 +184,14 @@ class ProfileMenu {
     pick.disabled = !row.selectable;
 
     const avatar = document.createElement('span');
-    avatar.className = `profile-avatar av-${row.tone}`;
+    // The profile's badge: its own annotation colour when it fixes one, and one of the app's
+    // tones from its id when it does not.
+    avatar.className = row.colour ? 'profile-avatar' : `profile-avatar av-${row.tone}`;
     avatar.textContent = row.avatar;
+    if (row.colour) {
+      avatar.style.background = row.colour;
+      avatar.style.color = row.ink;
+    }
     const name = document.createElement('span');
     name.className = 'profile-name';
     name.textContent = row.name;

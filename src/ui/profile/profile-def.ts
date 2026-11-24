@@ -45,7 +45,6 @@ class ProfileDef {
   /** Wire the sheet's own furniture. Called once, by the composition root. */
   init(handlers: ProfileDefHandlers): void {
     this.handlers = handlers;
-    el.profileDefClose.addEventListener('click', () => this.close());
     el.profileDefDone.addEventListener('click', () => this.close());
     el.profileDefBd.addEventListener('click', event => {
       if (event.target === el.profileDefBd) this.close();

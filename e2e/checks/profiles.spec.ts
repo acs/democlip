@@ -211,6 +211,8 @@ test('a profile is made in the selector, defined in its own sheet, chosen, kept 
   // And a colour, from the palette the sheet draws with each colour beside its name — so red and
   // orange are told apart by looking, not by reading.
   await row.locator('.profile-ico[data-act="define"]').click();
+  // The sheet has one way out, **Done**: no × in its corner.
+  await expect(page.locator('#profile-def-close')).toHaveCount(0);
   const palette = page.locator('.pdef-row[data-id="annotationColour"] .colour-choice');
   await expect(palette).toHaveText(['Not fixed', 'Red', 'Orange', 'White', 'Yellow', 'Green', 'Blue', 'Black']);
   await expect(page.locator('.pdef-row[data-id="annotationColour"] .colour-choice[data-value="#ff6c23"] .colour-choice-dot'))
@@ -219,14 +221,22 @@ test('a profile is made in the selector, defined in its own sheet, chosen, kept 
   await expect(page.locator('.pdef-row[data-id="annotationColour"] .colour-choice[aria-pressed="true"]')).toHaveText('Orange');
   await page.locator('#profile-def-done').click();
 
-  // Choose it: the clip is made under it.
+  // The profile's badge in the list wears that colour, with the ink that reads on it.
+  const badge = row.locator('.profile-avatar');
+  await expect(badge).toHaveCSS('background-color', 'rgb(255, 108, 35)');
+  await expect(badge).toHaveCSS('color', 'rgb(8, 9, 26)');
+
+  // Choose it: the clip is made under it, and the toolbar pill wears the same badge.
   await row.locator('.profile-pick').click();
   await expect(page.locator('#profile-initials')).toHaveText('Dem');
+  await expect(page.locator('#profile-btn')).toHaveCSS('background-color', 'rgb(255, 108, 35)');
 
   // A reload finds it whole — the profile, what it controls, and that it is the one in use.
   await page.reload();
   await expect(page.locator('#s-text')).toHaveText('Ready');
   await expect(page.locator('#profile-initials')).toHaveText('Dem');
+  // The pill's colour comes from the kept profile, not from having watched it being set.
+  await expect(page.locator('#profile-btn')).toHaveCSS('background-color', 'rgb(255, 108, 35)');
   const saved = await readBook(page);
   expect(saved?.activeId).not.toBe('default');
   expect(saved?.profiles.find(profile => profile.name === 'DemoClipTV')?.controls).toEqual({
@@ -256,6 +266,8 @@ test('a profile is made in the selector, defined in its own sheet, chosen, kept 
   await expect(page.locator('.profile-row')).toHaveCount(1);
   await page.keyboard.press('Escape');
   await expect(page.locator('#profile-initials')).toHaveText('Def');
+  // The default fixes no colour, so the pill is the app's glass again.
+  await expect(page.locator('#profile-btn')).not.toHaveClass(/wears-colour/);
   expect((await readBook(page))?.activeId).toBe('default');
 
   // The item is the person's again: the value the profile left is still there and it moves.

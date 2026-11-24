@@ -13,7 +13,7 @@ import { onPhaseChange } from '../../state.js';
 import { el, toast } from '../dom.js';
 import { applyActiveProfile } from './apply.js';
 import { controllingIn } from './control.js';
-import { avatarLetters } from './profile-rows.js';
+import { avatarLetters, badgeInk, profileColour } from './profile-rows.js';
 import { profileMenu } from './profile-menu.js';
 import { profileDef } from './profile-def.js';
 
@@ -75,10 +75,16 @@ export function initProfiles(): void {
 /**
  * The toolbar pill shows the active profile's first letters — Dem for DemoClipTV, Def for
  * Default — so what the clip is about to be made under is readable without opening anything.
+ * It is the same badge its row wears: when the profile fixes an annotation colour, the pill
+ * wears that colour too.
  */
 export function paintProfileButton(): void {
   const active = profiles.current.active();
   el.profileInitials.textContent = avatarLetters(active.name);
+  const colour = profileColour(active);
+  el.profileBtn.style.background = colour ?? '';
+  el.profileBtn.style.color = colour ? badgeInk(colour) : '';
+  el.profileBtn.classList.toggle('wears-colour', colour !== null);
   const label = `Profiles — working under ${active.name}`;
   el.profileBtn.setAttribute('aria-label', label);
   el.profileBtn.title = label;

@@ -116,9 +116,11 @@ test.describe('on a phone', () => {
     // panel and leave the person with a keyboard and nothing to type into.
     await page.setViewportSize({ width: 390, height: 400 });
     // Let the browser deliver the resize before asking, so the assertion sees what the
-    // person would rather than the moment before the app has answered it.
+    // person would rather than the moment before the app has answered it. And let the panel's
+    // own slide finish: it is measured where it rests, not while it is still moving.
     await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
     await expect(menu).toHaveClass(/on/);
+    await expect(menu).toHaveCSS('transform', 'matrix(1, 0, 0, 1, 0, 0)');
 
     // The fields are the person's to choose: a focus on opening would summon the
     // keyboard over the panel before it had been read.
