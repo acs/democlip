@@ -40,7 +40,7 @@ over" — the **New** button, or an exported clip:
 - The clip **outlives the page** in IndexedDB, so a reload — or the trip a Bluesky
   sign-in takes — comes back to it.
 
-`GLOSSARY.md` has the full table of objects and lifetimes.
+`docs/GLOSSARY.md` has the full table of objects and lifetimes.
 
 ## Where the code lives
 
@@ -78,7 +78,7 @@ skill covers this properly — read it before adding a rule.
 `mcp/` is not part of the app: it runs in node, reaches the app only through the
 page, and is released from this repository with the app's version. The app's own
 `src/` knows nothing of it; the **automation surface** it publishes is the whole of
-the coupling (`GLOSSARY.md`, "Being driven by an agent").
+the coupling (`docs/GLOSSARY.md`, "Being driven by an agent").
 
 It reaches that page over the browser's **DevTools Protocol** — Playwright is its
 client for that protocol and nothing more, a library with no browser download, whose
@@ -91,9 +91,10 @@ bounded — anything holding the port can do anything to the page — so the bou
 
 ## Which document owns which fact
 
-- `README.md` — what it is, how to use it, and the module map.
-- `FEATURES.md` — the full feature list.
-- `GLOSSARY.md` — **the words**, and the words we do not use. Use them in code,
+- `README.md` — what it is and how to use it.
+- `docs/FEATURES.md` — the full feature list.
+- `docs/FILES.md` — where the code lives: the module map.
+- `docs/GLOSSARY.md` — **the words**, and the words we do not use. Use them in code,
   tests, commits and pull requests; a new concept is written there first.
 - The sibling skills: **Domain model** (where a rule belongs, ports, lifetimes),
   **Verification** (unit test vs browser harness vs a real session), **Project

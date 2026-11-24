@@ -5,7 +5,7 @@ import { defineConfig } from 'vite';
 
 // The version shown beside the logo. `package.json` is the one place it is
 // written; the deploy workflow bumps it on every merge to main (see
-// VERSIONING.md), so the git tag, the deployed build and the number on screen
+// docs/VERSIONING.md), so the git tag, the deployed build and the number on screen
 // all say the same thing.
 const { version } = JSON.parse(readFileSync('package.json', 'utf8')) as { version: string };
 

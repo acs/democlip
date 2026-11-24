@@ -1,6 +1,6 @@
 # Features
 
-Everything DemoClip does, in full. The [README](README.md) keeps the headline
+Everything DemoClip does, in full. The [README](../README.md) keeps the headline
 capabilities; this is the whole list, in the order they tend to matter.
 
 - **Zero dependencies on your machine** — runs entirely in the browser via `getDisplayMedia`

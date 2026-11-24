@@ -121,6 +121,6 @@ Every rule above gets a unit test beside it, in node, with a fake behind any por
 
 ## The words
 
-Use the words in `GLOSSARY.md` — in the code, the tests, the commits and the pull
+Use the words in `docs/GLOSSARY.md` — in the code, the tests, the commits and the pull
 request — and add a new concept there first. `part` was a second name for `take` for
 a while, and undoing it touched nine modules.
