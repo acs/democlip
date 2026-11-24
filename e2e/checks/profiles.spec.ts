@@ -134,6 +134,60 @@ test('an item a profile fixes is applied and locked — on or off — and refuse
   await expect(page.locator('#clip-prop-menu .prop-value').first()).toHaveText('Off');
 });
 
+// ── An annotation colour a profile fixes ─────────────────────────────────────────────
+
+test('an annotation colour a profile fixes is the colour a new arrow and text are made in', async ({ page }) => {
+  const app = boot(page);
+  await app.gotoAgent();
+  // A colour the app's own palette holds but the app's default does not use, so a check that
+  // ignored the profile's value could not pass for this.
+  await writeBook(page, book({ annotationColour: '#3182ce' }));
+  await page.reload();
+  await expect(page.locator('#s-text')).toHaveText('Ready');
+
+  const takes = await makeTakes(page, { width: 640, height: 360, seconds: 1 });
+  await app.add(takes);
+  await app.review();
+
+  // The panel shows the profile's colour by the name the list gives it, with the lock that
+  // says whose it is, and nothing to press.
+  await page.locator('#props-btn').click();
+  const row = page.locator('#clip-prop-menu .prop-row[data-id="annotationColour"]');
+  await expect(row.locator('.prop-value')).toHaveText('Blue');
+  await expect(row.locator('.prop-lock')).toHaveAttribute('title', 'Set by DemoClipTV');
+  await expect(row.locator('input, select')).toHaveCount(0);
+  await page.locator('#props-btn').click();
+
+  // A new arrow and a new text, made through the surface — the same clip property the whole
+  // app reads, so the colour under the profile is the one both kinds are made in.
+  const made = await page.evaluate(async () => {
+    const surface = (globalThis as {
+      democlip?: { edit: { annotate(kind: string, params: Record<string, unknown>): Promise<{ ok: boolean; id?: string }> } };
+    }).democlip;
+    if (!surface) return null;
+    const span = { s: 0.1, e: 0.9 };
+    const arrow = await surface.edit.annotate('arrow', { span, from: { x: 0.3, y: 0.4 }, to: { x: 0.7, y: 0.6 } });
+    const text = await surface.edit.annotate('text', { span, text: 'Hello' });
+    return { arrow, text };
+  });
+  expect(made?.arrow.ok).toBe(true);
+  expect(made?.text.ok).toBe(true);
+
+  const colours = await page.evaluate(() => {
+    const surface = (globalThis as {
+      democlip?: { describe(): { annotations: Array<{ kind: string; properties: Array<{ id: string; value: string }> }> } };
+    }).democlip;
+    return surface?.describe().annotations.map(annotation => ({
+      kind: annotation.kind,
+      colour: annotation.properties.find(property => property.id === 'colour')?.value,
+    }));
+  });
+  expect(colours).toEqual([
+    { kind: 'arrow', colour: '#3182ce' },
+    { kind: 'text', colour: '#3182ce' },
+  ]);
+});
+
 // ── The selector, the config sheet, and the book outliving the app ───────────────────
 
 test('a profile is made in the selector, defined in its own sheet, chosen, kept and let go', async ({ page }) => {

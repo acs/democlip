@@ -1,18 +1,21 @@
 import { describe, expect, it } from 'vitest';
 
-import { clipProperties, clipProperty, registerClipProperty, seedableClipProperties, type ClipProperty } from './clip-properties.js';
+import { clipProperties, clipProperty, registerClipProperty, seedableClipProperties, annotationColour, type ClipProperty } from './clip-properties.js';
 import { ClipProperties } from '../../domain/clip/ClipProperties.js';
 
-// The register, proved in node: the two the app offers, and that a new property needs
+// The register, proved in node: the properties the app offers, and that a new property needs
 // no change to the panel or anywhere else — which is what the seam exists for.
 
 describe('the clip property register', () => {
-  it('offers the title, the description, the logo, the switch and the size, in order', () => {
+  it('offers the title, the description, the logo, the switch, the annotation colour and the size, in order', () => {
     // The switch sits below the three things the card draws, because it is their switch.
-    expect(clipProperties().map(property => property.id)).toEqual(['title', 'description', 'logo', 'addToExport', 'size']);
+    expect(clipProperties().map(property => property.id)).toEqual([
+      'title', 'description', 'logo', 'addToExport', 'annotationColour', 'size',
+    ]);
     expect(clipProperty('title')?.label).toBe('Title');
     expect(clipProperty('description')?.control).toBe('long-text');
     expect(clipProperty('addToExport')?.control).toBe('toggle');
+    expect(clipProperty('annotationColour')?.control).toBe('choice');
     expect(clipProperty('size')?.readOnly).toBe(true);
   });
 
@@ -78,10 +81,39 @@ describe('the clip property register', () => {
     expect(size.value(ClipProperties.EMPTY)).toBe('');
   });
 
-  it('marks the logo and the switch as what a profile may control', () => {
-    // What a profile may declare in this iteration; the title, the description and the
-    // read-only size are never a profile's.
-    expect(seedableClipProperties().map(property => property.id)).toEqual(['logo', 'addToExport']);
+  it('marks the logo, the switch and the annotation colour as what a profile may control', () => {
+    // What a profile may declare; the title, the description and the read-only size are never a
+    // profile's.
+    expect(seedableClipProperties().map(property => property.id)).toEqual(['logo', 'addToExport', 'annotationColour']);
+  });
+
+  it('makes a new annotation red until the clip is told another colour', () => {
+    // The clip's own answer, which the creation canvas and the agent's maker both ask: unset is
+    // the app's red, not empty and not a kind's fallback.
+    expect(annotationColour(ClipProperties.EMPTY)).toBe('#e53e3e');
+    const blue = clipProperty('annotationColour')!.with(ClipProperties.EMPTY, '#3182ce')!;
+    expect(annotationColour(blue)).toBe('#3182ce');
+    // A value that is not one of the palette's is answered with the red rather than a broken
+    // colour, even though the property would not have written it.
+    expect(annotationColour(ClipProperties.EMPTY.with('annotationColour', '#123456'))).toBe('#e53e3e');
+  });
+
+  it('offers the palette as a list, by name, and refuses a colour it does not hold', () => {
+    const colour = clipProperty('annotationColour')!;
+    expect(colour.control).toBe('choice');
+    expect(colour.choices).toEqual([
+      { value: '#e53e3e', label: 'Red' },
+      { value: '#ffffff', label: 'White' },
+      { value: '#f6e05e', label: 'Yellow' },
+      { value: '#38a169', label: 'Green' },
+      { value: '#3182ce', label: 'Blue' },
+      { value: '#111827', label: 'Black' },
+    ]);
+    // The list is not the only way a value arrives — a profile written elsewhere, an agent — so
+    // a colour outside the palette is refused rather than kept.
+    expect(colour.with(ClipProperties.EMPTY, '#123456')).toBeNull();
+    expect(colour.with(ClipProperties.EMPTY, 'red')).toBeNull();
+    expect(colour.value(colour.with(ClipProperties.EMPTY, '#111827')!)).toBe('#111827');
   });
 
   it('offers the marks the app ships as a list, with None above them', () => {

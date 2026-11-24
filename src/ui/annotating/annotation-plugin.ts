@@ -18,6 +18,7 @@
 // no settings control and no panel.
 
 import type { Annotation, Point } from '../../domain/annotation/Annotation.js';
+import type { AnnotationColour } from '../../domain/annotation/AnnotationColour.js';
 import type { Span } from '../../domain/clip/Span.js';
 import type { AnnotationRenderer } from './annotation-layer.js';
 
@@ -42,6 +43,11 @@ export interface CreationContext {
   readonly span: Span;
   /** The picture being drawn on, in its own pixels. */
   readonly picture: { readonly w: number; readonly h: number };
+  /**
+   * The colour a new annotation is made in — the clip's own annotation colour, so the kind
+   * does not choose one and an arrow and a text start in the same colour.
+   */
+  readonly colour: AnnotationColour;
   /**
    * Ask for a drag across the picture. Resolves with where it started and ended, or
    * null when there was no drag worth having (a stray click, a cancelled gesture).

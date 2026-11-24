@@ -1,8 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
-import { COLOURS, colourOf, isColour } from './AnnotationColour.js';
+import { COLOURS, COLOUR_LABELS, DEFAULT_ANNOTATION_COLOUR, colourOf, isColour } from './AnnotationColour.js';
 
 describe('the annotation colour', () => {
+  it('names every colour a person may pick, and the one a new annotation is made in', () => {
+    for (const colour of COLOURS) expect(COLOUR_LABELS[colour]).toMatch(/\S/);
+    expect(DEFAULT_ANNOTATION_COLOUR).toBe('#e53e3e');
+    expect(isColour(DEFAULT_ANNOTATION_COLOUR)).toBe(true);
+  });
   it('takes every colour the palette holds', () => {
     for (const colour of COLOURS) expect(colourOf(colour, COLOURS[0])).toBe(colour);
   });

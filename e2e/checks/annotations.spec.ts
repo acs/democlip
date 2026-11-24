@@ -1,7 +1,7 @@
-// Annotations: each kind is placed over a section through the real canvas, and a text's
-// box stays the shape of its own words however small it is dragged — including small
-// enough that its grips reach across it, where a press inside moves it rather than
-// resizing it.
+// Annotations: each kind is placed over a section through the real canvas and made in the
+// clip's annotation colour, and a text's box stays the shape of its own words however small
+// it is dragged — including small enough that its grips reach across it, where a press inside
+// moves it rather than resizing it.
 
 import { expect, test, type Page } from '@playwright/test';
 import { boot } from '../helpers/app.js';
@@ -25,14 +25,30 @@ async function section(page: Page): Promise<void> {
   await page.mouse.click(strip.x + strip.width * 0.5, y);
 }
 
-test('each annotation kind — arrow, image and text — is placed over a section and shown on the lane', async ({ page }) => {
+/** The colour an annotation of this kind is drawn in, read from the clip's own annotation. */
+const colourOf = (page: Page, kind: string) => page.evaluate(async ([url, wanted]: [string, string]) => {
+  const { session } = await import(/* @vite-ignore */ url);
+  const one = session.clip.annotations.all.find((annotation: { kind: string }) => annotation.kind === wanted) as
+    { colour?: string } | undefined;
+  return one?.colour ?? null;
+}, [HOOKS, kind] as [string, string]);
+
+test('each annotation kind — arrow, image and text — is placed over a section, in the clip’s colour, and shown on the lane', async ({ page }) => {
   const app = boot(page);
   await app.goto();
   const takes = await makeTakes(page, { width: 1280, height: 720, seconds: 4 });
   await app.seed(takes);
   await app.review();
 
-  // An arrow, drawn across the picture.
+  // The clip's own panel offers the colour every new annotation is made in, and starts at the
+  // app's red.
+  await page.locator('#props-btn').click();
+  const colour = page.locator('#clip-prop-menu .prop-row[data-id="annotationColour"] select');
+  await expect(colour).toHaveValue('#e53e3e');
+  await colour.selectOption('#38a169');
+  await page.locator('#props-btn').click();
+
+  // An arrow, drawn across the picture — and in the clip's colour, not the kind's own red.
   await section(page);
   await page.locator('[data-act="add"][data-kind="arrow"]').click();
   const preview = await page.locator('#preview').boundingBox();
@@ -46,6 +62,7 @@ test('each annotation kind — arrow, image and text — is placed over a sectio
   await page.mouse.up();
   // The annotation lane shows where the annotation is.
   await expect(page.locator('#tl-annots > *')).toHaveCount(1);
+  expect(await colourOf(page, 'arrow')).toBe('#38a169');
 
   // An image, chosen from a file.
   await section(page);
@@ -54,12 +71,18 @@ test('each annotation kind — arrow, image and text — is placed over a sectio
   await (await chooser).setFiles({ name: 'dot.png', mimeType: 'image/png', buffer: PNG });
   await expect(page.locator('#tl-annots > *')).toHaveCount(2);
 
-  // Text, typed into the app's own entry rather than the browser's prompt.
+  // Text, typed into the app's own entry rather than the browser's prompt — in the colour the
+  // clip's panel is left holding: neither the white a text used to fall back to nor the
+  // arrow's.
+  await page.locator('#props-btn').click();
+  await colour.selectOption('#3182ce');
+  await page.locator('#props-btn').click();
   await section(page);
   await page.locator('[data-act="add"][data-kind="text"]').click();
   await page.locator('#text-entry-input').fill('Hello');
   await page.locator('#text-entry-add').click();
   await expect(page.locator('#tl-annots > *')).toHaveCount(3);
+  expect(await colourOf(page, 'text')).toBe('#3182ce');
 });
 
 /** Bound the whole clip as the section, so the text kind's action is offered and its stretch holds. */

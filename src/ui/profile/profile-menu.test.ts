@@ -50,17 +50,20 @@ describe('profileRows', () => {
 describe('defineRows', () => {
   it('offers one row per item a profile may control', () => {
     const rows = defineRows(book().get('tv')!, { active: true, locked: false });
-    expect(rows.map(row => row.id)).toEqual(['logo', 'addToExport']);
+    expect(rows.map(row => row.id)).toEqual(['logo', 'addToExport', 'annotationColour']);
     // A list rather than a switch, and free when the profile says nothing about it. The choices
     // are the property's own, so the sheet draws them without knowing what they are.
     expect(rows[0]).toMatchObject({ label: 'Logo', control: 'choice', free: true, value: '', editable: true });
     expect(rows[0].choices.map(choice => choice.value)).toEqual(['', 'democlip', 'graditone']);
     expect(rows[1]).toMatchObject({ label: 'Add to export', control: 'toggle', free: false, value: 'true', editable: true });
+    // The colour a new annotation is made in: another list, its own entries, free until fixed.
+    expect(rows[2]).toMatchObject({ label: 'Annotation colour', control: 'choice', free: true, value: '', editable: true });
+    expect(rows[2].choices.map(choice => choice.label)).toEqual(['Red', 'White', 'Yellow', 'Green', 'Blue', 'Black']);
   });
 
   it('says an item is free when the profile does not control it', () => {
     const rows = defineRows(book().get('gra')!, { active: false, locked: false });
-    expect(rows.map(row => row.free)).toEqual([true, true]);
+    expect(rows.map(row => row.free)).toEqual([true, true, true]);
   });
 
   it('offers what a profile does control at the value it fixes', () => {

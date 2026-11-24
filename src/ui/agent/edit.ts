@@ -17,8 +17,9 @@
 import { Span } from '../../domain/clip/Span.js';
 import type { Clip } from '../../domain/clip/Clip.js';
 import type { Annotation } from '../../domain/annotation/Annotation.js';
+import type { AnnotationColour } from '../../domain/annotation/AnnotationColour.js';
 import { pluginOf, propertiesOf } from '../annotating/annotation-plugin.js';
-import { clipProperty } from '../clip/clip-properties.js';
+import { annotationColour, clipProperty } from '../clip/clip-properties.js';
 import { MIN_SECTION } from '../cutting/selection.js';
 import type { Controlling } from '../profile/control.js';
 import type { AnnotationParams, Result } from './surface.js';
@@ -27,11 +28,14 @@ import type { AnnotationParams, Result } from './surface.js';
 export type Made = { readonly annotation: Annotation } | { readonly reason: string };
 
 /**
- * Make a new annotation of a kind from data alone. The kinds whose shape *is* data
- * are here; a kind that needs something from outside the clip is not, and says so. A
- * maker that has to read a picture first answers with a promise.
+ * Make a new annotation of a kind from data alone, in the colour the clip makes new
+ * annotations in. The kinds whose shape *is* data are here; a kind that needs something
+ * from outside the clip is not, and says so. A maker that has to read a picture first
+ * answers with a promise.
  */
-export type MakeAnnotation = (kind: string, params: AnnotationParams, span: Span) => Made | Promise<Made>;
+export type MakeAnnotation = (
+  kind: string, params: AnnotationParams, span: Span, colour: AnnotationColour,
+) => Made | Promise<Made>;
 
 export interface Editor {
   cut(from: number, to: number): Result<{ removed: number }>;
@@ -58,7 +62,7 @@ export function createEditor(clip: Clip, make: MakeAnnotation, controlling: Cont
       if (!span) {
         return { ok: false, reason: `an annotation needs a stretch of the clip to be shown over, at least ${MIN_SECTION} long` };
       }
-      const made = await make(kind, params, span);
+      const made = await make(kind, params, span, annotationColour(clip.properties));
       if ('reason' in made) return { ok: false, reason: made.reason };
       clip.addAnnotation(made.annotation);
       return { ok: true, id: made.annotation.id };

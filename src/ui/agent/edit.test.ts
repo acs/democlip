@@ -108,6 +108,21 @@ describe('annotate', () => {
     expect(clip.annotations.count).toBe(1);
   });
 
+  it('hands the maker the colour the clip makes new annotations in', async () => {
+    registerPlugin(stubKind);
+    const clip = clipOf(10);
+    clip.setProperty('annotationColour', '#3182ce');
+    const arrow = Arrow.create(Span.of(0.1, 0.4), { x: 0.2, y: 0.3 }, { x: 0.6, y: 0.7 })!;
+    let seen: string | null = null;
+    await editorOf(clip, (_kind, _params, _span, colour) => {
+      seen = colour;
+      return { annotation: arrow };
+    }).annotate('stub', { span: { s: 0.1, e: 0.4 } });
+    // The clip's own annotation colour, not the kind's fallback: an agent's arrow is the same
+    // colour a person's would be.
+    expect(seen).toBe('#3182ce');
+  });
+
   it('waits for a maker that has to read something first, as an image does', async () => {
     registerPlugin(stubKind);
     const clip = clipOf(10);

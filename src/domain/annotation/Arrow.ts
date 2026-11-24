@@ -56,7 +56,8 @@ function distanceToSegment(px: number, py: number, x0: number, y0: number, x1: n
 export class Arrow extends Annotation {
   static readonly id = 'arrow';
 
-  /** The colour an arrow has when none is chosen — the app's action red. */
+  /** The colour an arrow reads back as when it carries none — the app's red, for one stored before
+   * colours existed. A new one is made in the clip's annotation colour, not this. */
   static readonly DEFAULT_COLOUR: AnnotationColour = '#e53e3e';
 
   private constructor(

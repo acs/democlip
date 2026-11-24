@@ -1,5 +1,6 @@
-// The clip's own properties, declared for the app: what a clip says about itself —
-// its title, its description — rather than what is drawn over its picture.
+// The clip's own properties, declared for the app: its title and its description, the mark
+// it wears, and the colour a new annotation is made in — the few things a person may change
+// about a clip without touching its picture.
 //
 // This is the annotation seam one level up. There, a *kind* declares what can be
 // changed about its annotations (`AnnotationPlugin.properties`); here the app declares
@@ -13,6 +14,10 @@
 
 import type { ClipProperties } from '../../domain/clip/ClipProperties.js';
 import type { Clip } from '../../domain/clip/Clip.js';
+import {
+  COLOURS, COLOUR_LABELS, DEFAULT_ANNOTATION_COLOUR, colourOf, isColour,
+  type AnnotationColour,
+} from '../../domain/annotation/AnnotationColour.js';
 import { LOGOS, logoFile } from '../logos.js';
 
 /** Which shared control edits a clip property. */
@@ -58,10 +63,10 @@ export interface ClipProperty {
    */
   blocked?(properties: ClipProperties, clip?: Clip): string | null;
   /**
-   * True for a property a **profile** may preload onto a new clip — **add to export** in
-   * this iteration. A profile carries settings keyed by property id, and only the
-   * seedable ones are ever applied, so flagging one here is the whole of teaching a
-   * profile to carry it.
+   * True for a property a **profile** may preload onto a new clip — **add to export**,
+   * **logo** and **annotation colour**. A profile carries settings keyed by property id,
+   * and only the seedable ones are ever applied, so flagging one here is the whole of
+   * teaching a profile to carry it.
    */
   readonly seedable?: boolean;
   /**
@@ -168,6 +173,30 @@ registerClipProperty({
 function hasCardContent(properties: ClipProperties): boolean {
   return properties.get('title') !== '' || properties.get('description') !== '' || properties.get('logo') !== '';
 }
+
+/**
+ * The colour a **new annotation** is made in: the clip's own annotation colour, or the
+ * app's red when it holds none. The creation canvas and the agent's maker both ask this,
+ * so an arrow a person draws and one an agent places land in the same colour.
+ */
+export function annotationColour(properties: ClipProperties): AnnotationColour {
+  return colourOf(properties.get('annotationColour'), DEFAULT_ANNOTATION_COLOUR);
+}
+
+// And the colour every new arrow and text is made in — a list, because the palette is the
+// app's own and a free-form picker could not promise a colour that reads over any picture. It
+// is the clip's own answer, and a **profile** may fix it, so every annotation made under that
+// profile starts in its colour. Changing it recolours nothing already placed: an annotation
+// carries the colour it was made in, and its own settings change that one.
+registerClipProperty({
+  id: 'annotationColour',
+  label: 'Annotation colour',
+  control: 'choice',
+  seedable: true,
+  choices: COLOURS.map(colour => ({ value: colour, label: COLOUR_LABELS[colour] })),
+  value: annotationColour,
+  with: (properties, value) => (isColour(value) ? properties.with('annotationColour', value) : null),
+});
 
 // And the clip's own size: the picture the review shows and every export writes — the
 // largest width and height among the takes, both even. It is **shown, not set**: the size
