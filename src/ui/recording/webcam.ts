@@ -134,22 +134,30 @@ function renderCameras(): void {
   cameraMenu.setItems(options, selectedId);
 }
 
-// Paint the webcam, mirrored, into the rectangle the compositor gives it.
+// Paint the webcam, mirrored, as a circle in the bottom-right of the rectangle the
+// compositor gives it. The circle sits a margin inside the corner, and the video is
+// scaled to cover it — centre-cropped, never stretched to the circle's square.
 export function drawWebcamOverlay(
   context: CanvasRenderingContext2D,
   x: number, y: number, width: number, height: number,
 ): void {
-  if (!capture.sources.webcam || el.wcv.readyState < 2) return;
-  const size = Math.min(width, height) * 0.28;
-  const cx = x + width - size * 0.7;
+  const video = el.wcv;
+  if (!capture.sources.webcam || video.readyState < 2 || !video.videoWidth) return;
+  const size = Math.min(width, height) * 0.28;   // the bubble's diameter
+  const cx = x + width - size * 0.7;             // its centre, a margin in from the corner
   const cy = y + height - size * 0.7;
+  // Cover the circle: scale the video so its shorter side fills the diameter, and centre
+  // it, so the circle crops the picture instead of squashing it.
+  const cover = Math.max(size / video.videoWidth, size / video.videoHeight);
+  const dw = video.videoWidth * cover;
+  const dh = video.videoHeight * cover;
   context.save();
   context.beginPath();
-  context.arc(cx + size / 2, cy + size / 2, size / 2, 0, Math.PI * 2);
+  context.arc(cx, cy, size / 2, 0, Math.PI * 2);
   context.closePath();
   context.clip();
-  context.translate(cx + size, cy);
+  context.translate(cx, cy);
   context.scale(-1, 1);
-  context.drawImage(el.wcv, 0, 0, size, size);
+  context.drawImage(video, -dw / 2, -dh / 2, dw, dh);
   context.restore();
 }
