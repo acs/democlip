@@ -20,3 +20,35 @@ test('the app boots, reads Ready, and its page carries no duplicate element ids'
   });
   expect(duplicates).toEqual([]);
 });
+
+// ── On a phone, where the header has only one row of room ─────────────────────
+
+test.describe('on a phone', () => {
+  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+
+  test('the header fits, with the build under the name and no capture size repeated', async ({ page }) => {
+    await boot(page).goto();
+
+    // The build's version holds the line the "Screen · WebM" subtitle used to, and
+    // goes to the project's own page.
+    await expect(page.locator('.logo-sub')).toHaveCount(0);
+    const ver = page.locator('#ver');
+    await expect(ver).toBeVisible();
+    await expect(ver).toHaveText(/^v\d+\.\d+\.\d+$/);
+    await expect(ver).toHaveAttribute('href', 'https://github.com/acs/democlip');
+    await expect(ver).toHaveAttribute('target', '_blank');
+    const titleBox = await page.locator('.logo-title').boundingBox();
+    const verBox = await ver.boundingBox();
+    expect(verBox!.y).toBeGreaterThan(titleBox!.y);
+
+    // The capture's size is the clip properties panel's, not the header's.
+    await expect(page.locator('#res-badge')).toHaveCount(0);
+
+    // The header no longer overflows a 390px phone: the profile pill, its last control,
+    // is wholly inside the window.
+    const pill = await page.locator('#profile-btn').boundingBox();
+    expect(pill).not.toBeNull();
+    expect(pill!.x).toBeGreaterThanOrEqual(0);
+    expect(pill!.x + pill!.width).toBeLessThanOrEqual(390);
+  });
+});

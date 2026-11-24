@@ -9,7 +9,7 @@
 //
 // The version is set from `package.json` at build time (see vite.config.ts) and
 // bumped by the deploy workflow on every merge to main, so the git tag, the
-// deployed build and the number in the corner all agree.
+// deployed build and the number in the header all agree.
 
 import { el } from '../dom.js';
 
@@ -17,7 +17,7 @@ import { el } from '../dom.js';
 const VERSION = typeof __APP_VERSION__ === 'string' ? __APP_VERSION__ : 'dev';
 
 /**
- * The build's version, in one place. The number beside the logo and the version the
+ * The build's version, in one place. The number under the wordmark and the version the
  * automation surface reports are the same string, read here, so they cannot drift.
  */
 export function appVersion(): string {
@@ -29,7 +29,8 @@ const ASK_EVERY_MS = 15 * 60 * 1000;   // how often to look, while the app stays
 export function initVersion(): void {
   const label = 'v' + appVersion();
   el.ver.textContent = label;
-  el.ver.title = 'DemoClip ' + label;
+  el.ver.title = 'DemoClip ' + label + ' — open the project on GitHub';
+  el.ver.setAttribute('aria-label', 'DemoClip ' + label + ' — open the project on GitHub');
   el.helpVer.textContent = label;
 
   el.verNew.addEventListener('click', () => location.reload());

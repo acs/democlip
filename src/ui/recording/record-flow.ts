@@ -74,7 +74,6 @@ export function syncSources(): void {
   if (!hasPicture()) {
     stopMirror();
     drawGrid();
-    el.resBadge.classList.remove('on');
     el.idleOv.classList.remove('gone');
     el.recBtn.disabled = false;
     el.recLbl.textContent = 'Record';
@@ -105,8 +104,6 @@ function sizePreview(): void {
   }
   el.cv.width = capture.width || 1280;
   el.cv.height = capture.height || 720;
-  el.resBadge.classList.add('on');
-  el.resBadge.textContent = `${el.cv.width}×${el.cv.height}`;
 }
 
 /**
