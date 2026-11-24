@@ -30,8 +30,8 @@ const ACTION_ICON = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none"
 
 // ── the look ──────────────────────────────────────────────────────────────────
 //
-// One style, defined once: a shaft with a solid head, in the annotation's colour —
-// the arrow's red unless the user chose another — with a thin dark edge so it reads
+// One style, defined once: a shaft with a solid head, in the clip's annotation colour —
+// red unless the clip or a profile says otherwise — with a thin dark edge so it reads
 // over both light and dark pictures at every colour the palette holds.
 
 const OUTLINE = 'rgba(2,3,8,0.72)';
@@ -60,7 +60,7 @@ export class ArrowPlugin implements AnnotationPlugin, AnnotationRenderer<Annotat
     icon: ACTION_ICON,
   };
 
-  /** The arrow's colour — the app's red unless the user chose another. */
+  /** The arrow's colour — the clip's annotation colour unless the user chose another. */
   readonly properties: readonly AnnotationProperty[] = [
     {
       id: 'colour',
@@ -85,8 +85,8 @@ export class ArrowPlugin implements AnnotationPlugin, AnnotationRenderer<Annotat
     void (async () => {
       try {
         for (;;) {
-          const drag = await ctx.drag((from, to) => Arrow.create(ctx.span, from, to, DRAFT_ID));
-          const arrow = drag ? Arrow.create(ctx.span, drag.from, drag.to) : null;
+          const drag = await ctx.drag((from, to) => Arrow.create(ctx.span, from, to, DRAFT_ID, ctx.colour));
+          const arrow = drag ? Arrow.create(ctx.span, drag.from, drag.to, undefined, ctx.colour) : null;
           if (arrow) { ctx.commit(arrow); return; }
           // A stray click is not an arrow. Stay armed, so the next try is a drag
           // away rather than a selection to be made again.

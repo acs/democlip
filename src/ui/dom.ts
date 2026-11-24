@@ -109,7 +109,6 @@ export const el = {
   profileDefBd:    byId<HTMLElement>('profile-def-bd'),
   profileDefTitle: byId<HTMLElement>('profile-def-title'),
   profileDefRows:  byId<HTMLElement>('profile-def-rows'),
-  profileDefClose: byId<HTMLButtonElement>('profile-def-close'),
   profileDefDone:  byId<HTMLButtonElement>('profile-def-done'),
 };
 

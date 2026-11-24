@@ -274,6 +274,10 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
    properties use; and a New Profile button at the foot. */
 .icon-btn-lbl{pointer-events:none;}
 .profile-pill{width:auto;min-width:30px;padding:0 9px;border-radius:100px;font-family:var(--font-mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;}
+/* The pill wears the active profile's annotation colour when it fixes one; the glass hover
+   would wash it out, so it brightens instead. */
+.profile-pill.wears-colour{border-color:transparent;}
+.profile-pill.wears-colour:hover{filter:brightness(1.08);}
 .profile-menu{min-width:286px;padding:8px;overflow-y:auto;overscroll-behavior:contain;}
 .profile-title{font-family:var(--font-ui);font-size:13px;font-weight:700;letter-spacing:.02em;color:var(--text);text-align:center;padding:4px 0 8px;}
 .profile-row{display:flex;flex-direction:column;gap:5px;padding:5px;border-radius:10px;border:1px solid transparent;}
@@ -318,8 +322,6 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 .pdef-bd{position:fixed;inset:0;z-index:150;display:flex;align-items:center;justify-content:center;background:rgba(3,4,10,0.55);opacity:0;visibility:hidden;transition:opacity .16s,visibility 0s linear .16s;}
 .pdef-bd.on{opacity:1;visibility:visible;transition:opacity .16s,visibility 0s;}
 .pdef-panel{position:relative;width:min(92vw,420px);padding:20px;border-radius:12px;border:1px solid var(--glass-b2);background:var(--surface);backdrop-filter:blur(20px) saturate(1.4);-webkit-backdrop-filter:blur(20px) saturate(1.4);display:flex;flex-direction:column;gap:12px;box-shadow:0 18px 50px rgba(0,0,0,.45);}
-.pdef-close{position:absolute;top:12px;right:12px;width:26px;height:26px;border-radius:7px;border:none;background:transparent;color:var(--text-mid);font-size:16px;line-height:1;cursor:pointer;transition:background .15s,color .15s;}
-.pdef-close:hover{background:var(--glass-b);color:var(--text);}
 .pdef-title{margin:0;font-family:var(--font-ui);font-size:15px;font-weight:700;color:var(--text);}
 .pdef-sub{margin:0;font-family:var(--font-ui);font-size:12px;line-height:1.5;color:var(--text-mid);}
 .pdef-rows{display:flex;flex-direction:column;gap:13px;padding:2px 0;}
@@ -339,7 +341,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 
 /* PROPERTIES INSPECTOR — at the body, beside the picked annotation, so the preview
    cannot clip it. The same panel look as the camera menu, with a row per property. */
-.prop-menu{position:fixed;z-index:120;min-width:180px;max-width:240px;padding:10px;border-radius:10px;border:1px solid var(--glass-b2);background:var(--surface);backdrop-filter:blur(20px) saturate(1.4);-webkit-backdrop-filter:blur(20px) saturate(1.4);display:flex;flex-direction:column;gap:10px;opacity:0;visibility:hidden;transform:translateY(4px);transition:opacity .16s,transform .16s,visibility 0s linear .16s;}
+.prop-menu{position:fixed;z-index:120;min-width:180px;max-width:240px;padding:10px;border-radius:10px;border:1px solid var(--glass-b2);background:var(--surface);backdrop-filter:blur(20px) saturate(1.4);-webkit-backdrop-filter:blur(20px) saturate(1.4);display:flex;flex-direction:column;gap:10px;overflow-y:auto;overscroll-behavior:contain;opacity:0;visibility:hidden;transform:translateY(4px);transition:opacity .16s,transform .16s,visibility 0s linear .16s;}
 .prop-menu.on{opacity:1;visibility:visible;transform:translateY(0);transition:opacity .16s,transform .16s,visibility 0s;}
 .prop-row{display:flex;flex-direction:column;gap:6px;}
 .prop-name{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-mid);}
@@ -372,6 +374,19 @@ select.prop-input option,select.pdef-select option{background:var(--bg);color:va
 .prop-hint{font-family:var(--font-ui);font-size:11px;line-height:1.45;color:var(--text-mid);}
 .prop-edit{padding:5px 10px;border-radius:7px;border:1px solid var(--glass-b2);background:var(--glass);color:var(--text);font-family:var(--font-ui);font-size:12px;cursor:pointer;transition:background .15s;}
 .prop-edit:hover{background:var(--glass-b);}
+
+/* A COLOUR PROPERTY — the clip's annotation colour, in its own panel and a profile's sheet.
+   One button per colour, each showing the colour itself beside its name; the free state, which
+   only a profile has, leads. */
+.colour-choices{display:flex;flex-wrap:wrap;gap:5px;}
+.colour-choice{display:inline-flex;align-items:center;gap:6px;padding:4px 9px 4px 6px;border-radius:100px;border:1px solid var(--glass-b2);background:var(--glass);color:var(--text-mid);font-family:var(--font-mono);font-size:10px;letter-spacing:.04em;cursor:pointer;transition:background .15s,color .15s,border-color .15s;}
+.colour-choice:hover:not(:disabled){background:var(--glass-b);color:var(--text);}
+.colour-choice[aria-pressed="true"]{background:var(--glass-b);border-color:var(--text-mid);color:var(--text);}
+.colour-choice:disabled{opacity:.45;cursor:not-allowed;}
+.colour-choice-free{padding:4px 9px;}
+.colour-choice-dot{width:11px;height:11px;flex-shrink:0;border-radius:50%;box-shadow:inset 0 0 0 1px rgba(255,255,255,.3),0 0 0 1px rgba(0,0,0,.35);}
+[data-theme="light"] .colour-choice-dot{box-shadow:inset 0 0 0 1px rgba(255,255,255,.5),0 0 0 1px rgba(0,0,0,.22);}
+.prop-colour{display:inline-flex;align-items:center;gap:7px;}
 
 /* TEXT ENTRY — the app's dialog for typing a line, used for entering and for editing */
 .te-bd{position:fixed;inset:0;z-index:140;display:flex;align-items:center;justify-content:center;background:rgba(3,4,10,0.55);opacity:0;visibility:hidden;transition:opacity .16s,visibility 0s linear .16s;}

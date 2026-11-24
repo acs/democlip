@@ -2,9 +2,9 @@
 //
 // A clip that wears a **logo** wears it as a watermark too — an image annotation over the whole
 // clip, which the review shows, the lane lists and every export draws — and under it, at half its
-// height, its **title**. The proof that each is *drawn* is a pixel count: two files with the same
-// card and the same clip, decoded at the same moment of the clip's own body — where the only
-// thing that differs is the mark, or the line.
+// height, its **title**, in the clip's **annotation colour** like any other text. The proof that
+// each is *drawn* is a pixel count: two files with the same card and the same clip, decoded at the
+// same moment of the clip's own body — where the only thing that differs is the mark, or the line.
 
 import { expect, test, type Page } from '@playwright/test';
 import { boot } from '../helpers/app.js';
@@ -40,6 +40,26 @@ async function setTitle(page: Page, text: string): Promise<void> {
   }, [HOOKS, text] as [string, string]);
   await expect.poll(() => worn(page, 'text')).toBe(text !== '');
 }
+
+/** Set the colour every new annotation is made in, and wait for the clip to hold it. */
+async function setAnnotationColour(page: Page, value: string): Promise<void> {
+  await page.evaluate(async ([url, colour]) => {
+    const { session } = await import(/* @vite-ignore */ url);
+    session.clip.setProperty('annotationColour', colour as string);
+  }, [HOOKS, value] as [string, string]);
+  await expect.poll(() => page.evaluate(async url => {
+    const { session } = await import(/* @vite-ignore */ url);
+    return session.clip.properties.get('annotationColour');
+  }, HOOKS)).toBe(value);
+}
+
+/** The colour the watermark's title line is drawn in, read from the clip's own model. */
+const watermarkTitleColour = (page: Page): Promise<string | null> => page.evaluate(async url => {
+  const { session } = await import(/* @vite-ignore */ url);
+  const worn = session.clip.watermarks().find((one: { kind: string }) => one.kind === 'text') as
+    { colour: string } | undefined;
+  return worn?.colour ?? null;
+}, HOOKS);
 
 /** Is one of the watermark's annotations of this kind on the clip? */
 const worn = (page: Page, kind: string): Promise<boolean> =>
@@ -110,6 +130,22 @@ test('a clip that wears a logo wears it as a watermark, with its title under it,
   const withTitle = await exportFile(page, '#exp-webm');
   expect(await frameDiff(page, marked, withTitle, 'video/webm', IN_THE_CLIP, TITLE_BAND)).toBeGreaterThan(100);
 
+  // The line is a text, and follows the clip's annotation colour like any other: it is made in
+  // the red a new text takes, and a change to the colour repaints it where it stands rather than
+  // placing another.
+  expect(await watermarkTitleColour(page)).toBe('#e53e3e');
+  await setAnnotationColour(page, '#3182ce');
+  await expect.poll(() => watermarkTitleColour(page)).toBe('#3182ce');
+  const repainted = await watermarkTitleRect(page);
+  expect(repainted).toMatchObject({ text: 'A demo' });
+  expect(repainted!.x).toBeCloseTo(title.x, 5);
+  expect(repainted!.y).toBeCloseTo(title.y, 5);
+
+  // And the file carries the new colour: exported again, the band the line is drawn in differs
+  // from the red line's own file.
+  const recoloured = await exportFile(page, '#exp-webm');
+  expect(await frameDiff(page, withTitle, recoloured, 'video/webm', IN_THE_CLIP, TITLE_BAND)).toBeGreaterThan(50);
+
   // It goes with the title: cleared, the line goes and the mark stays.
   await setTitle(page, '');
   expect(await watermarkTitleRect(page)).toBeNull();
@@ -122,6 +158,8 @@ test('a clip that wears a logo wears it as a watermark, with its title under it,
   // A title with no logo wears the line alone, in the corner; a logo joins it, above it.
   await setTitle(page, 'A demo');
   await expect.poll(() => watermarkTitleRect(page)).not.toBeNull();
+  // Placed after the colour changed, so it is made in that colour.
+  expect(await watermarkTitleColour(page)).toBe('#3182ce');
   expect(await watermarkRect(page)).toBeNull();
   await setLogo(page, 'democlip');
   const alone = await watermarkRect(page);

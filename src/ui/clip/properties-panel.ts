@@ -27,6 +27,7 @@
 import { session } from '../../session.js';
 import { el, toast } from '../dom.js';
 import { clipProperties, type ClipProperty } from './clip-properties.js';
+import { colourChoices } from './colour-choices.js';
 import type { Controlling } from '../profile/control.js';
 
 const GAP = 8;      // between the control and the panel
@@ -185,6 +186,9 @@ class ClipPropertiesPanel {
       const value = document.createElement('span');
       value.className = 'prop-value';
       value.textContent = this.shown(property);
+      // A colour reads as its swatch beside its name, here as where it is chosen: "Blue" alone
+      // is a word, and the row is meant to say which colour the clip is holding.
+      const shown = property.control === 'colour' ? this.withSwatch(property, value) : value;
       if (fixedBy) {
         const line = document.createElement('div');
         line.className = 'prop-fixed';
@@ -195,10 +199,10 @@ class ClipPropertiesPanel {
         lock.setAttribute('role', 'img');
         lock.setAttribute('aria-label', said);
         lock.innerHTML = LOCK_ICON;
-        line.append(value, lock);
+        line.append(shown, lock);
         host.append(name, line);
       } else {
-        host.append(name, value);
+        host.append(name, shown);
       }
       return host;
     }
@@ -225,6 +229,22 @@ class ClipPropertiesPanel {
       host.append(label);
       if (hint) host.append(hint);
       this.fields.push({ property, input: check, hint: hint ?? undefined, label });
+      return host;
+    }
+
+    // A colour: the palette as buttons, each wearing its own colour beside its name, so the
+    // value is not a word the person has to translate. It applies on the press — there is nothing
+    // to type — and the row is rebuilt with the chosen one pressed.
+    if (property.control === 'colour') {
+      const group = colourChoices({
+        label: property.label,
+        choices: property.choices ?? [],
+        value: property.value(session.clip.properties, session.clip),
+        disabled: blocked !== null,
+        pick: value => { if (value !== null) this.applyColour(property, value); },
+      });
+      host.append(name, group);
+      if (hint) host.append(hint);
       return host;
     }
 
@@ -290,10 +310,31 @@ class ClipPropertiesPanel {
   private shown(property: ClipProperty): string {
     const value = property.value(session.clip.properties, session.clip);
     if (property.control === 'toggle') return value === 'true' ? 'On' : 'Off';
-    if (property.control === 'choice') {
+    if (property.control === 'choice' || property.control === 'colour') {
       return property.choices?.find(choice => choice.value === value)?.label ?? '—';
     }
     return value || '—';
+  }
+
+  /** A colour value: the swatch of what the clip holds, beside the name of that colour. */
+  private withSwatch(property: ClipProperty, name: HTMLSpanElement): HTMLElement {
+    const shown = document.createElement('span');
+    shown.className = 'prop-colour';
+    const dot = document.createElement('span');
+    dot.className = 'colour-choice-dot';
+    dot.style.background = property.value(session.clip.properties, session.clip);
+    shown.append(dot, name);
+    return shown;
+  }
+
+  /** A colour picked: written through the clip, and the row rebuilt with it pressed. */
+  private applyColour(property: ClipProperty, value: string): void {
+    if (value === property.value(session.clip.properties, session.clip)) return;
+    const next = property.with(session.clip.properties, value);
+    if (!next) { toast(`${property.label} not changed — that colour is not one of ours`); return; }
+    session.clip.setProperty(property.id, next.get(property.id));
+    this.render();
+    this.place();
   }
 
   /** Apply one field through the clip: it announces, the one undo holds it, and it is kept. */

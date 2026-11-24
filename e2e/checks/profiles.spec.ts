@@ -134,6 +134,61 @@ test('an item a profile fixes is applied and locked — on or off — and refuse
   await expect(page.locator('#clip-prop-menu .prop-value').first()).toHaveText('Off');
 });
 
+// ── An annotation colour a profile fixes ─────────────────────────────────────────────
+
+test('an annotation colour a profile fixes is the colour a new arrow and text are made in', async ({ page }) => {
+  const app = boot(page);
+  await app.gotoAgent();
+  // A colour the app's own palette holds but the app's default does not use, so a check that
+  // ignored the profile's value could not pass for this.
+  await writeBook(page, book({ annotationColour: '#3182ce' }));
+  await page.reload();
+  await expect(page.locator('#s-text')).toHaveText('Ready');
+
+  const takes = await makeTakes(page, { width: 640, height: 360, seconds: 1 });
+  await app.add(takes);
+  await app.review();
+
+  // The panel shows the profile's colour by the name the list gives it, with the lock that
+  // says whose it is, and nothing to press.
+  await page.locator('#props-btn').click();
+  const row = page.locator('#clip-prop-menu .prop-row[data-id="annotationColour"]');
+  await expect(row.locator('.prop-value')).toHaveText('Blue');
+  await expect(row.locator('.colour-choice-dot')).toHaveCSS('background-color', 'rgb(49, 130, 206)');
+  await expect(row.locator('.prop-lock')).toHaveAttribute('title', 'Set by DemoClipTV');
+  await expect(row.locator('input, select')).toHaveCount(0);
+  await page.locator('#props-btn').click();
+
+  // A new arrow and a new text, made through the surface — the same clip property the whole
+  // app reads, so the colour under the profile is the one both kinds are made in.
+  const made = await page.evaluate(async () => {
+    const surface = (globalThis as {
+      democlip?: { edit: { annotate(kind: string, params: Record<string, unknown>): Promise<{ ok: boolean; id?: string }> } };
+    }).democlip;
+    if (!surface) return null;
+    const span = { s: 0.1, e: 0.9 };
+    const arrow = await surface.edit.annotate('arrow', { span, from: { x: 0.3, y: 0.4 }, to: { x: 0.7, y: 0.6 } });
+    const text = await surface.edit.annotate('text', { span, text: 'Hello' });
+    return { arrow, text };
+  });
+  expect(made?.arrow.ok).toBe(true);
+  expect(made?.text.ok).toBe(true);
+
+  const colours = await page.evaluate(() => {
+    const surface = (globalThis as {
+      democlip?: { describe(): { annotations: Array<{ kind: string; properties: Array<{ id: string; value: string }> }> } };
+    }).democlip;
+    return surface?.describe().annotations.map(annotation => ({
+      kind: annotation.kind,
+      colour: annotation.properties.find(property => property.id === 'colour')?.value,
+    }));
+  });
+  expect(colours).toEqual([
+    { kind: 'arrow', colour: '#3182ce' },
+    { kind: 'text', colour: '#3182ce' },
+  ]);
+});
+
 // ── The selector, the config sheet, and the book outliving the app ───────────────────
 
 test('a profile is made in the selector, defined in its own sheet, chosen, kept and let go', async ({ page }) => {
@@ -153,17 +208,41 @@ test('a profile is made in the selector, defined in its own sheet, chosen, kept 
   await expect(row.locator('.profile-ico[data-act="rename"]')).toHaveCount(0);
   await defineIn(page, 'DemoClipTV', 'addToExport', 'on');
 
-  // Choose it: the clip is made under it.
+  // And a colour, from the palette the sheet draws with each colour beside its name — so red and
+  // orange are told apart by looking, not by reading.
+  await row.locator('.profile-ico[data-act="define"]').click();
+  // The sheet has one way out, **Done**: no × in its corner.
+  await expect(page.locator('#profile-def-close')).toHaveCount(0);
+  const palette = page.locator('.pdef-row[data-id="annotationColour"] .colour-choice');
+  await expect(palette).toHaveText(['Not fixed', 'Red', 'Orange', 'White', 'Yellow', 'Green', 'Blue', 'Black']);
+  await expect(page.locator('.pdef-row[data-id="annotationColour"] .colour-choice[data-value="#ff6c23"] .colour-choice-dot'))
+    .toHaveCSS('background-color', 'rgb(255, 108, 35)');
+  await page.locator('.pdef-row[data-id="annotationColour"] .colour-choice[data-value="#ff6c23"]').click();
+  await expect(page.locator('.pdef-row[data-id="annotationColour"] .colour-choice[aria-pressed="true"]')).toHaveText('Orange');
+  await page.locator('#profile-def-done').click();
+
+  // The profile's badge in the list wears that colour, with the ink that reads on it.
+  const badge = row.locator('.profile-avatar');
+  await expect(badge).toHaveCSS('background-color', 'rgb(255, 108, 35)');
+  await expect(badge).toHaveCSS('color', 'rgb(8, 9, 26)');
+
+  // Choose it: the clip is made under it, and the toolbar pill wears the same badge.
   await row.locator('.profile-pick').click();
   await expect(page.locator('#profile-initials')).toHaveText('Dem');
+  await expect(page.locator('#profile-btn')).toHaveCSS('background-color', 'rgb(255, 108, 35)');
 
   // A reload finds it whole — the profile, what it controls, and that it is the one in use.
   await page.reload();
   await expect(page.locator('#s-text')).toHaveText('Ready');
   await expect(page.locator('#profile-initials')).toHaveText('Dem');
+  // The pill's colour comes from the kept profile, not from having watched it being set.
+  await expect(page.locator('#profile-btn')).toHaveCSS('background-color', 'rgb(255, 108, 35)');
   const saved = await readBook(page);
   expect(saved?.activeId).not.toBe('default');
-  expect(saved?.profiles.find(profile => profile.name === 'DemoClipTV')?.controls).toEqual({ addToExport: 'true' });
+  expect(saved?.profiles.find(profile => profile.name === 'DemoClipTV')?.controls).toEqual({
+    addToExport: 'true',
+    annotationColour: '#ff6c23',
+  });
 
   // The built-in default offers no pencil mark and no bin.
   await page.locator('#profile-btn').click();
@@ -187,6 +266,8 @@ test('a profile is made in the selector, defined in its own sheet, chosen, kept 
   await expect(page.locator('.profile-row')).toHaveCount(1);
   await page.keyboard.press('Escape');
   await expect(page.locator('#profile-initials')).toHaveText('Def');
+  // The default fixes no colour, so the pill is the app's glass again.
+  await expect(page.locator('#profile-btn')).not.toHaveClass(/wears-colour/);
   expect((await readBook(page))?.activeId).toBe('default');
 
   // The item is the person's again: the value the profile left is still there and it moves.
@@ -195,6 +276,9 @@ test('a profile is made in the selector, defined in its own sheet, chosen, kept 
   await app.review();
   await page.locator('#props-btn').click();
   await expect(page.locator('#clip-prop-menu .prop-lock')).toHaveCount(0);
+  // The colour the profile fixed is still the clip's, now the person's to move, and it reads as
+  // the colour itself beside its name.
+  await expect(page.locator('#clip-prop-menu .prop-row[data-id="annotationColour"] .colour-choice[aria-pressed="true"]')).toHaveText('Orange');
   await expect(page.locator('#clip-prop-menu input.prop-check')).toBeChecked();
   await page.locator('#clip-prop-menu input.prop-check').uncheck();
   await expect(page.locator('#clip-prop-menu input.prop-check')).not.toBeChecked();

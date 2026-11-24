@@ -8,6 +8,7 @@
 import { seedableClipProperties, type PropertyChoice } from '../clip/clip-properties.js';
 import { Profile } from '../../domain/profile/Profile.js';
 import { Profiles } from '../../domain/profile/Profiles.js';
+import { isColour, type AnnotationColour } from '../../domain/annotation/AnnotationColour.js';
 
 /** A profile, as the selector draws it. */
 export interface ProfileRow {
@@ -15,8 +16,12 @@ export interface ProfileRow {
   readonly name: string;
   /** The first letters of the name, for the row's and the toolbar's pill — 'Dem'. */
   readonly avatar: string;
-  /** Which of the avatar colours this profile keeps — the same one every time it is drawn. */
+  /** Which of the avatar colours this profile keeps when it fixes no colour — the same one every time. */
   readonly tone: number;
+  /** The colour the profile fixes its annotations to, or null — the badge wears it when there is one. */
+  readonly colour: AnnotationColour | null;
+  /** The ink that reads on that colour; unused when the profile fixes none. */
+  readonly ink: string;
   readonly active: boolean;
   /** May this profile be chosen now? False for the others while the session has begun to capture. */
   readonly selectable: boolean;
@@ -58,12 +63,37 @@ export function avatarLetters(name: string): string {
 
 /**
  * A profile's own colour, from its id alone, so a pill keeps its colour between openings
- * and after a reload rather than being handed out by position.
+ * and after a reload rather than being handed out by position. It is the fallback: a profile
+ * that fixes an annotation colour wears that one instead (`profileColour`).
  */
 export function avatarTone(id: string): number {
   let hash = 0;
   for (let at = 0; at < id.length; at++) hash = (hash * 31 + id.charCodeAt(at)) % 997;
   return hash % AVATAR_TONES;
+}
+
+/** The colour a profile fixes its annotations to, or null when it fixes none. */
+export function profileColour(profile: Profile): AnnotationColour | null {
+  const value = profile.valueFor('annotationColour');
+  return isColour(value) ? value : null;
+}
+
+/**
+ * The ink that reads on a badge of this colour: the app's dark on the light colours, white on
+ * the dark one. A badge is a solid patch of the colour, so the theme it sits in is not part of
+ * the answer — the colour is the same on both.
+ */
+export function badgeInk(colour: AnnotationColour): string {
+  return luminance(colour) > 0.186 ? '#08091A' : '#FFFFFF';
+}
+
+/** How bright a colour is, linearised as WCAG measures it. */
+function luminance(hex: string): number {
+  const [r, g, b] = [1, 3, 5].map(at => {
+    const channel = parseInt(hex.slice(at, at + 2), 16) / 255;
+    return channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
+  });
+  return 0.2126 * r! + 0.7152 * g! + 0.0722 * b!;
 }
 
 /**
@@ -76,11 +106,14 @@ export function profileRows(book: Profiles, locked: boolean): ProfileRow[] {
   return book.all.map(profile => {
     const active = profile.id === book.activeId;
     const fixed = profile.id === Profiles.DEFAULT_ID;
+    const colour = profileColour(profile);
     return {
       id: profile.id,
       name: profile.name,
       avatar: avatarLetters(profile.name),
       tone: avatarTone(profile.id),
+      colour,
+      ink: colour ? badgeInk(colour) : '',
       active,
       selectable: !locked || active,
       fixed,

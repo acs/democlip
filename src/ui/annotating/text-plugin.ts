@@ -38,6 +38,10 @@ const FONT_WEIGHT = '600';
 const FONT_FAMILY = 'ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif';
 const OUTLINE = 'rgba(2,3,8,0.72)';   // a dark edge, so any palette colour reads over any picture
 
+// A new line is made in the clip's annotation colour, red by default — the same colour a new
+// arrow takes, so the two kinds do not start in different ones. The white below is what a text
+// written before colours existed reads back as, not what a new one is made in.
+
 const ARMED = 'TEXT — type the text to show';
 const NO_TEXT = 'TEXT — no text entered';
 const NO_FIT = 'TEXT — that text did not fit';
@@ -158,7 +162,7 @@ export class TextPlugin implements AnnotationPlugin, AnnotationRenderer<Annotati
       y: (1 - size.height) / 2,
       width: size.width,
       height: size.height,
-    });
+    }, undefined, ctx.colour);
     if (!annotation) { ctx.cancel(NO_FIT); return; }
     ctx.commit(annotation);
   }

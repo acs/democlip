@@ -10,8 +10,8 @@
 //
 // Which annotations are the watermark is the **clip's** own fact (`Clip.watermarks()`,
 // `Clip.setWatermarks()`): it keeps their ids and writes them down with itself, so nothing inside
-// a kind has to carry a marker. The **logo** and the **title** are the whole of the coupling —
-// this module listens for them and makes the watermark follow.
+// a kind has to carry a marker. The **logo**, the **title** and the clip's **annotation colour**
+// are the whole of the coupling — this module listens for them and makes the watermark follow.
 //
 // The two parts are **independent**, each following its own property: the mark is placed when the
 // logo is set and taken away when it is cleared, the line when the title is. A clip with a title
@@ -32,13 +32,17 @@ import { images } from '../../infra/images.js';
 import { logoFile, logoPictureId } from '../logos.js';
 import { placeWatermark, placeWatermarkTitle } from '../annotating/picture.js';
 import { measureTextWidth } from '../annotating/text-plugin.js';
+import { annotationColour } from './clip-properties.js';
 
 /** The ids the watermark is made with, so it is one set of annotations the clip keeps. */
 const WATERMARK_ID = 'watermark';
 const WATERMARK_TITLE_ID = 'watermark-title';
 
-/** Which of the two properties moved, or `picture` when the clip has just got one to draw on. */
-export type WatermarkChange = 'logo' | 'title' | 'picture';
+/**
+ * Which of the properties the watermark follows moved, or `picture` when the clip has just got
+ * one to draw on.
+ */
+export type WatermarkChange = 'logo' | 'title' | 'colour' | 'picture';
 
 // Bumped on every run, so a file that finishes loading after a newer change is dropped.
 let seq = 0;
@@ -48,6 +52,7 @@ export function initWatermark(): void {
   session.clip.onChange(event => {
     if (event.type === 'property-changed' && event.id === 'logo') void syncWatermark('logo');
     else if (event.type === 'property-changed' && event.id === 'title') void syncWatermark('title');
+    else if (event.type === 'property-changed' && event.id === 'annotationColour') void syncWatermark('colour');
     // A logo or a title fixed before there was a picture — by a profile — is placed once the
     // **first** take lands, because a watermark's size is a fraction of the clip's own picture.
     // A later take only lengthens the clip, which `Clip` itself keeps the marks spanning.
@@ -56,17 +61,20 @@ export function initWatermark(): void {
 }
 
 /**
- * Put the clip's watermark where its **logo** and its **title** ask, or take a part away.
+ * Put the clip's watermark where its **logo**, its **title** and its **annotation colour** ask,
+ * or take a part away.
  *
  * `what` is the property that moved: the part it belongs to is placed or rebuilt, and the other
  * is left exactly as it is — so a part the person took away is not put back by a change to the
- * other one. `picture` is a clip that has just got a picture to draw on, or one being opened: the
- * watermark is placed only when the clip wears **none**, so a removal survives both.
+ * other one. `colour` repaints the title line where it stays rather than placing one back, and
+ * `picture` is a clip that has just got a picture to draw on, or one being opened: the watermark
+ * is placed only when the clip wears **none**, so a removal survives both.
  */
 export async function syncWatermark(what: WatermarkChange): Promise<void> {
   const mine = ++seq;
   const name = session.clip.properties.get('logo');
   const title = session.clip.properties.get('title').trim();
+  const colour = annotationColour(session.clip.properties);
   const worn = session.clip.watermarks();
   const wornMark = worn.find((one): one is ImageAnnotation => one instanceof ImageAnnotation) ?? null;
   const wornLine = worn.find((one): one is TextAnnotation => one instanceof TextAnnotation) ?? null;
@@ -101,7 +109,7 @@ export async function syncWatermark(what: WatermarkChange): Promise<void> {
 
   // The mark: placed when the logo moved, kept where the person put it when it did not.
   let mark: ImageAnnotation | null = null;
-  if (what === 'title') {
+  if (what === 'title' || what === 'colour') {
     mark = wornMark;
   } else if (imageId) {
     const source = images.get(imageId) as HTMLImageElement | null;
@@ -117,15 +125,20 @@ export async function syncWatermark(what: WatermarkChange): Promise<void> {
 
   // And the title: its words follow the title and its place follows the mark, so it is placed
   // afresh when either of them moves — kept as it is only when the title moved and says the same
-  // words. A line the person took away is not placed at all.
+  // words. A line the person took away is not placed at all, and the clip's annotation colour
+  // repaints the line where it stays rather than putting one back.
   let line: TextAnnotation | null = null;
-  if (title && (what !== 'logo' || wornLine)) {
+  if (what === 'colour') {
+    line = wornLine && wornLine.colour !== colour ? wornLine.withColour(colour) : wornLine;
+  } else if (title && (what !== 'logo' || wornLine)) {
     const kept = what !== 'logo' && wornLine && wornLine.geometry.text === title ? wornLine : null;
-    line = kept ?? TextAnnotation.create(
+    const placed = kept ?? TextAnnotation.create(
       Span.of(0, 1),
       placeWatermarkTitle(title, mark?.geometry ?? null, (text, height) => measureTextWidth(text, height, picture)),
       WATERMARK_TITLE_ID,
+      colour,
     );
+    line = placed && placed.colour !== colour ? placed.withColour(colour) : placed;
   }
 
   const next: Annotation[] = [];

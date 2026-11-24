@@ -53,7 +53,8 @@ function rect(x: unknown, y: unknown, width: unknown, height: unknown): { x: num
 export class TextAnnotation extends Annotation {
   static readonly id = 'text';
 
-  /** The colour text has when none is chosen — white, with the outline keeping it legible. */
+  /** The colour a text reads back as when it carries none — stored before colours existed. A new
+   * one is made in the clip's annotation colour, not this. */
   static readonly DEFAULT_COLOUR: AnnotationColour = '#ffffff';
 
   private constructor(

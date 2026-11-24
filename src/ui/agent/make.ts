@@ -7,8 +7,9 @@
 // says so rather than making something wrong.
 //
 // A text is measured with the kind's own measurement, and an image is prepared and
-// placed by the kind's own code, so an agent's annotation lands at the same size and
-// place as a person's would.
+// placed by the kind's own code, so an agent's annotation lands at the same size, place
+// and colour as a person's would: the arrow and the text are made in the colour the
+// clip's own annotation colour names.
 //
 // An image is the one maker that is slow — it decodes the picture and keeps it in the
 // store before the clip takes the annotation — so a maker may answer with a promise.
@@ -17,6 +18,7 @@ import { Arrow } from '../../domain/annotation/Arrow.js';
 import { ImageAnnotation } from '../../domain/annotation/ImageAnnotation.js';
 import { newAnnotationId } from '../../domain/annotation/Annotation.js';
 import { TextAnnotation } from '../../domain/annotation/TextAnnotation.js';
+import type { AnnotationColour } from '../../domain/annotation/AnnotationColour.js';
 import type { Span } from '../../domain/clip/Span.js';
 import { images } from '../../infra/images.js';
 import { el } from '../dom.js';
@@ -27,27 +29,27 @@ import type { AnnotationParams } from './surface.js';
 
 const MAX_HEIGHT = 0.4;   // a text may not be so tall it swallows the picture
 
-export const makeAnnotation: MakeAnnotation = (kind, params, span) => {
-  if (kind === Arrow.id) return makeArrow(params, span);
-  if (kind === TextAnnotation.id) return makeText(params, span);
+export const makeAnnotation: MakeAnnotation = (kind, params, span, colour) => {
+  if (kind === Arrow.id) return makeArrow(params, span, colour);
+  if (kind === TextAnnotation.id) return makeText(params, span, colour);
   if (kind === ImageAnnotation.id) return makeImage(params, span);
   return {
     reason: `the app cannot make a ${kind} from data alone`,
   };
 };
 
-function makeArrow(params: AnnotationParams, span: Span): Made {
+function makeArrow(params: AnnotationParams, span: Span, colour: AnnotationColour): Made {
   const from = pointIn(params, 'from');
   const to = pointIn(params, 'to');
   if (!from || !to) {
     return { reason: 'an arrow needs a "from" and a "to", each { x, y } as a fraction of the picture' };
   }
-  const arrow = Arrow.create(span, from, to);
+  const arrow = Arrow.create(span, from, to, undefined, colour);
   if (!arrow) return { reason: 'an arrow needs two different points inside the picture' };
   return { annotation: arrow };
 }
 
-function makeText(params: AnnotationParams, span: Span): Made {
+function makeText(params: AnnotationParams, span: Span, colour: AnnotationColour): Made {
   const text = typeof params.text === 'string' ? params.text.trim() : '';
   if (!text) return { reason: 'a text needs words' };
 
@@ -64,7 +66,7 @@ function makeText(params: AnnotationParams, span: Span): Made {
 
   const x = fractionIn(params, 'x') ?? (1 - box.width) / 2;
   const y = fractionIn(params, 'y') ?? (1 - box.height) / 2;
-  const annotation = TextAnnotation.create(span, { text, x, y, width: box.width, height: box.height });
+  const annotation = TextAnnotation.create(span, { text, x, y, width: box.width, height: box.height }, undefined, colour);
   if (!annotation) return { reason: 'a text needs a box inside the picture' };
   return { annotation };
 }

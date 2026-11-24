@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { avatarLetters, avatarTone, AVATAR_TONES, defineRows, profileRows } from './profile-rows.js';
+import { avatarLetters, avatarTone, AVATAR_TONES, badgeInk, defineRows, profileColour, profileRows } from './profile-rows.js';
 import { Profile } from '../../domain/profile/Profile.js';
 import { Profiles } from '../../domain/profile/Profiles.js';
 
@@ -50,17 +50,20 @@ describe('profileRows', () => {
 describe('defineRows', () => {
   it('offers one row per item a profile may control', () => {
     const rows = defineRows(book().get('tv')!, { active: true, locked: false });
-    expect(rows.map(row => row.id)).toEqual(['logo', 'addToExport']);
+    expect(rows.map(row => row.id)).toEqual(['logo', 'addToExport', 'annotationColour']);
     // A list rather than a switch, and free when the profile says nothing about it. The choices
     // are the property's own, so the sheet draws them without knowing what they are.
     expect(rows[0]).toMatchObject({ label: 'Logo', control: 'choice', free: true, value: '', editable: true });
     expect(rows[0].choices.map(choice => choice.value)).toEqual(['', 'democlip', 'graditone']);
     expect(rows[1]).toMatchObject({ label: 'Add to export', control: 'toggle', free: false, value: 'true', editable: true });
+    // The colour a new annotation is made in: another list, its own entries, free until fixed.
+    expect(rows[2]).toMatchObject({ label: 'Annotation colour', control: 'colour', free: true, value: '', editable: true });
+    expect(rows[2].choices.map(choice => choice.label)).toEqual(['Red', 'Orange', 'White', 'Yellow', 'Green', 'Blue', 'Black']);
   });
 
   it('says an item is free when the profile does not control it', () => {
     const rows = defineRows(book().get('gra')!, { active: false, locked: false });
-    expect(rows.map(row => row.free)).toEqual([true, true]);
+    expect(rows.map(row => row.free)).toEqual([true, true, true]);
   });
 
   it('offers what a profile does control at the value it fixes', () => {
@@ -104,5 +107,33 @@ describe('the avatar a profile is drawn with', () => {
     expect(tone).toBeGreaterThanOrEqual(0);
     expect(tone).toBeLessThan(AVATAR_TONES);
     expect(avatarTone('tv')).toBe(tone);
+  });
+
+  it('wears the profile\'s annotation colour when it fixes one, instead of its tone', () => {
+    const coloured = Profile.create('tv', 'DemoClipTV', { annotationColour: '#ff6c23' })!;
+    const book = Profiles.starting().add(coloured)!.add(Profile.create('gra', 'GraditoneTV')!)!;
+    const rows = profileRows(book, false);
+    const tv = rows.find(row => row.id === 'tv')!;
+    expect(tv.colour).toBe('#ff6c23');
+    expect(tv.ink).toBe('#08091A');        // dark initials read on the orange
+    // A profile that fixes no colour keeps one of the app's own tones.
+    const gra = rows.find(row => row.id === 'gra')!;
+    expect(gra.colour).toBeNull();
+    expect(gra.tone).toBe(avatarTone('gra'));
+    expect(rows.find(row => row.id === Profiles.DEFAULT_ID)!.colour).toBeNull();
+  });
+
+  it('ignores a colour the palette does not hold, rather than wearing it', () => {
+    const odd = Profile.create('odd', 'Odd', { annotationColour: '#123456' })!;
+    expect(profileColour(odd)).toBeNull();
+    expect(profileRows(Profiles.starting().add(odd)!, false).find(row => row.id === 'odd')!.colour).toBeNull();
+  });
+
+  it('gives the badge an ink that reads on the colour it wears', () => {
+    // Dark initials on the light colours, white on the near-black one.
+    for (const colour of ['#e53e3e', '#ff6c23', '#ffffff', '#f6e05e', '#38a169', '#3182ce'] as const) {
+      expect(badgeInk(colour)).toBe('#08091A');
+    }
+    expect(badgeInk('#111827')).toBe('#FFFFFF');
   });
 });

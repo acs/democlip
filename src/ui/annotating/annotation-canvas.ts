@@ -26,6 +26,7 @@ import type { Annotation, AnnotationHandle, Point } from '../../domain/annotatio
 import { copyControl, drawAnnotations, removeControl, settingsControl } from './annotation-layer.js';
 import { pluginOf, propertiesOf, type AnnotationPlugin, type CreationContext } from './annotation-plugin.js';
 import { inspector } from './properties-inspector.js';
+import { annotationColour } from '../clip/clip-properties.js';
 import { drawFrame } from '../recording/preview.js';
 import { player, reviewFrame } from '../clip/clip.js';
 import { playback } from '../clip/playback.js';
@@ -404,6 +405,7 @@ export class AnnotationCanvas {
     return {
       span: this.creating!.span,
       picture: { w: el.cv.width, h: el.cv.height },
+      colour: annotationColour(session.clip.properties),
       drag: (build, minLengthPx = MIN_DRAG_PX) => new Promise((resolve, reject) => {
         this.pending?.reject(new Error('a new creation began'));
         this.pending = { build, minLengthPx, resolve, reject };

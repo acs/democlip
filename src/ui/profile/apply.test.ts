@@ -40,6 +40,12 @@ describe('applyActiveProfile', () => {
     expect(clip.properties.get('addToExport')).toBe('true');
   });
 
+  it('fixes the colour a new annotation is made in, so the clip\'s arrows and text take it', () => {
+    const clip = Clip.empty(new FakeTakes());
+    applyActiveProfile(clip, bookWith({ annotationColour: '#3182ce' }));
+    expect(clip.properties.get('annotationColour')).toBe('#3182ce');
+  });
+
   it('leaves a clip that already holds a take exactly as it is', () => {
     const clip = Clip.empty(new FakeTakes());
     clip.addTake(new Blob(['x']), 2);

@@ -109,6 +109,9 @@ describe('describeClip', () => {
       { id: 'logo', label: 'Logo', control: 'choice', value: '', choices: ['', 'democlip', 'graditone'], readOnly: false },
       // The switch is read-only with nothing to put on the card, and comes to life with a word.
       { id: 'addToExport', label: 'Add to export', control: 'toggle', value: '', readOnly: true },
+      // The colour a new annotation is made in: the app's red until the clip says otherwise, and
+      // the palette offered by value so an agent is not guessing at a colour.
+      { id: 'annotationColour', label: 'Annotation colour', control: 'colour', value: '#e53e3e', choices: ['#e53e3e', '#ff6c23', '#ffffff', '#f6e05e', '#38a169', '#3182ce', '#111827'], readOnly: false },
       { id: 'size', label: 'Clip size', control: 'text', value: '', readOnly: true },
     ]);
   });
