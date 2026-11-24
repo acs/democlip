@@ -8,7 +8,7 @@
 import { expect, test } from '@playwright/test';
 import { boot } from '../helpers/app.js';
 
-test('the help dialog shows the brief tutorial and links to the full guide', async ({ page }) => {
+test('the help dialog shows the brief tutorial, and the guide is a page with every section', async ({ page }) => {
   await boot(page).goto();
   await page.locator('#help-btn').click();
   await expect(page.locator('#help-bd')).toHaveClass(/\bon\b/);
@@ -24,9 +24,8 @@ test('the help dialog shows the brief tutorial and links to the full guide', asy
 
   // And the way to the long-form text.
   await expect(page.locator('#help-more')).toHaveAttribute('href', 'help.html');
-});
 
-test('the full guide is a page of its own, with every section', async ({ page }) => {
+  // Which is a page of its own, with every section.
   await page.goto('/help.html');
   const sections = page.locator('.guide-section');
   await expect(sections).toHaveCount(5);
