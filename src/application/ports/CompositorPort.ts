@@ -18,6 +18,12 @@ export interface CompositorInput {
    * is after the take has already opened.
    */
   readonly picture?: { readonly width: number; readonly height: number };
+  /**
+   * The element the app is already showing the picture in. Its current frame is drawn
+   * as the take's first frame, so the canvas opens on a real picture rather than a
+   * blank one while the compositor's own element waits for its first frame.
+   */
+  readonly pictureElement?: HTMLVideoElement;
   /** Draw the webcam bubble, if the view has one. */
   readonly drawBubble?: (ctx: CanvasRenderingContext2D, width: number, height: number) => void;
 }

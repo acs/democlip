@@ -33,6 +33,8 @@ export interface RecordDeps {
   readonly region: () => CropRegion;
   /** The picture's own size, for a take that has to be drawn on a canvas. */
   readonly picture?: () => { readonly width: number; readonly height: number };
+  /** The element the picture is already shown in, for the compositor's first frame. */
+  readonly pictureElement?: () => HTMLVideoElement;
   readonly drawBubble?: (context: CanvasRenderingContext2D) => void;
   readonly setAudio?: (hasAudio: boolean) => void;
 }
@@ -57,6 +59,7 @@ export class RecordTake {
       region: this.deps.region(),
       audio: true,
       picture: this.deps.picture?.(),
+      pictureElement: this.deps.pictureElement?.(),
       drawBubble: this.deps.drawBubble,
     });
     this.deps.recorder.start(composed.stream);

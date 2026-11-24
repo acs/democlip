@@ -19,6 +19,13 @@ import { drawWebcamOverlay } from './webcam.js';
 import { liveTimeline } from './live-timeline.js';
 import { openReview } from '../clip/review-flow.js';
 
+// The element the picture is drawn from — the screen, or the camera when the screen is
+// off — the one place that knows its size, since a display track's settings lie until
+// its first frame. The compositor is handed the element too, so its first frame is a
+// real picture rather than a blank canvas.
+const pictureElement = (): HTMLVideoElement =>
+  capture.sources.screen ? el.sv : el.wcv;
+
 const record = new RecordTake({
   clip: session.clip,
   capture,
@@ -30,12 +37,11 @@ const record = new RecordTake({
   clock,
   sources: () => capture.sources,
   region: () => capture.region,
-  // The picture's own size, from the element the picture is drawn from — the screen, or
-  // the camera when the screen is off — the one place that knows it, since a display
-  // track's settings lie until its first frame.
-  picture: () => capture.sources.screen
-    ? { width: el.sv.videoWidth, height: el.sv.videoHeight }
-    : { width: el.wcv.videoWidth, height: el.wcv.videoHeight },
+  picture: () => {
+    const element = pictureElement();
+    return { width: element.videoWidth, height: element.videoHeight };
+  },
+  pictureElement,
   drawBubble: context => drawWebcamOverlay(context, 0, 0, context.canvas.width, context.canvas.height),
   setAudio: audio => { session.audio = audio; },
 });
