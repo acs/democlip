@@ -1,6 +1,6 @@
 ---
 name: Branding
-description: How DemoClip's mark and name are used — the mark-only images, the wordmark as live text and its orange, the per-theme files, the icon set, and where the text-banner files are still right. Use when changing the logo, the header, an icon, the social card, or anything that shows the project's name.
+description: How DemoClip's mark and name are used — the mark-only images, the wordmark as live text and its red, the per-theme files, the icon set, and where the text-banner files are still right. Use when changing the logo, the header, an icon, the social card, or anything that shows the project's name.
 ---
 
 # Branding
@@ -22,9 +22,10 @@ So `web/public/branding/` holds two families:
 ## The name
 
 `DemoClip`: capital D, lowercase `emo`, capital C, lowercase `lip` — one word, no
-space. `Clip` is the brand orange; `Demo` is the interface's text colour, so it
-follows the theme. Do not uppercase it — `text-transform: uppercase` is how the
-header came to say DEMOCLIP — and do not track it like small capitals.
+space. `Clip` is the brand red — the record button's own red; `Demo` is the
+interface's text colour, so it follows the theme. Do not uppercase it —
+`text-transform: uppercase` is how the header came to say DEMOCLIP — and do not
+track it like small capitals.
 
 ```html
 <img class="logo-mark logo-mark-dark" src="/branding/logo-small-dark.png" alt="" width="37" height="27">
@@ -33,8 +34,9 @@ header came to say DEMOCLIP — and do not track it like small capitals.
 ```
 
 ```css
-:root{--brand-orange:#FF6C23;}
-.logo-title-accent{color:var(--brand-orange);}
+:root{--crimson:#E53E3E;--brand-red:var(--crimson);}       /* dark */
+[data-theme="light"]{--brand-red:#C62828;}                  /* deep enough to read */
+.logo-title-accent{color:var(--brand-red);}
 ```
 
 The mark carries `alt=""`: the name is text right beside it, and a second
@@ -44,22 +46,22 @@ The mark carries `alt=""`: the name is text right beside it, and a second
 
 `web/public/branding/logo.svg` is the source of truth — read the hex from the vector,
 not from a PNG. The PNGs have been through a resize and their inks are a few digits
-off: sampling `logo.png` gives `#F96B04` for an orange that is `#FF6C23`.
+off: sampling `logo.png` gives `#131312` for a black that is `#111111`.
 
 | part | the vector |
 |---|---|
-| `Clip` | `#FF6C23` — the `--brand-orange` token |
+| `Clip` | `#E53E3E` — the `--brand-red` token, the record button's red |
 | the record dot | `#FF2731` |
 | the clapperboard, `Demo` | `#111111` on light; `#FFFFFF` in the on-dark files |
 
-Two reds live here and are not meant to become one: the logo's dot is `#FF2731`,
-the interface's recording accent is `--crimson` `#E53E3E`. Do not recolour the mark
-to the accent, or the accent to the mark.
+The wordmark and the interface's recording accent are one red: `#E53E3E` is
+`--crimson`, and `--brand-red` follows it, so the brand cannot drift from the record
+button. The mark's own dot is a second, lighter red, `#FF2731`, and is not the
+accent: do not recolour the dot to the accent, or the accent to the dot.
 
-On the light theme the brand orange sits at about 2.5:1 against `#ECF0FA`, below the
-4.5:1 a 13px label wants. It is a brand mark rather than body text and is kept
-exact; if it must ever be darkened (as `.tl-mark` does in light), give the token a
-light-theme value rather than a colour to the component.
+On the light theme `#E53E3E` sits at about 3.6:1 against `#ECF0FA`, below the 4.5:1
+an 11px link wants. The token therefore carries a deeper red in that theme,
+`#C62828` (about 4.9:1), rather than each component darkening itself.
 
 ## The files
 
@@ -90,7 +92,7 @@ there too.
 
 Work from `logo.svg`: render it at the size needed on a transparent background
 (`rsvg-convert`, `resvg`, Inkscape, or a browser), and for an on-dark variant swap
-`#111111` and `#FFFFFF` while leaving `#FF6C23` and `#FF2731` alone. Do not trace a
+`#111111` and `#FFFFFF` while leaving `#E53E3E` and `#FF2731` alone. Do not trace a
 PNG, and do not filter the mark with CSS — a filter takes the colours with it.
 
 ## Proving a branding change
@@ -99,7 +101,8 @@ Branding is drawn, so it is proved the way the **Verification** skill says anyth
 drawn is: on the running dev server, at a desktop and a phone width, in both themes.
 Look at it, and ask the browser what it computed:
 
-- the name reads `DemoClip`, with `Clip` at `rgb(255, 108, 35)`
+- the name reads `DemoClip`, with `Clip` at `rgb(229, 62, 62)` — or
+  `rgb(198, 40, 40)` on the light theme
 - the mark that loads matches the theme, and the other one is `display:none`
 - nothing asked for a missing file
 

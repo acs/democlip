@@ -21,6 +21,26 @@ test('the app boots, reads Ready, and its page carries no duplicate element ids'
   expect(duplicates).toEqual([]);
 });
 
+// ── The brand's red ────────────────────────────────────────────────────────────
+
+test('the wordmark, the guide link and the guide wear the record button’s red, in both themes', async ({ page }) => {
+  await boot(page).goto();
+
+  // The default theme is dark, where the brand is the record button's own crimson.
+  await expect(page.locator('.logo-title-accent')).toHaveCSS('color', 'rgb(229, 62, 62)');
+  await expect(page.locator('#help-more')).toHaveCSS('color', 'rgb(229, 62, 62)');
+
+  // The light theme deepens the one token, so the 11px link still reads.
+  await page.locator('#theme-btn').click();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+  await expect(page.locator('.logo-title-accent')).toHaveCSS('color', 'rgb(198, 40, 40)');
+  await expect(page.locator('#help-more')).toHaveCSS('color', 'rgb(198, 40, 40)');
+
+  // And the guide, a page of its own, wears the same red in the theme the person chose.
+  await page.goto('help.html');
+  await expect(page.locator('.guide-title')).toHaveCSS('color', 'rgb(198, 40, 40)');
+});
+
 // ── On a phone, where the header has only one row of room ─────────────────────
 
 test.describe('on a phone', () => {
