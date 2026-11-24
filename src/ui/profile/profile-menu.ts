@@ -5,6 +5,10 @@
 // itself each time it opens (above the pill when there is no room below, and against the
 // window's right edge, since the pill is there).
 //
+// A change to the visible viewport — a window resized, or a phone's keyboard coming or
+// going — moves the menu back inside what can be seen instead of closing it: the name
+// field is focused to be typed in, and its keyboard must not take the menu away.
+//
 // The selector only *selects*: a row is a pill with the profile's first letters, its name, a tick
 // when it is the one in use, and — on the person's own profiles — a pencil mark and a bin. A
 // profile is neither named nor configured here: both are its own dialog (`profile-def.ts`), which
@@ -63,7 +67,14 @@ class ProfileMenu {
     if (event.key === 'Escape') this.close();
   };
 
-  private readonly onResize = (): void => this.close();
+  /**
+   * What can be seen changed: a window was resized, or a phone's keyboard came or went.
+   * The menu is anchored to the pill, so it is placed again inside the new bounds —
+   * never closed, which on a phone would take the name field away as it was focused.
+   */
+  private readonly onViewportChange = (): void => {
+    if (this.isOpen) this.place();
+  };
 
   init(handlers: ProfileMenuHandlers): void {
     this.handlers = handlers;
@@ -81,19 +92,17 @@ class ProfileMenu {
   open(): void {
     this.creating = false;
     this.render();
-    const pill = el.profileBtn.getBoundingClientRect();
-    const width = el.profileMenu.offsetWidth;
-    const height = el.profileMenu.offsetHeight;
-    const roomBelow = window.innerHeight - pill.bottom - GAP;
-    const top = roomBelow >= height + EDGE ? pill.bottom + GAP : pill.top - height - GAP;
-    const left = Math.max(EDGE, Math.min(pill.right - width, window.innerWidth - width - EDGE));
-    el.profileMenu.style.left = `${Math.round(left)}px`;
-    el.profileMenu.style.top = `${Math.round(Math.max(EDGE, top))}px`;
     el.profileMenu.classList.add('on');
     el.profileBtn.setAttribute('aria-expanded', 'true');
+    this.place();
     document.addEventListener('click', this.onDocumentClick);
     document.addEventListener('keydown', this.onKeyDown);
-    window.addEventListener('resize', this.onResize);
+    // The window's own resize and the visible viewport's: a phone's keyboard shrinks
+    // the latter without resizing the former, and either way the menu is put back where
+    // it belongs rather than closed under the person's hands.
+    window.addEventListener('resize', this.onViewportChange);
+    window.visualViewport?.addEventListener('resize', this.onViewportChange);
+    window.visualViewport?.addEventListener('scroll', this.onViewportChange);
   }
 
   close(): void {
@@ -102,7 +111,39 @@ class ProfileMenu {
     el.profileBtn.setAttribute('aria-expanded', 'false');
     document.removeEventListener('click', this.onDocumentClick);
     document.removeEventListener('keydown', this.onKeyDown);
-    window.removeEventListener('resize', this.onResize);
+    window.removeEventListener('resize', this.onViewportChange);
+    window.visualViewport?.removeEventListener('resize', this.onViewportChange);
+    window.visualViewport?.removeEventListener('scroll', this.onViewportChange);
+  }
+
+  /** Put the menu under the pill, above it when there is no room below, inside what can be seen. */
+  private place(): void {
+    const pill = el.profileBtn.getBoundingClientRect();
+    // The visible viewport, not the window: a phone's keyboard shrinks it while the pill
+    // stays where it is, so the menu must be kept inside what can be seen.
+    const view = window.visualViewport;
+    const viewLeft = view?.offsetLeft ?? 0;
+    const viewTop = view?.offsetTop ?? 0;
+    const viewWidth = view?.width ?? window.innerWidth;
+    const viewHeight = view?.height ?? window.innerHeight;
+    const edgeLeft = viewLeft + EDGE;
+    const edgeTop = viewTop + EDGE;
+    const edgeRight = viewLeft + viewWidth - EDGE;
+    const edgeBottom = viewTop + viewHeight - EDGE;
+
+    // A short viewport — a phone with its keyboard up — lets the menu scroll rather than
+    // hiding the profile rows and the field at its foot.
+    el.profileMenu.style.maxHeight = `${Math.max(0, viewHeight - 2 * EDGE)}px`;
+
+    const width = el.profileMenu.offsetWidth;
+    const height = el.profileMenu.offsetHeight;
+    const below = pill.bottom + GAP;
+    const top = below + height > edgeBottom
+      ? Math.max(edgeTop, Math.min(pill.top - height - GAP, edgeBottom - height))
+      : below;
+    const left = Math.max(edgeLeft, Math.min(pill.right - width, edgeRight - width));
+    el.profileMenu.style.left = `${Math.round(left)}px`;
+    el.profileMenu.style.top = `${Math.round(Math.max(edgeTop, top))}px`;
   }
 
   /** Redraw, but only while it is open — a change behind a closed menu needs no DOM. */
@@ -203,6 +244,7 @@ class ProfileMenu {
       add.addEventListener('click', () => {
         this.creating = true;
         this.render();
+        this.place();   // the field has made the menu taller: keep it inside the viewport
       });
       foot.append(add);
       return foot;

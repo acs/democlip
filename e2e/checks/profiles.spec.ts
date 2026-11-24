@@ -344,3 +344,42 @@ async function serveUnderSubpath(page: Page): Promise<void> {
     return route.continue();
   });
 }
+
+// ── On a phone, where the name field's keyboard takes the viewport ─────────────
+
+test.describe('on a phone', () => {
+  test.use({ viewport: { width: 430, height: 932 }, hasTouch: true, isMobile: true });
+
+  test('the new-profile field stays open when the keyboard takes the viewport', async ({ page }) => {
+    const app = boot(page);
+    await app.goto();
+
+    // New Profile turns the foot into a name field, and focuses it — which, on a phone,
+    // raises the keyboard.
+    await page.locator('#profile-btn').tap();
+    const menu = page.locator('#profile-menu');
+    const field = menu.locator('.profile-new-input');
+    await page.locator('.profile-new-btn').tap();
+    await expect(field).toBeFocused();
+
+    // The keyboard shrinks the visible viewport — the change that used to close the menu
+    // and leave the person with a keyboard and no field to type into.
+    await page.setViewportSize({ width: 430, height: 400 });
+    // Let the browser deliver the resize before asking, so the assertion sees what the
+    // person would rather than the moment before the app has answered it.
+    await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+    await expect(menu).toHaveClass(/on/);
+    await expect(field).toBeFocused();
+
+    // It sits inside what can be seen…
+    const box = await menu.boundingBox();
+    expect(box).not.toBeNull();
+    expect(box!.y).toBeGreaterThanOrEqual(8);
+    expect(box!.y + box!.height).toBeLessThanOrEqual(392.5);
+
+    // …and the name can still be typed and the profile made.
+    await field.fill('DemoClipTV');
+    await page.locator('.profile-new-add').tap();
+    await expect(page.locator('.profile-row:not([data-id="default"]) .profile-name')).toHaveText('DemoClipTV');
+  });
+});
