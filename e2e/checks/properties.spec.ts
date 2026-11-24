@@ -93,3 +93,48 @@ test('the panel gives the clip a title and a description, kept across a reload, 
   await page.locator('#cut-undo').click();
   await expect.poll(() => properties(page)).toEqual({ title: 'A short demo', description: 'What the clip shows' });
 });
+
+// ── On a phone, where a field's keyboard takes the viewport ─────────────────────
+
+test.describe('on a phone', () => {
+  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+
+  test('the panel stays open and usable when the keyboard takes the viewport', async ({ page }) => {
+    const app = boot(page);
+    await app.goto();
+    const takes = await makeTakes(page, { width: 1280, height: 720, seconds: 2 });
+    await app.seed(takes);
+    await app.review();
+
+    // A press opens the panel.
+    await page.locator('#props-btn').tap();
+    const menu = page.locator('#clip-prop-menu');
+    const title = menu.locator('.prop-row[data-id="title"] input');
+    await expect(menu).toHaveClass(/on/);
+
+    // The keyboard shrinks the visible viewport — the change that used to close the
+    // panel and leave the person with a keyboard and nothing to type into.
+    await page.setViewportSize({ width: 390, height: 400 });
+    // Let the browser deliver the resize before asking, so the assertion sees what the
+    // person would rather than the moment before the app has answered it.
+    await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+    await expect(menu).toHaveClass(/on/);
+
+    // The fields are the person's to choose: a focus on opening would summon the
+    // keyboard over the panel before it had been read.
+    await expect(title).not.toBeFocused();
+
+    // It sits inside what can be seen…
+    const box = await menu.boundingBox();
+    expect(box).not.toBeNull();
+    expect(box!.y).toBeGreaterThanOrEqual(8);
+    expect(box!.y + box!.height).toBeLessThanOrEqual(392.5);
+
+    // …and the person can still type a field and have the edit land on the clip.
+    await title.tap();
+    await title.fill('A short demo');
+    await title.blur();
+    await expect.poll(() => properties(page)).toEqual({ title: 'A short demo' });
+    await expect(menu).toHaveClass(/on/);
+  });
+});

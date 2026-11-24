@@ -18,6 +18,11 @@
 // A field is applied when it is left (or Enter is pressed), so a whole edit is one
 // change the undo takes back, and nothing is written while the words are still being
 // typed.
+//
+// A change to the visible viewport — a window resized, or a phone's keyboard coming or
+// going — moves the panel back inside what can be seen instead of closing it: to a
+// phone, the keyboard is the normal consequence of pressing a field, not a reason to
+// take the panel away.
 
 import { session } from '../../session.js';
 import { el, toast } from '../dom.js';
@@ -26,6 +31,9 @@ import type { Controlling } from '../profile/control.js';
 
 const GAP = 8;      // between the control and the panel
 const EDGE = 8;     // the least the panel may sit from a viewport edge
+
+/** A touch screen, where focusing a field summons the on-screen keyboard. */
+const TOUCH = '(pointer: coarse)';
 
 /** The mark a profile-fixed property wears: a lock, its tooltip naming the profile. */
 const LOCK_ICON = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
@@ -53,7 +61,12 @@ class ClipPropertiesPanel {
     el.propsBtn.addEventListener('click', () => this.toggle());
     document.addEventListener('click', this.onDocumentClick);
     document.addEventListener('keydown', this.onKeyDown);
-    window.addEventListener('resize', () => this.close());
+    // The window's own resize and the visible viewport's: a phone's keyboard shrinks
+    // the latter without resizing the former, and either way the panel is put back
+    // where it belongs rather than closed under the person's hands.
+    window.addEventListener('resize', this.onViewportChange);
+    window.visualViewport?.addEventListener('resize', this.onViewportChange);
+    window.visualViewport?.addEventListener('scroll', this.onViewportChange);
   }
 
   /** The settings control: open when closed, close when open. */
@@ -67,7 +80,10 @@ class ClipPropertiesPanel {
     el.clipPropMenu.classList.add('on');
     el.propsBtn.setAttribute('aria-expanded', 'true');
     this.place();
-    this.fields[0]?.input.focus();
+    // On a touch screen the choice of which field to type in is the person's: focusing
+    // here would open the keyboard at once, over the panel and the picture it belongs
+    // to, before either has been read.
+    if (!window.matchMedia(TOUCH).matches) this.fields[0]?.input.focus();
   }
 
   /** Write whatever was typed but not yet left, and hide. */
@@ -105,14 +121,41 @@ class ClipPropertiesPanel {
     this.close();
   };
 
+  /**
+   * What can be seen changed: a window was resized, or a phone's keyboard came or went.
+   * The panel is anchored to the picture, so it is placed again inside the new bounds —
+   * never closed, which on a phone would take it away the moment a field was pressed.
+   */
+  private readonly onViewportChange = (): void => {
+    if (this.isOpen) this.place();
+  };
+
   /** Put the panel beside the control, above it when there is no room below. */
   private place(): void {
     const rect = el.propsBtn.getBoundingClientRect();
+    // The visible viewport, not the window: a phone's keyboard shrinks it while the
+    // button stays where it is, so the panel must be kept inside what can be seen.
+    const view = window.visualViewport;
+    const viewLeft = view?.offsetLeft ?? 0;
+    const viewTop = view?.offsetTop ?? 0;
+    const viewWidth = view?.width ?? window.innerWidth;
+    const viewHeight = view?.height ?? window.innerHeight;
+    const edgeLeft = viewLeft + EDGE;
+    const edgeTop = viewTop + EDGE;
+    const edgeRight = viewLeft + viewWidth - EDGE;
+    const edgeBottom = viewTop + viewHeight - EDGE;
+
+    // A short viewport — a phone upright with its keyboard up, a landscape phone — lets
+    // the panel scroll rather than hiding the fields at its end.
+    el.clipPropMenu.style.maxHeight = `${Math.max(0, viewHeight - 2 * EDGE)}px`;
+
     const width = el.clipPropMenu.offsetWidth;
     const height = el.clipPropMenu.offsetHeight;
-    const x = Math.max(EDGE, Math.min(rect.left, window.innerWidth - width - EDGE));
+    const x = Math.max(edgeLeft, Math.min(rect.left, edgeRight - width));
     const below = rect.bottom + GAP;
-    const y = below + height > window.innerHeight - EDGE ? Math.max(EDGE, rect.top - height - GAP) : below;
+    const y = below + height > edgeBottom
+      ? Math.max(edgeTop, Math.min(rect.top - height - GAP, edgeBottom - height))
+      : below;
     el.clipPropMenu.style.left = `${Math.round(x)}px`;
     el.clipPropMenu.style.top = `${Math.round(y)}px`;
   }
