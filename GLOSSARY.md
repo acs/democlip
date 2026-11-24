@@ -206,6 +206,8 @@ is holding.
 | **fade** | the sound going down over the last 80 ms of a take and back up as the next begins | `FADE_S` |
 | **dissolve** | the picture blending from the last frame of a take into the first frames of the next, over the same 80 ms — and, the same way, an annotation blending onto the picture over the first and last moments of its stretch | `DISSOLVE_S`, `Span.fadeAt()` |
 | **crop region** | the rectangle of the screen being recorded — the red box — as fractions of the capture. A region stays inside the picture and is never empty | `CropRegion` (`src/domain/capture/CropRegion.ts`) |
+| **webcam bubble** | the camera drawn as a **circle** over the recorded picture when the screen is shared — or the whole picture on its own, with no bubble, when the screen is off. It is always round: a resize changes its **diameter** only | the drawing in `drawWebcamOverlay()` (`src/ui/recording/webcam.ts`) |
+| **placement** | where and how big a **webcam bubble** sits — a centre and a diameter in fractions of the recorded region, so the live preview and the recording agree. **Per sitting**: it lasts across takes, and is gone at New and at a reload. Never kept with the clip | `WebcamBubble` (`src/domain/capture/WebcamBubble.ts`) |
 
 ## A clip that leaves and comes back
 

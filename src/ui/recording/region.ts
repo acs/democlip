@@ -1,4 +1,5 @@
-// Rectangular crop region drawn over the live capture.
+// Rectangular crop region drawn over the live capture — and the router of the preview's
+// drags.
 //
 // The region is always shown as a red box over the preview — by default it
 // covers the whole source. Drag to select a smaller region (only it is
@@ -6,11 +7,17 @@
 // picture is on the preview: the shared screen, or the camera when the screen is
 // off. The overlay is painted straight onto the preview canvas, so it can never
 // end up in the recording (which reads from the source <video>).
+//
+// One press does one thing. A press that lands on the **webcam bubble** (only with the
+// screen shared) moves it; every other press begins a crop. This module is the one place
+// the two are told apart, so the bubble never swallows the crop and the crop never takes
+// the bubble's press.
 
 import { currentPhase } from '../../state.js';
 import { capture } from '../../infra/capture.js';
 import { CropRegion } from '../../domain/capture/CropRegion.js';
 import { el, ctx } from '../dom.js';
+import { bubblePlacer } from './webcam.js';
 
 export const FULL = CropRegion.FULL;
 
@@ -104,23 +111,58 @@ function toCanvas(e: PointerEvent): { x: number; y: number } {
   };
 }
 
+// A point in the recorded region's own pixels — the frame the bubble's placement lives in.
+function regionAt(p: { x: number; y: number }): { x: number; y: number; width: number; height: number } {
+  const region = capture.region;
+  return {
+    x: p.x - region.x * el.cv.width,
+    y: p.y - region.y * el.cv.height,
+    width: region.w * el.cv.width,
+    height: region.h * el.cv.height,
+  };
+}
+
 function onDown(e: PointerEvent): void {
   // A crop is a crop of the picture: the shared screen, or the camera when it is the
   // whole picture. With neither on there is nothing under the pointer to crop.
   if (currentPhase() !== 'live' || !(capture.sources.screen || capture.sources.webcam)) return;
   const p = toCanvas(e);
+  // The bubble exists only with the screen shared, and takes a press that lands on it —
+  // moving it. Every other press is a crop, exactly as before.
+  if (capture.sources.screen && capture.sources.webcam) {
+    const r = regionAt(p);
+    const gesture = bubblePlacer.hit(r.x, r.y, r.width, r.height);
+    if (gesture) {
+      bubblePlacer.begin(r.x, r.y, gesture, r.width, r.height);
+      try { el.cv.setPointerCapture(e.pointerId); } catch { /* not capturable */ }
+      e.preventDefault();
+      return;
+    }
+  }
   crop.begin(p.x, p.y);
   try { el.cv.setPointerCapture(e.pointerId); } catch { /* not capturable */ }
   e.preventDefault();
 }
 
 function onMove(e: PointerEvent): void {
+  if (bubblePlacer.active) {
+    const r = regionAt(toCanvas(e));
+    bubblePlacer.move(r.x, r.y);
+    return;
+  }
   if (!crop.active) return;
   const p = toCanvas(e);
   crop.move(p.x, p.y);
 }
 
 function onUp(e: PointerEvent): void {
+  if (bubblePlacer.active) {
+    const r = regionAt(toCanvas(e));
+    bubblePlacer.move(r.x, r.y);
+    bubblePlacer.end(r.width, r.height);
+    try { el.cv.releasePointerCapture(e.pointerId); } catch { /* ignore */ }
+    return;
+  }
   if (!crop.active) return;
   const box = crop.end();
   try { el.cv.releasePointerCapture(e.pointerId); } catch { /* ignore */ }
