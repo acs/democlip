@@ -4,8 +4,11 @@
 :root{
   --crimson:#E53E3E;
   --crimson-glow:rgba(229,62,62,0.45);
-  /* The orange of the wordmark's "Clip", taken from public/branding/logo.svg. */
-  --brand-orange:#FF6C23;
+  /* The wordmark's "Clip", and the app's own accent for the clip: the record
+     button's red. It follows --crimson so the brand and the button cannot drift
+     apart. The mark's own dot is a different red (#FF2731, in logo.svg) and stays
+     as it is. */
+  --brand-red:var(--crimson);
   --bg:#060710;
   --surface:rgba(7,8,18,0.92);
   --surface-2:rgba(8,9,20,0.82);
@@ -36,6 +39,9 @@
   --text-dim:#9298B8;
   --text-mid:#454B6A;
   --crimson-glow:rgba(229,62,62,0.28);
+  /* The same red, deepened so the 11px guide link and the wordmark read on the
+     light background: 4.9:1 against #ECF0FA. */
+  --brand-red:#C62828;
   --idle-bg:rgba(236,240,250,0.94);
   --idle-bd:rgba(0,0,0,0.08);
 }
@@ -55,13 +61,13 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 .logo{display:flex;align-items:center;gap:10px;flex-shrink:0;}
 .logo-mark{display:block;height:27px;width:auto;flex-shrink:0;}
 /* The mark is black on light and light on dark, so each theme gets its own file
-   rather than a CSS filter — the red dot and the orange stay true either way. */
+   rather than a CSS filter — the red dot stays true either way. */
 .logo-mark-light{display:none;}
 [data-theme="light"] .logo-mark-light{display:block;}
 [data-theme="light"] .logo-mark-dark{display:none;}
 .logo-name{display:flex;flex-direction:column;gap:1px;align-items:flex-start;}
 .logo-title{font-size:13px;font-weight:800;letter-spacing:.02em;color:var(--text);line-height:1;}
-.logo-title-accent{color:var(--brand-orange);}
+.logo-title-accent{color:var(--brand-red);}
 /* The build's version, under the wordmark: the one number that says which deployed
    build this window is running, in the line the old "Screen · WebM" subtitle held,
    and a link to the project's own page. */
@@ -124,14 +130,14 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 
 /* The clip's own settings, in the corner of the picture the clip is seen on — beside
    the thing, as a picked annotation's settings control is drawn on it. In the
-   wordmark's orange, the app's own accent for the clip itself. Shown only in the
+   wordmark's red, the app's own accent for the clip itself. Shown only in the
    review, where nothing is recording and the REC badge's corner is free. */
-.clip-props{position:absolute;top:12px;right:12px;z-index:4;width:26px;height:26px;padding:0;border-radius:50%;border:1px solid rgba(255,108,35,.45);background:rgba(0,0,0,.5);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);color:var(--brand-orange);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:color .18s,background .18s,border-color .18s,transform .18s;}
-.clip-props:hover{background:rgba(255,108,35,.18);border-color:rgba(255,108,35,.7);transform:scale(1.06);}
+.clip-props{position:absolute;top:12px;right:12px;z-index:4;width:26px;height:26px;padding:0;border-radius:50%;border:1px solid rgba(229,62,62,.45);background:rgba(0,0,0,.5);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);color:var(--brand-red);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:color .18s,background .18s,border-color .18s,transform .18s;}
+.clip-props:hover{background:rgba(229,62,62,.18);border-color:rgba(229,62,62,.7);transform:scale(1.06);}
 .clip-props:active{transform:scale(.94);}
 .clip-props svg{pointer-events:none;}
 [data-theme="light"] .clip-props{background:rgba(255,255,255,.72);}
-[data-theme="light"] .clip-props:hover{background:rgba(255,108,35,.16);}
+[data-theme="light"] .clip-props:hover{background:rgba(229,62,62,.16);}
 
 /* ── TIMELINE ── */
 .timeline{width:100%;max-width:1160px;flex-shrink:0;background:var(--surface-2);backdrop-filter:blur(20px);border:1px solid var(--glass-b);border-radius:12px;padding:11px 16px;margin-bottom:9px;opacity:0;transform:translateY(8px);transition:opacity .35s,transform .35s;pointer-events:none;}
@@ -278,7 +284,8 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 .profile-pick:disabled{cursor:not-allowed;opacity:.55;}
 .profile-avatar{flex-shrink:0;width:40px;height:26px;border-radius:100px;display:flex;align-items:center;justify-content:center;font-family:var(--font-ui);font-size:12px;font-weight:700;letter-spacing:.02em;color:#fff;background:var(--crimson);}
 .profile-avatar.av-0{background:var(--crimson);}
-.profile-avatar.av-1{background:var(--brand-orange);}
+/* Violet, not the brand red: av-0 already wears the record button's crimson. */
+.profile-avatar.av-1{background:#7C3AED;}
 .profile-avatar.av-2{background:var(--blue);}
 .profile-avatar.av-3{background:var(--green);}
 .profile-avatar.av-4{background:var(--amber);color:#2A1C00;}
@@ -355,7 +362,7 @@ select.prop-input,select.pdef-select{cursor:pointer;}
 select.prop-input option,select.pdef-select option{background:var(--bg);color:var(--text);}
 .prop-value{font-family:var(--font-mono);font-size:13px;color:var(--text);}
 .prop-toggle{display:flex;align-items:center;gap:9px;cursor:pointer;}
-.prop-check{width:15px;height:15px;flex-shrink:0;accent-color:var(--brand-orange);cursor:pointer;}
+.prop-check{width:15px;height:15px;flex-shrink:0;accent-color:var(--brand-red);cursor:pointer;}
 .prop-toggle .prop-name{text-transform:none;letter-spacing:0;font-size:13px;color:var(--text);}
 /* A control the clip cannot offer yet — the switch to add the card, with nothing to put on it —
    says why underneath, and the label stops reading as something to press. */
@@ -486,17 +493,16 @@ select.prop-input option,select.pdef-select option{background:var(--bg);color:va
 .help-close:hover{background:var(--glass-b);color:var(--text);}
 .help-divider{border:none;border-top:1px solid var(--glass-b);margin:18px 0;}
 .help-footer{font-family:var(--font-mono);font-size:10px;color:var(--text-dim);letter-spacing:.05em;}
-.help-more{display:inline-block;margin-top:18px;font-family:var(--font-mono);font-size:11px;letter-spacing:.08em;color:var(--brand-orange);text-decoration:none;border-bottom:1px solid transparent;transition:border-color .2s;}
-.help-more:hover{border-bottom-color:var(--brand-orange);}
+.help-more{display:inline-block;margin-top:18px;font-family:var(--font-mono);font-size:11px;letter-spacing:.08em;color:var(--brand-red);text-decoration:none;border-bottom:1px solid transparent;transition:border-color .2s;}
+.help-more:hover{border-bottom-color:var(--brand-red);}
 
 /* ── THE COMPLETE GUIDE (web/help.html) ──
    A page of its own, opened from the dialog's link. The look follows Graditone's
-   guide plugin — a centred column, section headings in the brand orange over a
+   guide plugin — a centred column, section headings in the brand red over a
    rule, a body that follows the app's theme — in DemoClip's own colours. */
 html.guide-html{height:auto;overflow-y:auto;}
 html.guide-html body{height:auto;min-height:100%;overflow:visible;}
-.guide-plugin{--guide-accent:var(--brand-orange);min-height:100%;}
-[data-theme="light"] .guide-plugin{--guide-accent:#C2410C;}
+.guide-plugin{--guide-accent:var(--brand-red);min-height:100%;}
 .guide-plugin__inner{max-width:720px;margin:0 auto;padding:44px 24px 64px;box-sizing:border-box;font-size:16px;line-height:1.65;color:var(--text-mid);}
 .guide-back{font-family:var(--font-mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;margin-bottom:28px;}
 .guide-back a{color:var(--text-dim);text-decoration:none;}
