@@ -15,6 +15,7 @@ import { liveTimeline } from '../recording/live-timeline.js';
 import { player } from '../clip/clip.js';
 import { drag } from '../cutting/marks.js';
 import { crop } from '../recording/region.js';
+import { bubblePlacer } from '../recording/webcam.js';
 import { canvas } from '../annotating/annotation-canvas.js';
 import { clipboard } from '../annotating/annotation-clipboard.js';
 import { clipPropertiesPanel } from '../clip/properties-panel.js';
@@ -31,6 +32,7 @@ export function initViewLifetime(): void {
     strip.cancel();
     drag.cancel();
     crop.cancel();
+    bubblePlacer.reset();      // the bubble's placement is the sitting's: New is the corner again
     canvas.cancel();
     clipboard.clear();
     clipPropertiesPanel.dismiss();   // the clip is gone: hide, and write nothing back

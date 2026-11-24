@@ -11,6 +11,7 @@ import { boot } from '../helpers/app.js';
 import { makeTakes } from '../fixtures/takes.js';
 import { askedFor, installStandInShare, installSuspendedAudio } from '../helpers/stand-ins.js';
 import { pageModule } from '../helpers/page-module.js';
+import { watchBubble, previewBubble, lastWebcamDraw, compositedBubble, type BubbleArc } from '../helpers/bubble.js';
 
 const HOOKS = pageModule('e2e/support/app-hooks.ts');
 
@@ -256,36 +257,9 @@ test('a stand-in device records a take, and the meter follows the voice though i
 });
 
 test('the webcam bubble is a whole, undistorted circle, inset from the corner — not a quarter of one cut off by it', async ({ page }) => {
-  // The bubble is a clipped circle, and on the live preview it is the only circle the
-  // canvas is asked to draw (the crosshair, when idle, is a much smaller one at the
-  // centre). Watching those `arc` calls is therefore watching the bubble: the centre
-  // and radius it is drawn at, and the picture it has to fit inside. Watching the
-  // `drawImage` that paints the camera says whether it was squashed into that square.
-  interface Arc { cx: number; cy: number; r: number; w: number; h: number }
-  interface Drawn { dw: number; dh: number; sw: number; sh: number }
-  await page.addInitScript(() => {
-    const win = window as unknown as { __arcs: Arc[]; __webcamDraws: Drawn[] };
-    win.__arcs = [];
-    win.__webcamDraws = [];
-    const arc = CanvasRenderingContext2D.prototype.arc;
-    CanvasRenderingContext2D.prototype.arc = function (
-      this: CanvasRenderingContext2D, ...args: Parameters<CanvasRenderingContext2D['arc']>
-    ) {
-      const [cx, cy, r] = args;
-      if (this.canvas.id === 'preview') win.__arcs.push({ cx, cy, r, w: this.canvas.width, h: this.canvas.height });
-      return arc.apply(this, args);
-    };
-    const drawImage = CanvasRenderingContext2D.prototype.drawImage;
-    CanvasRenderingContext2D.prototype.drawImage = function (this: CanvasRenderingContext2D, ...args: unknown[]) {
-      const source = args[0];
-      // The bubble draws the camera video into a square; the 5-arg form is (image, dx, dy, dw, dh).
-      if (this.canvas.id === 'preview' && source instanceof HTMLVideoElement && args.length >= 5) {
-        win.__webcamDraws.push({ dw: args[3] as number, dh: args[4] as number, sw: source.videoWidth, sh: source.videoHeight });
-      }
-      return (drawImage as (...a: unknown[]) => void).apply(this, args);
-    };
-  });
-
+  // `watchBubble` sees every circle and camera draw; the helper readers pick out the
+  // bubble's — its centre and radius, and the picture it has to fit inside.
+  await watchBubble(page);
   await installStandInShare(page, { width: 1280, height: 720 });
   const app = boot(page);
   await app.goto();
@@ -296,17 +270,11 @@ test('the webcam bubble is a whole, undistorted circle, inset from the corner �
 
   // The mirror paints the bubble every frame; wait for a full-size one to land.
   await page.waitForFunction(() => {
-    const arcs = (window as unknown as { __arcs?: { r: number }[] }).__arcs ?? [];
+    const arcs = (window as unknown as { __bubbleArcs?: { r: number }[] }).__bubbleArcs ?? [];
     return arcs.some(one => one.r > 60);
   });
-  const bubble = await page.evaluate(() => {
-    const arcs = (window as unknown as { __arcs: { cx: number; cy: number; r: number; w: number; h: number }[] }).__arcs;
-    return arcs.filter(one => one.r > 60).at(-1)!;
-  });
-  const drawn = await page.evaluate(() => {
-    const draws = (window as unknown as { __webcamDraws: { dw: number; dh: number; sw: number; sh: number }[] }).__webcamDraws;
-    return draws.at(-1)!;
-  });
+  const bubble = await previewBubble(page);
+  const drawn = await lastWebcamDraw(page);
 
   // The whole circle is inside the picture. Before the fix its centre was placed 0.2 of
   // the diameter from each edge — inside the radius — so the crop cut the bubble down to
@@ -325,6 +293,120 @@ test('the webcam bubble is a whole, undistorted circle, inset from the corner �
   // The camera is not square to begin with, or this would prove nothing.
   expect(drawn.sw).not.toBe(drawn.sh);
   expect(drawn.dw / drawn.dh).toBeCloseTo(drawn.sw / drawn.sh, 2);
+});
+
+/** Is the whole circle inside the region it was drawn on? */
+const whole = (arc: BubbleArc): boolean =>
+  arc.cx - arc.r >= -0.5 && arc.cy - arc.r >= -0.5 &&
+  arc.cx + arc.r <= arc.w + 0.5 && arc.cy + arc.r <= arc.h + 0.5;
+
+/** Is the crop the whole picture? The canvas does not say it, so the model is asked. */
+const regionIsFull = (page: Page): Promise<boolean> =>
+  page.evaluate(async (url) => {
+    const { capture } = await import(/* @vite-ignore */ url);
+    return capture.region.isFull;
+  }, HOOKS);
+
+test('the webcam bubble is moved and resized in the live preview, and a take records it there', async ({ page }) => {
+  await watchBubble(page);
+  await installStandInShare(page, { width: 1280, height: 720 });
+  const app = boot(page);
+  await app.goto();
+  await page.locator('#webcam-btn').click();
+  await expect(page.locator('#webcam-btn')).toHaveAttribute('aria-pressed', 'true');
+  await page.locator('#screen-btn').click();
+  await expect(page.locator('#s-text')).toContainText('Live');
+  await page.waitForFunction(() => {
+    const arcs = (window as unknown as { __bubbleArcs?: { r: number }[] }).__bubbleArcs ?? [];
+    return arcs.some(one => one.r > 60);
+  });
+
+  let rect = await page.locator('#preview').boundingBox();
+  if (!rect) throw new Error('the preview has no box to drag on');
+  let frame = await previewBubble(page);
+  const at = (x: number, y: number) => ({ x: rect.x + rect.width * x / frame.w, y: rect.y + rect.height * y / frame.h });
+  const drag = async (from: { x: number; y: number }, to: { x: number; y: number }) => {
+    await page.mouse.move(from.x, from.y);
+    await page.mouse.down();
+    await page.mouse.move(to.x, to.y, { steps: 10 });
+    await page.mouse.up();
+  };
+
+  // A drag away from the bubble is still a crop — the routing did not take the crop away.
+  await drag(at(frame.w * 0.05, frame.h * 0.05), at(frame.w * 0.45, frame.h * 0.45));
+  await expect.poll(() => regionIsFull(page)).toBe(false);
+
+  // A plain click resets the crop to the whole screen, so the take below is full-size.
+  await page.mouse.move(at(frame.w * 0.05, frame.h * 0.05).x, at(frame.w * 0.05, frame.h * 0.05).y);
+  await page.mouse.down();
+  await page.mouse.up();
+  await expect.poll(() => regionIsFull(page)).toBe(true);
+
+  const before = await previewBubble(page);
+  frame = before;
+  expect(before.cx).toBeGreaterThan(before.w / 2);
+  expect(before.cy).toBeGreaterThan(before.h / 2);
+
+  // Drag the bubble to the upper-left third: it moves, stays whole, and never crops.
+  await drag(at(before.cx, before.cy), at(before.w * 0.3, before.h * 0.3));
+  await expect.poll(async () => (await previewBubble(page)).cx).toBeLessThan(before.w * 0.4);
+  const moved = await previewBubble(page);
+  expect(whole(moved)).toBe(true);
+  expect(await regionIsFull(page)).toBe(true);
+
+  // Pressing the visible edge — a little *inside* it — resizes the bubble rather than
+  // moving it: aiming at the line used to read as the middle and shunt the circle across.
+  await drag(at(moved.cx + moved.r * 0.9, moved.cy), at(moved.cx + moved.r * 1.8, moved.cy));
+  await expect.poll(async () => (await previewBubble(page)).r).toBeGreaterThan(moved.r + 20);
+  const sized = await previewBubble(page);
+  frame = sized;
+  expect(sized.cx).toBeCloseTo(moved.cx, 0);   // the centre held: it resized, it did not move
+  expect(sized.cy).toBeCloseTo(moved.cy, 0);
+  const drawn = await lastWebcamDraw(page);
+  expect(drawn.sw).not.toBe(drawn.sh);
+  expect(drawn.dw / drawn.dh).toBeCloseTo(drawn.sw / drawn.sh, 2);
+
+  // The take records the bubble exactly where and at the size the preview showed it.
+  await page.locator('#rec-btn').click();
+  await expect(page.locator('#s-text')).toHaveText('Recording');
+  await expect.poll(async () => (await compositedBubble(page))?.r ?? 0, { timeout: 10_000 }).toBeGreaterThan(moved.r + 20);
+  await expect(page.locator('#t-live-time')).not.toHaveText('00:00');
+  const record = await compositedBubble(page);
+  expect(record).not.toBeNull();
+  expect(record!.cx).toBeCloseTo(sized.cx, 0);
+  expect(record!.cy).toBeCloseTo(sized.cy, 0);
+  expect(record!.r).toBeCloseTo(sized.r, 0);
+  await page.locator('#rec-btn').click();
+  await expect.poll(() => app.clipLength(), { timeout: 10_000 }).toBeGreaterThan(0.2);
+
+  // The placement lasts the sitting and is forgotten at New: the corner again.
+  await app.goto();
+  // A reload lays the page out afresh; the preview's box is not the one from before it.
+  rect = await page.locator('#preview').boundingBox() ?? rect;
+  await page.locator('#webcam-btn').click();
+  await expect(page.locator('#webcam-btn')).toHaveAttribute('aria-pressed', 'true');
+  await page.locator('#screen-btn').click();
+  await expect(page.locator('#s-text')).toContainText('Live');
+  await page.waitForFunction(() => {
+    const arcs = (window as unknown as { __bubbleArcs?: { r: number }[] }).__bubbleArcs ?? [];
+    return arcs.some(one => one.r > 60);
+  });
+  const fresh = await previewBubble(page);
+  expect(fresh.cx).toBeGreaterThan(fresh.w / 2);
+  expect(fresh.cy).toBeGreaterThan(fresh.h / 2);
+  expect(fresh.r).toBeCloseTo(before.r, 0);
+
+  // ...and, in the same way, at New: the sitting ends and the corner is where it starts.
+  frame = fresh;
+  await drag(at(fresh.cx, fresh.cy), at(fresh.w * 0.3, fresh.h * 0.3));
+  await expect.poll(async () => (await previewBubble(page)).cx).toBeLessThan(fresh.w * 0.4);
+  await page.locator('#btn-new').click();
+  await expect(page.locator('#s-text')).toContainText('Live');
+  // The watcher's list is not reset by New, so wait for a fresh default frame to land.
+  await expect.poll(async () => (await previewBubble(page)).cx).toBeGreaterThan(fresh.w / 2);
+  const afterNew = await previewBubble(page);
+  expect(afterNew.cy).toBeGreaterThan(afterNew.h / 2);
+  expect(afterNew.r).toBeCloseTo(before.r, 0);
 });
 
 test('the first frame of a composited take is the picture, not a blank canvas', async ({ page }) => {

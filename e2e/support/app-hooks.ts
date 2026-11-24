@@ -13,3 +13,4 @@ export { player } from '../../src/ui/clip/clip.js';
 export { strip } from '../../src/ui/clip/timeline-ui.js';
 export { setPhase, currentPhase } from '../../src/state.js';
 export { openReview } from '../../src/ui/clip/review-flow.js';
+export { capture } from '../../src/infra/capture.js';
