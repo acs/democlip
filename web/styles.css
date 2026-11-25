@@ -147,16 +147,18 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
    the clip's answer to the settings control a picked annotation wears, in the same place
    beside the same pencil mark, and the kinds are its rows. Every one is a control from the
    palette — an opaque `--control` surface with a `--control-line` border and a `--control-text`
-   label — so it reads over the picture. The column's own gap is wider than the kinds' so the
-   clip control reads as a target of its own, and the column takes no click itself: only its
-   controls do, so the picture between them is still the picture. Shown only in the review,
-   where nothing is recording and the REC badge's corner is free. */
-.corner-actions{position:absolute;top:12px;right:12px;z-index:4;display:flex;flex-direction:column;align-items:flex-end;gap:16px;pointer-events:none;}
+   label — so it reads over the picture. Every row is one width, the widest of them, so the
+   column reads as a list rather than ragged buttons — the label alone is not the size. The
+   column's own gap is wider than the kinds' so the clip control reads as a target of its own,
+   and the column takes no click itself: only its controls do, so the picture between them is
+   still the picture. Shown only in the review, where nothing is recording and the REC badge's
+   corner is free. */
+.corner-actions{position:absolute;top:12px;right:12px;z-index:4;display:flex;flex-direction:column;align-items:stretch;gap:16px;pointer-events:none;}
 .clip-props,.annotate-row{display:inline-flex;align-items:center;gap:7px;padding:7px 12px;border-radius:9px;border:1px solid var(--control-line);background:var(--control);color:var(--control-text);box-shadow:var(--control-shadow);cursor:pointer;font-family:var(--font-mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;transition:all .2s;white-space:nowrap;-webkit-tap-highlight-color:transparent;pointer-events:auto;}
 .clip-props:hover,.annotate-row:hover{background:var(--control-hover);color:var(--text);}
 .clip-props:active,.annotate-row:active{transform:scale(.97);}
 .clip-props svg,.annotate-row svg{flex-shrink:0;pointer-events:none;}
-.annotate-bar{display:none;flex-direction:column;gap:6px;align-items:flex-end;}
+.annotate-bar{display:none;flex-direction:column;gap:6px;align-items:stretch;}
 .annotate-bar.on{display:flex;}
 .annotate-lbl,.clip-props-lbl{pointer-events:none;white-space:nowrap;}
 
