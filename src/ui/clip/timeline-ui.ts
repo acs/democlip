@@ -66,7 +66,6 @@ export function updateSizeUI(): void {
 export function beginEncoding(): string {
   const was = el.tCut.textContent ?? '';
   el.timeline.classList.add('encoding');
-  el.tlLabel.textContent = 'Timeline · Export';
   el.tCut.textContent = 'ENCODING';
   el.tLive.classList.remove('on');
   return was;
@@ -85,7 +84,6 @@ export function encodingAt(source: number, to: number): void {
 
 export function endEncoding(was: string): void {
   el.timeline.classList.remove('encoding');
-  el.tlLabel.textContent = 'Timeline · Cut';
   el.tCut.textContent = was;
   updateTimeUI();              // the length and the head come back
 }

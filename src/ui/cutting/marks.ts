@@ -119,7 +119,12 @@ export function renderMarks(): void {
           + `</span>`;
   }
   selection.marks.forEach((m, i) => {
-    html += `<div class="tl-mark" data-i="${i}" style="left:${at(m * d)}" title="Mark ${stamp(m * d)} — drag to move"></div>`;
+    // With one mark placed, the next click closes the section: the mark's own tooltip
+    // says so, so the header is left to the times rather than carrying an instruction.
+    const hint = selection.marks.length === 1
+      ? ' — click again to close the section, or drag to move'
+      : ' — drag to move';
+    html += `<div class="tl-mark" data-i="${i}" style="left:${at(m * d)}" title="Mark ${stamp(m * d)}${hint}"></div>`;
   });
   host.innerHTML = html;
 
@@ -133,9 +138,9 @@ export function renderMarks(): void {
     el.cutUndo.style.display = '';
     el.cutWrap.classList.add('on');
   } else {
-    el.tCut.textContent = selection.marks.length === 1 ? 'mark set — click again to close the section' : '';
+    el.tCut.textContent = '';
     el.cutUndo.style.display = 'none';
-    el.cutWrap.classList.toggle('on', selection.marks.length === 1);
+    el.cutWrap.classList.remove('on');
   }
 }
 
