@@ -141,6 +141,10 @@ export class EncoderAdapter implements EncoderPort {
         for await (const frame of new VideoSampleSink(track).samples(first, to)) {
           try {
             const source = plan.startOf(step.takeIndex) + (frame.timestamp - first);
+            // A frame inside a cut is not part of the file. It used to be drawn at the time
+            // just before the cut — the moment `outputTimeOf` gives a cut — which wrote the cut's
+            // own picture into the file as samples of no duration. A cut's frames are skipped.
+            if (plan.isCut(source)) continue;
             const at = plan.outputTimeOf(source);
             if (at < -0.001 || at > plan.total + 0.001) continue;
 

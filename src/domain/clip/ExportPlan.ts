@@ -270,6 +270,17 @@ export class ExportPlan {
     return this.introSeconds + this.map.keptOf(source);
   }
 
+  /**
+   * Is this moment of the recording inside a **cut** — a stretch the file does not hold?
+   * `outputTimeOf` maps such a moment to the time just before the cut, so a frame loop that
+   * reads only that draws the cut's own picture at the join and hands the encoder samples of
+   * no duration — which is how a cut's frames ended up in the file. The loop asks this first
+   * and writes nothing for a moment it says is gone.
+   */
+  isCut(source: number): boolean {
+    return this.map.contains(source);
+  }
+
   /** Is a different take on the other side of this piece? Then a join is there. */
   joinsPrev(piece: number): boolean {
     return piece > 0 && this.pieces[piece].takeIndex !== this.pieces[piece - 1].takeIndex;
