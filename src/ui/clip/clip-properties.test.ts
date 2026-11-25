@@ -8,10 +8,10 @@ import type { Clip } from '../../domain/clip/Clip.js';
 // no change to the panel or anywhere else — which is what the seam exists for.
 
 describe('the clip property register', () => {
-  it('offers the title, the description, the logo, the switch, the annotation colour and the size, in order', () => {
+  it('offers the title, the description, the logo, the switches, the annotation colour and the size, in order', () => {
     // The switch sits below the three things the card draws, because it is their switch.
     expect(clipProperties().map(property => property.id)).toEqual([
-      'title', 'description', 'logo', 'addToExport', 'annotationColour', 'size',
+      'title', 'description', 'logo', 'addToExport', 'annotationColour', 'soundBoost', 'size',
     ]);
     expect(clipProperty('title')?.label).toBe('Title');
     expect(clipProperty('description')?.control).toBe('long-text');
@@ -56,6 +56,25 @@ describe('the clip property register', () => {
     expect(addToExport.value(addToExport.with(on, 'no')!)).toBe('');
   });
 
+  it('offers the boost as a switch that is on until the clip says otherwise', () => {
+    const boost = clipProperty('soundBoost')!;
+    expect(boost.control).toBe('toggle');
+    expect(boost.seedable).toBe(true);
+    // The first property whose default is on: a clip that never set it reads as on.
+    expect(boost.value(ClipProperties.EMPTY)).toBe('true');
+    // Its off is a stored 'false', not an empty value — an empty one would be deleted, and
+    // "fixed off" would be lost.
+    const off = boost.with(ClipProperties.EMPTY, '')!;
+    expect(off.get('soundBoost')).toBe('false');
+    expect(boost.value(off)).toBe('');
+    // Anything that is not 'true' is off, as for the card's switch, and on clears it back.
+    expect(boost.value(boost.with(off, 'true')!)).toBe('true');
+    expect(boost.with(off, 'true')!.get('soundBoost')).toBe('');
+    expect(boost.value(boost.with(ClipProperties.EMPTY, 'nonsense')!)).toBe('');
+    // It is always the person's to move: no reason blocks it.
+    expect(boost.blocked).toBeUndefined();
+  });
+
   it('blocks the switch until the clip has something to put on the card', () => {
     const addToExport = clipProperty('addToExport')!;
     // Nothing to draw: the switch is not the person's to move.
@@ -92,7 +111,7 @@ describe('the clip property register', () => {
   it('marks the logo, the switch and the annotation colour as what a profile may control', () => {
     // What a profile may declare; the title, the description and the read-only size are never a
     // profile's.
-    expect(seedableClipProperties().map(property => property.id)).toEqual(['logo', 'addToExport', 'annotationColour']);
+    expect(seedableClipProperties().map(property => property.id)).toEqual(['logo', 'addToExport', 'annotationColour', 'soundBoost']);
   });
 
   it('makes a new annotation red until the clip is told another colour', () => {

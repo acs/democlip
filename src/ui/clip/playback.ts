@@ -21,7 +21,8 @@ import { drawClipFrame, drawSoundOnly } from '../recording/preview.js';
 import { drawAnnotations } from '../annotating/annotation-layer.js';
 import { clampToClip, typingIn } from '../../util.js';
 import { keptLengthNow, keptOf, player, reviewFrame } from './clip.js';
-import { FADE_S, fadeIn, fadeOut, fadeReset } from './fade.js';
+import { FADE_S, elementAudio, fadeIn, fadeOut, fadeReset } from './fade.js';
+import { boostNow } from './boost.js';
 import { DISSOLVE_S, dissolve } from './dissolve.js';
 
 const PLAY_ICON  = '<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>';
@@ -95,6 +96,10 @@ export class Playback {
     this.joinFaded = false;
     fadeReset();               // starting again at full, whatever a pause left behind
     dissolve.clear();              // ...and with no dissolve owed from an earlier join
+    // The element's sound is routed through the boost's gain node to be boosted, and that
+    // graph is otherwise made lazily by the fades — which a clip with no join never reaches.
+    // So it is made here, on the press that started playback, whenever a boost is in force.
+    if (boostNow() !== 1) elementAudio();
     this.seenAt = player.time();
     this.seenTime = Date.now();
     this.updateTransport();

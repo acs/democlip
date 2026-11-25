@@ -8,6 +8,9 @@
 
 import { type Page } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
+import { pageModule } from './page-module.js';
+
+const HOOKS = pageModule('e2e/support/app-hooks.ts');
 
 /** A band of the picture, as fractions of it. */
 export interface Band {
@@ -55,8 +58,7 @@ export async function probeFile(
   }, { base64: bytes.toString('base64'), type: mime });
 }
 
-/** Whether a file's sound can be decoded — a sound-only export has one, a picture-only file does not. */
-export async function hasSound(page: Page, bytes: Buffer): Promise<boolean> {
+/** Whether a file's sound can be decoded — a sound-only export has one, a picture-only file does not. */export async function hasSound(page: Page, bytes: Buffer): Promise<boolean> {
   return page.evaluate(async (base64) => {
     const binary = atob(base64);
     const data = new Uint8Array(binary.length);
@@ -69,6 +71,29 @@ export async function hasSound(page: Page, bytes: Buffer): Promise<boolean> {
       return false;
     }
   }, bytes.toString('base64'));
+}
+
+/**
+ * A file's own loudness and peak, measured with the app's own rule — the same `Loudness`
+ * module the export and the review use, so a check reads the real number rather than a
+ * second implementation of it. A value that is not finite (silence) comes back as -999,
+ * because a number that is not a number does not cross into the runner.
+ */
+export async function loudnessOf(page: Page, bytes: Buffer): Promise<{ lufs: number; peakDb: number }> {
+  return page.evaluate(async ({ base64, url }) => {
+    const binary = atob(base64);
+    const data = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) data[i] = binary.charCodeAt(i);
+    const context = new OfflineAudioContext(2, 1, 48_000);
+    const audio = await context.decodeAudioData(data.buffer);
+    const { measure } = await import(/* @vite-ignore */ url);
+    const channels = Array.from({ length: audio.numberOfChannels }, (_, c) => audio.getChannelData(c));
+    const measured = measure(channels, audio.sampleRate);
+    return {
+      lufs: Number.isFinite(measured.lufs) ? measured.lufs : -999,
+      peakDb: Number.isFinite(measured.peakDb) ? measured.peakDb : -999,
+    };
+  }, { base64: bytes.toString('base64'), url: HOOKS });
 }
 
 /**

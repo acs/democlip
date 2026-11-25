@@ -24,6 +24,7 @@ import { initWatermark } from './ui/clip/watermark.js';
 import { inspector } from './ui/annotating/properties-inspector.js';
 import { textEntry } from './ui/annotating/text-entry.js';
 import { clipPropertiesPanel } from './ui/clip/properties-panel.js';
+import { initBoost } from './ui/clip/boost.js';
 import { initViewLifetime } from './ui/lifecycle/view-lifetime.js';
 import { toggleRecord, toggleScreen, syncSources, onScreenEnded, initRecordFlow, startTake, stopRecording, canRecord } from './ui/recording/record-flow.js';
 import { doExport } from './ui/exporting/export-flow.js';
@@ -115,6 +116,10 @@ function init(): void {
 
   // Every view resets itself when the clip is cleared. The session names no view.
   initViewLifetime();
+
+  // The boost follows the clip: its switch, and its sound. The gain it sets is the one the
+  // export will apply, so the review and the file cannot disagree.
+  initBoost();
 
   // The clip outlives the page. It is kept written down as it changes — a reload
   // or a new version comes back to it, and the trip a Bluesky sign-in takes is

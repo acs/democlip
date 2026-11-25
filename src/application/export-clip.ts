@@ -11,6 +11,7 @@
 import type { Clip } from '../domain/clip/Clip.js';
 import { AnnotationSet } from '../domain/annotation/AnnotationSet.js';
 import { ExportPlan, type ExportSettings } from '../domain/clip/ExportPlan.js';
+import { boostsSound } from '../domain/sound/SoundBoost.js';
 
 // A hair off the end: a WebM's last frame is not decodable right at the end, so
 // the export stops a moment short of it.
@@ -29,5 +30,9 @@ export function planExport(clip: Clip, settings: ExportSettings): ExportPlan | n
   const annotations = settings.annotations === 'carried' ? AnnotationSet.EMPTY : clip.annotations;
   return ExportPlan.of(
     segments, clip.takes.all(), to, clip.timeline(), settings, annotations, settings.intro ?? null,
+    // Whether the clip's sound is boosted is the clip's own setting, read here so every
+    // encoder that builds its plan through this use case — the download and both publishes —
+    // gets the one answer and no caller can disagree with the clip.
+    boostsSound(clip.properties),
   );
 }

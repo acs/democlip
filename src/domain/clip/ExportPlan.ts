@@ -68,6 +68,13 @@ export class ExportPlan {
      * encoder to write an audio track without a video one, and a video service to refuse it.
      */
     readonly soundOnly: boolean,
+    /**
+     * The clip's sound is to be **boosted**: brought to the app's target loudness with peak
+     * safety, as the sound is heard and written. The clip's own setting — a clip property a
+     * **profile** may fix — so every encoder reads it here and no caller can disagree. It is
+     * independent of `audio`: a plan with no sound has the flag and nothing to do with it.
+     */
+    readonly soundBoost: boolean,
   ) {}
 
   /**
@@ -77,7 +84,8 @@ export class ExportPlan {
    * ways, which is where a frame's position comes from; `annotations` is what the
    * clip says is drawn over the picture. `intro` is a card at the head of the file,
    * if the export has one: it takes the first seconds, and every kept stretch lands
-   * that much later.
+   * that much later. `soundBoost` is whether the clip's sound is to be brought to the
+   * app's target loudness — the clip's own setting, handed in by `planExport`.
    */
   static of(
     segments: readonly Segment[],
@@ -87,6 +95,7 @@ export class ExportPlan {
     settings: ExportSettings,
     annotations: AnnotationSet = AnnotationSet.EMPTY,
     intro: IntroCard | null = null,
+    soundBoost = false,
   ): ExportPlan {
     // The kept takes' own facts decide what the file holds: a picture from any take that
     // has one, and sound from any take that carries an audio track. A sound-only file has
@@ -125,7 +134,7 @@ export class ExportPlan {
 
     return new ExportPlan(
       pieces, steps, takes, to, offset + total, audio, settings.fadeSeconds,
-      annotations, map, starts, card, offset, soundOnly,
+      annotations, map, starts, card, offset, soundOnly, soundBoost,
     );
   }
 

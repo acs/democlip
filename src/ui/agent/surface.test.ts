@@ -112,6 +112,9 @@ describe('describeClip', () => {
       // The colour a new annotation is made in: the app's red until the clip says otherwise, and
       // the palette offered by value so an agent is not guessing at a colour.
       { id: 'annotationColour', label: 'Annotation colour', control: 'colour', value: '#e53e3e', choices: ['#e53e3e', '#ff6c23', '#ffffff', '#f6e05e', '#38a169', '#3182ce', '#111827'], readOnly: false },
+      // The sound boost: the one switch whose default is on, so it reads as on for a clip
+      // that never set it, and it is the person's to move.
+      { id: 'soundBoost', label: 'Boost the sound', control: 'toggle', value: 'true', readOnly: false },
       { id: 'size', label: 'Clip size', control: 'text', value: '', readOnly: true },
     ]);
   });

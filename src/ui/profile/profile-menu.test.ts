@@ -50,7 +50,7 @@ describe('profileRows', () => {
 describe('defineRows', () => {
   it('offers one row per item a profile may control', () => {
     const rows = defineRows(book().get('tv')!, { active: true, locked: false });
-    expect(rows.map(row => row.id)).toEqual(['logo', 'addToExport', 'annotationColour']);
+    expect(rows.map(row => row.id)).toEqual(['logo', 'addToExport', 'annotationColour', 'soundBoost']);
     // A list rather than a switch, and free when the profile says nothing about it. The choices
     // are the property's own, so the sheet draws them without knowing what they are.
     expect(rows[0]).toMatchObject({ label: 'Logo', control: 'choice', free: true, value: '', editable: true });
@@ -59,11 +59,25 @@ describe('defineRows', () => {
     // The colour a new annotation is made in: another list, its own entries, free until fixed.
     expect(rows[2]).toMatchObject({ label: 'Annotation colour', control: 'colour', free: true, value: '', editable: true });
     expect(rows[2].choices.map(choice => choice.label)).toEqual(['Red', 'Orange', 'White', 'Yellow', 'Green', 'Blue', 'Black']);
+    // And the sound boost: the second switch, free here, which the sheet draws exactly as it
+    // draws the card's — so the profile can be told to fix it on, off, or not at all.
+    expect(rows[3]).toMatchObject({ label: 'Boost the sound', control: 'toggle', free: true, value: '', editable: true });
   });
 
   it('says an item is free when the profile does not control it', () => {
     const rows = defineRows(book().get('gra')!, { active: false, locked: false });
-    expect(rows.map(row => row.free)).toEqual([true, true, true]);
+    expect(rows.map(row => row.free)).toEqual([true, true, true, true]);
+  });
+
+  it('tells a controlled sound boost apart from a free one, in the sheet and on the clip', () => {
+    // The switch is the first whose default is **on**, so its off is a stored `'false'` and its
+    // on is the empty value the sheet writes: the three states stay apart.
+    const off = Profile.create('off', 'Off', { soundBoost: '' })!;
+    expect(defineRows(off, { active: false, locked: false }).find(row => row.id === 'soundBoost'))
+      .toMatchObject({ free: false, value: '' });
+    const on = Profile.create('on', 'On', { soundBoost: 'true' })!;
+    expect(defineRows(on, { active: false, locked: false }).find(row => row.id === 'soundBoost'))
+      .toMatchObject({ free: false, value: 'true' });
   });
 
   it('offers what a profile does control at the value it fixes', () => {

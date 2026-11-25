@@ -14,3 +14,5 @@ export { strip } from '../../src/ui/clip/timeline-ui.js';
 export { setPhase, currentPhase } from '../../src/state.js';
 export { openReview } from '../../src/ui/clip/review-flow.js';
 export { capture } from '../../src/infra/capture.js';
+// The loudness rule, so a check can measure an exported file with the app's own numbers.
+export { measure } from '../../src/domain/sound/Loudness.js';

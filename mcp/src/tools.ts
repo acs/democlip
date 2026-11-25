@@ -145,10 +145,10 @@ const setProperty: Tool = {
 const setClipProperty: Tool = {
   name: 'set_clip_property',
   description:
-    'Change what the clip says about itself. `property` is "title" or "description" (the words), or "addToExport" (whether an export puts a title card — those words over the clip\u2019s first frame — at the head of the file). For the two words, `value` is the text; for "addToExport", "true" turns the card on and anything else turns it off. Publishing fills its fields from the title and description, so a clip is branded once. One undo takes it back.',
+    'Change what the clip says about itself. `property` is "title" or "description" (the words), "addToExport" (whether an export puts a title card — those words over the clip\u2019s first frame — at the head of the file), or "soundBoost" (whether the clip\u2019s sound is brought to a competitive loudness, in the review and in every file; on by default). For the two words, `value` is the text; for the two switches, "true" turns one on and anything else turns it off. Publishing fills its fields from the title and description, so a clip is branded once. One undo takes it back.',
   inputSchema: objectSchema({
-    property: { type: 'string', enum: ['title', 'description', 'addToExport'], description: 'Which of the clip\u2019s own properties' },
-    value: { type: 'string', description: 'The new text, or "true" / "" for "addToExport"' },
+    property: { type: 'string', enum: ['title', 'description', 'addToExport', 'soundBoost'], description: 'Which of the clip\u2019s own properties' },
+    value: { type: 'string', description: 'The new text, or "true" / "" for "addToExport" or "soundBoost"' },
   }, ['property', 'value']),
   run: (session, args) => callSurface(session, 'edit.setClipProperty', args.property, args.value),
 };
