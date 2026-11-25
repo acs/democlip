@@ -22,6 +22,8 @@ interface App {
   refuse(words: string): void;
   /** The app takes what arrives, as a take of this length. */
   take(seconds: number): void;
+  /** The app takes it and says so, but only when its words are next read — the race. */
+  takeLate(seconds: number, words: string): void;
   noFileInput(): void;
   importDisabled(): void;
   fails(error: Error): void;
@@ -36,6 +38,7 @@ function app(): App {
     failure: null as Error | null,
     files: [] as string[],
     onFiles: null as (() => void) | null,
+    onToast: null as (() => void) | null,
   };
 
   const page = {
@@ -54,7 +57,17 @@ function app(): App {
         return { count: async () => 1, isDisabled: async () => state.disabled };
       }
       if (selector === '#toast') {
-        return { textContent: async () => state.words };
+        return {
+          textContent: async () => {
+            // A toast can arrive between the two reads the delivery makes — the take
+            // count, then the app's words. This fires at the words, so the race is
+            // reachable from the stub.
+            const late = state.onToast;
+            state.onToast = null;
+            late?.();
+            return state.words;
+          },
+        };
       }
       throw new Error(`the stub page has no ${selector}`);
     },
@@ -79,6 +92,14 @@ function app(): App {
     takes: seconds => { state.takes = seconds.map((s, index) => ({ index, seconds: s })); },
     refuse: words => { state.onFiles = () => { state.words = words; }; },
     take: seconds => { state.onFiles = () => { state.takes.push({ index: state.takes.length, seconds }); }; },
+    takeLate: (seconds, words) => {
+      state.onFiles = () => {
+        state.onToast = () => {
+          state.takes.push({ index: state.takes.length, seconds });
+          state.words = words;
+        };
+      };
+    },
     noFileInput: () => { state.hasInput = false; },
     importDisabled: () => { state.disabled = true; },
     fails: error => { state.failure = error; },
@@ -116,6 +137,17 @@ describe('import_take', () => {
     const outcome = await importTakeFile(stub.session, '/tmp/clip.webm');
     expect(outcome).toEqual({ ok: true, take: { index: 0, seconds: 1.4 } });
     expect(stub.files).toEqual(['/tmp/clip.webm']);
+  });
+
+  it('still reports the take when the app says so between the two reads — the race', async () => {
+    // The app appends the take and raises its own words; the words land after this
+    // delivery has read the count and before it reads them. The take is still the
+    // answer: a success toast ("Imported, and 1 annotation came back with it") is not
+    // a refusal.
+    const stub = app();
+    stub.takeLate(1.2, 'Imported, and 1 annotation came back with it');
+    const outcome = await importTakeFile(stub.session, '/tmp/clip.webm');
+    expect(outcome).toEqual({ ok: true, take: { index: 0, seconds: 1.2 } });
   });
 
   it('hands over the sidecar written beside the file, so the annotations travel with it', async () => {

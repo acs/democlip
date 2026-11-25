@@ -70,17 +70,25 @@ export async function importTakeFile(session: Session, path: string): Promise<Im
 
   // The app's own flow takes it from here: it reads the container, appends the take and
   // opens the review.
+  const taken = async (): Promise<Imported> => {
+    const described = await callSurface<{ takes: Array<{ index: number; seconds: number }> }>(
+      session, 'describe',
+    );
+    return { ok: true, take: described.takes[described.takes.length - 1] };
+  };
   const until = Date.now() + TAKEN_MS;
   for (;;) {
     const now = await takesOf(session);
-    if (now > before) {
-      const described = await callSurface<{ takes: Array<{ index: number; seconds: number }> }>(
-        session, 'describe',
-      );
-      return { ok: true, take: described.takes[now - 1] };
-    }
+    if (now > before) return taken();
     const said = await theAppsWords(session);
-    if (said && said !== saidBefore) return { ok: false, reason: said };
+    if (said && said !== saidBefore) {
+      // A changed toast is usually the app refusing the file — but the app also says
+      // "Imported, and 1 annotation came back with it" when it **took** one, and that
+      // word can land between the two reads above. So the take count is asked once more
+      // before the words are taken as a refusal: the take, not the toast, is the truth.
+      if (await takesOf(session) > before) return taken();
+      return { ok: false, reason: said };
+    }
     if (Date.now() >= until) return { ok: false, reason: 'the app did not take the file' };
     await pause(POLL_MS);
   }
