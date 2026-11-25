@@ -81,7 +81,7 @@ export class LiveTimeline {
     this.analyser = null;
     this.buf = new Uint8Array(0);
     el.timeline.classList.remove('recording');
-    el.tlLabel.textContent = 'Timeline · Cut';
+    el.tlLabel.textContent = 'Timeline';
     el.tLive.classList.remove('on');
     el.waveform.style.display = 'none';
   }

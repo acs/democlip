@@ -87,15 +87,30 @@ test('a section becomes a cut, one undo puts it back, and the clip is kept with 
   await app.seed(takes);
   await app.review();
 
+  // The header names the panel and nothing more: the export's size moved under the Export
+  // button, where the button's own word says what the number is.
+  await expect(page.locator('#tl-label')).toHaveText('Timeline');
+
   // The timeline is drawn over the thumbnail strip, so a click is measured there. Two clicks
   // bound a section and the chip names it; the scissors takes it out and the timeline closes up.
   const box = await page.locator('#thumbs').boundingBox();
   if (!box) throw new Error('no thumbnail strip');
   const y = box.y + box.height / 2;
   const clickAt = (fraction: number) => page.mouse.click(box.x + box.width * fraction, y);
+
+  // One mark: the header keeps to the times, and the mark's own tooltip carries the hint
+  // to click again — it is not a line beside the times.
   await clickAt(0.25);
+  await expect(page.locator('#t-cut')).toHaveText('');
+  await expect(page.locator('#t-cut-wrap')).not.toHaveClass(/on/);
+  await expect(page.locator('.tl-mark')).toHaveAttribute('title', /click again to close the section/);
+
   await clickAt(0.5);
   await expect(page.locator('#t-cut')).toContainText('CUT');
+  // The section offers the cut alone: the keep/undo button is gone, and a click outside
+  // the section is what drops the selection.
+  await expect(page.locator('#tl-marks .tl-act')).toHaveCount(1);
+  await expect(page.locator('#tl-marks [data-act="keep"]')).toHaveCount(0);
   await page.locator('[data-act="cut"]').click();
   await expect(page.locator('#cut-undo')).toBeVisible();
   await expect(page.locator('#t-clip')).toHaveText('3.00s');   // 1 s of the 4 removed
