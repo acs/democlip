@@ -21,6 +21,15 @@
   --blue:#3B7FFF;
   --green:#22C55E;
   --amber:#F59E0B;
+  /* The palette. A **control** — a button — is an opaque surface the colour of the scene
+     around the picture (`--bg`), so it reads as part of the app rather than a lit panel;
+     a hover step, a line and a shadow set it apart, and `--control-text` is its label.
+     The brand red and the accents are above, unchanged. */
+  --control:var(--bg);
+  --control-hover:#171A24;
+  --control-line:#2E3444;
+  --control-text:#C7CCDE;
+  --control-shadow:0 2px 8px rgba(0,0,0,.5);
   --font-ui:'Syne','Helvetica Neue',sans-serif;
   --font-mono:'JetBrains Mono','SF Mono',monospace;
   --idle-bg:rgba(6,7,16,0.93);
@@ -44,9 +53,14 @@
   --brand-red:#C62828;
   --idle-bg:rgba(236,240,250,0.94);
   --idle-bd:rgba(0,0,0,0.08);
+  /* The palette on light: the same rule — a control is the scene colour (`--bg`), never
+     white; a darker label carries it. */
+  --control-hover:#E2E7F4;
+  --control-line:#C9D0E0;
+  --control-text:#3A4160;
+  --control-shadow:0 1px 3px rgba(20,30,60,.16);
 }
 [data-theme="light"] .deco{opacity:.05;filter:invert(1);}
-[data-theme="light"] .act-btn:not(:disabled):hover{background:rgba(0,0,0,.06);}
 [data-theme="light"] .rec-badge{background:rgba(255,255,255,.75);}
 [data-theme="light"] .tl-mark{background:#B45309;}
 [data-theme="light"] .tl-sel em{color:#7A1010;background:rgba(255,255,255,.82);}
@@ -75,17 +89,17 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 .logo-ver:hover{color:var(--text-mid);text-decoration:underline;}
 /* Offered when the deployment is serving a newer build than the one running. It
    is only a offer: reloading by itself would take a recording in progress. */
-.ver-new{display:none;font-family:var(--font-mono);font-size:9px;letter-spacing:.1em;color:var(--amber);border:1px solid rgba(245,158,11,.35);background:rgba(245,158,11,.08);border-radius:5px;padding:3px 7px;line-height:1;align-self:center;cursor:pointer;}
+.ver-new{display:none;font-family:var(--font-mono);font-size:9px;letter-spacing:.1em;color:var(--amber);border:1px solid var(--control-line);background:var(--control);border-radius:5px;padding:3px 7px;line-height:1;align-self:center;cursor:pointer;}
 .ver-new.on{display:inline-flex;}
 .ver-new:hover{border-color:rgba(245,158,11,.6);}
 
 .hdr-actions{display:flex;align-items:center;gap:7px;margin-left:auto;}
 
-.icon-btn{width:30px;height:30px;border-radius:50%;border:1px solid var(--glass-b);background:var(--glass);color:var(--text-mid);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;font-family:var(--font-mono);font-size:13px;font-weight:600;line-height:1;flex-shrink:0;}
-.icon-btn:hover{background:var(--glass-b);color:var(--text);border-color:var(--glass-b2);}
+.icon-btn{width:30px;height:30px;border-radius:50%;border:1px solid var(--control-line);background:var(--control);color:var(--control-text);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;font-family:var(--font-mono);font-size:13px;font-weight:600;line-height:1;flex-shrink:0;}
+.icon-btn:hover{background:var(--control-hover);color:var(--text);}
 .icon-btn:active{transform:scale(.92);}
 .icon-btn:disabled{opacity:.35;cursor:not-allowed;}
-.icon-btn:disabled:hover{background:var(--glass);color:var(--text-mid);border-color:var(--glass-b);}
+.icon-btn:disabled:hover{background:var(--control);color:var(--control-text);}
 .icon-btn svg{pointer-events:none;}
 
 /* The status is announced, not drawn — see the live region at the end of the page. */
@@ -129,26 +143,26 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 .rec-badge-dot{width:5px;height:5px;border-radius:50%;background:var(--crimson);animation:blink 1s infinite;}
 
 /* The clip's own settings, in the corner of the picture the clip is seen on — beside
-   the thing, as a picked annotation's settings control is drawn on it. In the
-   wordmark's red, the app's own accent for the clip itself. Shown only in the
-   review, where nothing is recording and the REC badge's corner is free. */
-.clip-props{position:absolute;top:12px;right:12px;z-index:4;width:26px;height:26px;padding:0;border-radius:50%;border:1px solid rgba(229,62,62,.45);background:rgba(0,0,0,.5);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);color:var(--brand-red);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:color .18s,background .18s,border-color .18s,transform .18s;}
-.clip-props:hover{background:rgba(229,62,62,.18);border-color:rgba(229,62,62,.7);transform:scale(1.06);}
-.clip-props:active{transform:scale(.94);}
+   the thing, as a picked annotation's settings control is drawn on it. It is a control
+   from the palette: an opaque `--control` surface with a `--control-line` border and a
+   `--control-text` mark, lifted by a shadow so it reads over the picture. Shown only in
+   the review, where nothing is recording and the REC badge's corner is free. */
+.clip-props{position:absolute;top:12px;right:12px;z-index:4;width:26px;height:26px;padding:0;border-radius:50%;border:1px solid var(--control-line);background:var(--control);color:var(--control-text);box-shadow:var(--control-shadow);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:all .2s;-webkit-tap-highlight-color:transparent;}
+.clip-props:hover{background:var(--control-hover);color:var(--text);}
+.clip-props:active{transform:scale(.97);}
 .clip-props svg{pointer-events:none;}
-[data-theme="light"] .clip-props{background:rgba(255,255,255,.72);}
-[data-theme="light"] .clip-props:hover{background:rgba(229,62,62,.16);}
 
-/* The annotate options: a vertical column of kind rows below the clip's settings control. */
+/* The annotate options: a vertical column of kind rows below the clip's settings control.
+   A row is a control from the palette like every other button — the opaque `--control`
+   surface, the `--control-line` border and the `--control-text` label in the mono face —
+   so a kind reads over the picture. */
 .annotate-bar{position:absolute;top:46px;right:12px;z-index:4;display:none;flex-direction:column;gap:6px;align-items:flex-end;}
 .annotate-bar.on{display:flex;}
-.annotate-row{display:inline-flex;align-items:center;gap:6px;padding:5px 9px;border-radius:999px;border:1px solid var(--glass-b2);background:rgba(0,0,0,.5);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);color:#fff;font-family:var(--font-sans);font-size:11px;letter-spacing:.04em;cursor:pointer;transition:background .18s,border-color .18s,transform .18s;}
-.annotate-row:hover{background:rgba(229,62,62,.18);border-color:rgba(229,62,62,.7);transform:scale(1.03);}
-.annotate-row:active{transform:scale(.96);}
-.annotate-row svg{pointer-events:none;}
+.annotate-row{display:inline-flex;align-items:center;gap:7px;padding:7px 12px;border-radius:9px;border:1px solid var(--control-line);background:var(--control);color:var(--control-text);box-shadow:var(--control-shadow);cursor:pointer;font-family:var(--font-mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;transition:all .2s;white-space:nowrap;-webkit-tap-highlight-color:transparent;}
+.annotate-row:hover{background:var(--control-hover);color:var(--text);}
+.annotate-row:active{transform:scale(.97);}
+.annotate-row svg{flex-shrink:0;pointer-events:none;}
 .annotate-lbl{pointer-events:none;white-space:nowrap;}
-[data-theme="light"] .annotate-row{background:rgba(255,255,255,.72);color:#1a1a1a;}
-[data-theme="light"] .annotate-row:hover{background:rgba(229,62,62,.16);}
 
 /* ── TIMELINE ── */
 .timeline{width:100%;max-width:1160px;flex-shrink:0;background:var(--surface-2);backdrop-filter:blur(20px);border:1px solid var(--glass-b);border-radius:12px;padding:11px 16px;margin-bottom:9px;opacity:0;transform:translateY(8px);transition:opacity .35s,transform .35s;pointer-events:none;}
@@ -166,20 +180,16 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
    They appear beside the range they act on, in the header. */
 .tl-cut{display:none;align-items:center;gap:6px;font-family:var(--font-mono);font-size:10px;letter-spacing:.08em;white-space:nowrap;}
 .tl-cut.on{display:inline-flex;}
-.tl-act{width:19px;height:19px;flex-shrink:0;border-radius:50%;border:1px solid var(--glass-b2);background:var(--glass);color:var(--text-mid);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;padding:0;transition:all .15s;}
-.tl-act:hover{transform:scale(1.12);}
-.tl-act.ok{color:var(--green);border-color:rgba(34,197,94,.45);}
-.tl-act.ok:hover{background:rgba(34,197,94,.14);}
-.tl-act.no{color:var(--crimson);border-color:rgba(229,62,62,.45);}
-.tl-act.no:hover{background:rgba(229,62,62,.14);}
-.tl-act.ann{color:var(--amber);border-color:rgba(245,158,11,.45);}
-.tl-act.ann:hover{background:rgba(245,158,11,.14);}
-.tl-act.undo{color:var(--text-mid);}
-.tl-act.undo:hover{background:var(--glass-b);color:var(--text);}
+.tl-act{width:19px;height:19px;flex-shrink:0;border-radius:50%;border:1px solid var(--control-line);background:var(--control);color:var(--control-text);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;padding:0;transition:all .15s;}
+.tl-act:hover{background:var(--control-hover);color:var(--text);transform:scale(1.12);}
+.tl-act.ok{color:var(--green);border-color:rgba(34,197,94,.55);}
+.tl-act.no{color:var(--crimson);border-color:rgba(229,62,62,.55);}
+.tl-act.ann{color:var(--amber);border-color:rgba(245,158,11,.55);}
+.tl-act.undo{color:var(--control-text);}
 .tl-act svg{pointer-events:none;}
 
 /* The scissors and the undo, sitting on the selected section itself */
-.tl-acts{position:absolute;top:50%;transform:translate(-50%,-50%);display:inline-flex;gap:5px;padding:3px 5px;border-radius:999px;background:rgba(6,7,16,.74);border:1px solid var(--glass-b2);pointer-events:auto;box-shadow:0 2px 12px rgba(0,0,0,.5);}
+.tl-acts{position:absolute;top:50%;transform:translate(-50%,-50%);display:inline-flex;gap:5px;padding:3px 5px;border-radius:999px;background:var(--control);border:1px solid var(--control-line);pointer-events:auto;box-shadow:0 2px 12px rgba(0,0,0,.5);}
 .tl-acts .tl-act{width:17px;height:17px;}
 .tl-acts .tl-act svg{width:11px;height:11px;}
 
@@ -219,10 +229,10 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 .range-bg{position:absolute;left:0;right:0;height:3px;background:var(--glass-b);border-radius:2px;}
 
 /* Playback transport */
-.tl-play{width:26px;height:26px;flex-shrink:0;border-radius:50%;border:1px solid var(--glass-b2);background:var(--glass);color:var(--text);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;padding:0;}
-.tl-play:hover:not(:disabled){background:var(--glass-b);transform:scale(1.08);}
+.tl-play{width:26px;height:26px;flex-shrink:0;border-radius:50%;border:1px solid var(--control-line);background:var(--control);color:var(--control-text);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;padding:0;}
+.tl-play:hover:not(:disabled){background:var(--control-hover);color:var(--text);transform:scale(1.08);}
 .tl-play:disabled{opacity:.4;cursor:not-allowed;}
-.tl-play.playing{color:var(--crimson);border-color:rgba(229,62,62,.45);}
+.tl-play.playing{color:var(--crimson);border-color:rgba(229,62,62,.55);}
 .tl-play svg{pointer-events:none;}
 .tl-now-wrap{color:var(--text);}
 .range-playhead{position:absolute;top:1px;bottom:1px;left:0%;width:2px;border-radius:2px;background:var(--text);box-shadow:0 0 6px rgba(255,255,255,.45);pointer-events:none;z-index:3;transform:translateX(-1px);}
@@ -253,26 +263,26 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 
 /* The record sources: what goes into the take. Screen is on by default. */
 .srcs{display:flex;align-items:center;gap:6px;flex-wrap:wrap;min-width:0;}
-.src-btn{display:inline-flex;align-items:center;gap:7px;padding:7px 12px;border-radius:9px;border:1px solid var(--glass-b);background:var(--glass);color:var(--text-mid);cursor:pointer;font-family:var(--font-mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;transition:all .2s;white-space:nowrap;-webkit-tap-highlight-color:transparent;}
+.src-btn{display:inline-flex;align-items:center;gap:7px;padding:7px 12px;border-radius:9px;border:1px solid var(--control-line);background:var(--control);color:var(--control-text);cursor:pointer;font-family:var(--font-mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;transition:all .2s;white-space:nowrap;-webkit-tap-highlight-color:transparent;}
 .src-btn svg{flex-shrink:0;pointer-events:none;}
-.src-btn:hover:not(:disabled){background:var(--glass-b);color:var(--text);border-color:var(--glass-b2);}
+.src-btn:hover:not(:disabled){background:var(--control-hover);color:var(--text);}
 .src-btn:active:not(:disabled){transform:scale(.97);}
 .src-btn:disabled{opacity:.35;cursor:not-allowed;}
 /* A source is lit while it is on, and its pin with it. The three are
    independent: the screen can be turned off, and the webcam then carries the
    picture on its own. */
-.src-btn.active{color:var(--text);border-color:rgba(229,62,62,.42);background:rgba(229,62,62,.12);}
+.src-btn.active{color:var(--text);border-color:rgba(229,62,62,.6);background:var(--control-hover);}
 .src-pin{width:6px;height:6px;border-radius:50%;background:var(--text-dim);flex-shrink:0;transition:background .2s,box-shadow .2s;}
 .src-btn.active .src-pin{background:var(--green);box-shadow:0 0 6px var(--green);}
 
 /* The camera picker: a small caret beside the Webcam button that opens a menu.
    It borrows the source button's look but stays compact, so it never crowds the
    row or the record button's rings. */
-.cam-pick-btn{display:inline-flex;align-items:center;justify-content:center;width:26px;height:30px;padding:0;border-radius:9px;border:1px solid var(--glass-b);background:var(--glass);color:var(--text-mid);cursor:pointer;transition:all .2s;-webkit-tap-highlight-color:transparent;flex-shrink:0;}
-.cam-pick-btn:hover:not(:disabled){background:var(--glass-b);color:var(--text);border-color:var(--glass-b2);}
+.cam-pick-btn{display:inline-flex;align-items:center;justify-content:center;width:26px;height:30px;padding:0;border-radius:9px;border:1px solid var(--control-line);background:var(--control);color:var(--control-text);cursor:pointer;transition:all .2s;-webkit-tap-highlight-color:transparent;flex-shrink:0;}
+.cam-pick-btn:hover:not(:disabled){background:var(--control-hover);color:var(--text);}
 .cam-pick-btn:active:not(:disabled){transform:scale(.97);}
 .cam-pick-btn:disabled{opacity:.35;cursor:not-allowed;}
-.cam-pick-btn[aria-expanded="true"]{background:var(--glass-b);color:var(--text);border-color:var(--glass-b2);}
+.cam-pick-btn[aria-expanded="true"]{background:var(--control-hover);color:var(--text);}
 .cam-pick-btn[hidden]{display:none;}
 
 /* The camera menu — a small popover above the caret, styled like the Export
@@ -312,8 +322,8 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 .profile-name{flex:1;min-width:0;white-space:nowrap;text-overflow:ellipsis;overflow:hidden;}
 .profile-check{flex-shrink:0;color:var(--green);font-size:13px;font-weight:700;}
 .profile-acts{display:flex;align-items:center;gap:1px;flex-shrink:0;}
-.profile-ico{width:26px;height:26px;border-radius:7px;border:none;background:transparent;color:var(--text-mid);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s,color .15s;}
-.profile-ico:hover:not(:disabled){background:var(--glass-b);color:var(--text);}
+.profile-ico{width:26px;height:26px;border-radius:7px;border:1px solid var(--control-line);background:var(--control);color:var(--control-text);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s,color .15s;}
+.profile-ico:hover:not(:disabled){background:var(--control-hover);color:var(--text);}
 .profile-ico:disabled{cursor:not-allowed;opacity:.3;}
 .profile-ico svg{pointer-events:none;}
 .profile-rename-input{flex:1;min-width:0;padding:7px 9px;border-radius:8px;border:1px solid var(--glass-b2);background:var(--surface);color:var(--text);font-family:var(--font-ui);font-size:14px;outline:none;}
@@ -323,10 +333,10 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 .profile-new-btn:hover{filter:brightness(1.08);}
 .profile-new-input{flex:1;min-width:0;padding:8px 10px;border-radius:9px;border:1px solid var(--glass-b2);background:var(--surface);color:var(--text);font-family:var(--font-ui);font-size:14px;outline:none;}
 .profile-new-input:focus{border-color:var(--text-mid);}
-.profile-new-add,.profile-new-cancel{padding:8px 12px;border-radius:9px;border:1px solid var(--glass-b2);background:var(--glass);color:var(--text);font-family:var(--font-ui);font-size:13px;cursor:pointer;transition:background .15s;}
+.profile-new-add,.profile-new-cancel{padding:8px 12px;border-radius:9px;border:1px solid var(--control-line);background:var(--control);color:var(--control-text);font-family:var(--font-ui);font-size:13px;cursor:pointer;transition:background .15s;}
 .profile-new-add{background:var(--crimson);border-color:var(--crimson);color:#fff;font-weight:600;}
 .profile-new-add:hover{filter:brightness(1.08);}
-.profile-new-cancel:hover{background:var(--glass-b);}
+.profile-new-cancel:hover{background:var(--control-hover);color:var(--text);}
 
 /* A property a profile fixes: its value, and a lock whose tooltip names the profile. */
 .prop-fixed{display:flex;align-items:center;gap:8px;}
@@ -344,9 +354,9 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 .pdef-row{display:flex;flex-direction:column;gap:6px;}
 .pdef-name{font-family:var(--font-ui);font-size:13px;color:var(--text);}
 .pdef-seg{display:flex;align-self:flex-start;border:1px solid var(--glass-b2);border-radius:8px;overflow:hidden;}
-.pdef-opt{padding:6px 14px;border:none;border-right:1px solid var(--glass-b2);background:transparent;color:var(--text-mid);font-family:var(--font-ui);font-size:12px;cursor:pointer;transition:background .15s,color .15s;}
+.pdef-opt{padding:6px 14px;border:none;border-right:1px solid var(--control-line);background:var(--control);color:var(--control-text);font-family:var(--font-ui);font-size:12px;cursor:pointer;transition:background .15s,color .15s;}
 .pdef-opt:last-child{border-right:none;}
-.pdef-opt:hover:not(:disabled){background:var(--glass-b);color:var(--text);}
+.pdef-opt:hover:not(:disabled){background:var(--control-hover);color:var(--text);}
 .pdef-opt[aria-pressed="true"]{background:var(--crimson);color:#fff;}
 .pdef-opt:disabled{cursor:not-allowed;opacity:.45;}
 .pdef-input{padding:8px 10px;border-radius:8px;border:1px solid var(--glass-b2);background:var(--glass);color:var(--text);font-family:var(--font-ui);font-size:14px;outline:none;}
@@ -369,8 +379,8 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 .prop-words-text{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:13px;color:var(--text);}
 .prop-duration{display:flex;align-items:center;gap:8px;}
 .prop-duration-text{font-family:var(--font-mono);font-size:13px;color:var(--text);min-width:46px;text-align:center;}
-.prop-step{width:24px;height:24px;padding:0;border-radius:7px;border:1px solid var(--glass-b2);background:var(--glass);color:var(--text);font-size:15px;line-height:1;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:background .15s,border-color .15s;}
-.prop-step:hover{background:rgba(229,62,62,.16);border-color:rgba(229,62,62,.6);}
+.prop-step{width:24px;height:24px;padding:0;border-radius:7px;border:1px solid var(--control-line);background:var(--control);color:var(--control-text);font-size:15px;line-height:1;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:background .15s,border-color .15s;}
+.prop-step:hover{background:var(--control-hover);color:var(--text);}
 /* The clip's own properties: a little wider than an annotation's panel, and its values
    are typed rather than picked. */
 .prop-menu.clip{min-width:240px;max-width:320px;overflow-y:auto;overscroll-behavior:contain;}
@@ -392,16 +402,16 @@ select.prop-input option,select.pdef-select option{background:var(--bg);color:va
 .prop-toggle.off{cursor:not-allowed;}
 .prop-toggle.off .prop-name{color:var(--text-mid);}
 .prop-hint{font-family:var(--font-ui);font-size:11px;line-height:1.45;color:var(--text-mid);}
-.prop-edit{padding:5px 10px;border-radius:7px;border:1px solid var(--glass-b2);background:var(--glass);color:var(--text);font-family:var(--font-ui);font-size:12px;cursor:pointer;transition:background .15s;}
-.prop-edit:hover{background:var(--glass-b);}
+.prop-edit{padding:5px 10px;border-radius:7px;border:1px solid var(--control-line);background:var(--control);color:var(--control-text);font-family:var(--font-ui);font-size:12px;cursor:pointer;transition:background .15s;}
+.prop-edit:hover{background:var(--control-hover);color:var(--text);}
 
 /* A COLOUR PROPERTY — the clip's annotation colour, in its own panel and a profile's sheet.
    One button per colour, each showing the colour itself beside its name; the free state, which
    only a profile has, leads. */
 .colour-choices{display:flex;flex-wrap:wrap;gap:5px;}
-.colour-choice{display:inline-flex;align-items:center;gap:6px;padding:4px 9px 4px 6px;border-radius:100px;border:1px solid var(--glass-b2);background:var(--glass);color:var(--text-mid);font-family:var(--font-mono);font-size:10px;letter-spacing:.04em;cursor:pointer;transition:background .15s,color .15s,border-color .15s;}
-.colour-choice:hover:not(:disabled){background:var(--glass-b);color:var(--text);}
-.colour-choice[aria-pressed="true"]{background:var(--glass-b);border-color:var(--text-mid);color:var(--text);}
+.colour-choice{display:inline-flex;align-items:center;gap:6px;padding:4px 9px 4px 6px;border-radius:100px;border:1px solid var(--control-line);background:var(--control);color:var(--control-text);font-family:var(--font-mono);font-size:10px;letter-spacing:.04em;cursor:pointer;transition:background .15s,color .15s,border-color .15s;}
+.colour-choice:hover:not(:disabled){background:var(--control-hover);color:var(--text);}
+.colour-choice[aria-pressed="true"]{background:var(--control-hover);border-color:var(--text-mid);color:var(--text);}
 .colour-choice:disabled{opacity:.45;cursor:not-allowed;}
 .colour-choice-free{padding:4px 9px;}
 .colour-choice-dot{width:11px;height:11px;flex-shrink:0;border-radius:50%;box-shadow:inset 0 0 0 1px rgba(255,255,255,.3),0 0 0 1px rgba(0,0,0,.35);}
@@ -416,8 +426,8 @@ select.prop-input option,select.pdef-select option{background:var(--bg);color:va
 .te-input{width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--glass-b2);background:var(--glass);color:var(--text);font-family:var(--font-ui);font-size:15px;outline:none;transition:border-color .15s;}
 .te-input:focus{border-color:var(--text-mid);}
 .te-actions{display:flex;justify-content:flex-end;gap:8px;}
-.te-cancel,.te-add{padding:8px 14px;border-radius:8px;border:1px solid var(--glass-b2);background:var(--glass);color:var(--text);font-family:var(--font-ui);font-size:13px;cursor:pointer;transition:background .15s;}
-.te-cancel:hover{background:var(--glass-b);}
+.te-cancel,.te-add{padding:8px 14px;border-radius:8px;border:1px solid var(--control-line);background:var(--control);color:var(--control-text);font-family:var(--font-ui);font-size:13px;cursor:pointer;transition:background .15s;}
+.te-cancel:hover{background:var(--control-hover);color:var(--text);}
 .te-add{background:var(--crimson);border-color:var(--crimson);color:#fff;}
 .te-add:hover{filter:brightness(1.08);}
 
@@ -449,12 +459,12 @@ select.prop-input option,select.pdef-select option{background:var(--bg);color:va
 
 /* Reset and Export, at the end of the row */
 .ctrl-actions{display:flex;gap:7px;justify-self:end;}
-.act-btn{padding:7px 16px;border-radius:8px;border:1px solid var(--glass-b);background:var(--glass);color:var(--text-mid);font-family:var(--font-mono);font-size:11px;letter-spacing:.08em;cursor:pointer;transition:all .2s;white-space:nowrap;}
-.act-btn:not(:disabled):hover{background:rgba(255,255,255,.07);color:var(--text);border-color:var(--glass-b2);}
+.act-btn{padding:7px 16px;border-radius:8px;border:1px solid var(--control-line);background:var(--control);color:var(--control-text);font-family:var(--font-mono);font-size:11px;letter-spacing:.08em;cursor:pointer;transition:all .2s;white-space:nowrap;}
+.act-btn:not(:disabled):hover{background:var(--control-hover);color:var(--text);}
 .act-btn:active:not(:disabled){transform:scale(.97);}
 .act-btn:disabled{opacity:.3;cursor:not-allowed;}
-.act-btn.export{background:rgba(59,127,255,.12);color:var(--blue);border-color:rgba(59,127,255,.28);}
-.act-btn.export:not(:disabled):hover{background:rgba(59,127,255,.22);border-color:rgba(59,127,255,.45);}
+.act-btn.export{color:var(--blue);border-color:rgba(59,127,255,.45);}
+.act-btn.export:not(:disabled):hover{background:var(--control-hover);border-color:rgba(59,127,255,.7);}
 
 /* Import and Export are a pair — a file coming in as a take, the clip going out to a
    file — so each carries its mark at every width: the mark beside the word on a wide
@@ -526,8 +536,8 @@ select.prop-input option,select.pdef-select option{background:var(--bg);color:va
 .help-step-body{flex:1;}
 .help-step-title{font-size:13px;font-weight:700;color:var(--text);letter-spacing:.04em;margin-bottom:3px;}
 .help-step-desc{font-family:var(--font-mono);font-size:11px;color:var(--text-mid);line-height:1.65;letter-spacing:.03em;}
-.help-close{position:absolute;top:14px;right:14px;width:28px;height:28px;border-radius:50%;border:1px solid var(--glass-b);background:var(--glass);color:var(--text-mid);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;line-height:1;transition:all .2s;}
-.help-close:hover{background:var(--glass-b);color:var(--text);}
+.help-close{position:absolute;top:14px;right:14px;width:28px;height:28px;border-radius:50%;border:1px solid var(--control-line);background:var(--control);color:var(--control-text);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;line-height:1;transition:all .2s;}
+.help-close:hover{background:var(--control-hover);color:var(--text);}
 .help-divider{border:none;border-top:1px solid var(--glass-b);margin:18px 0;}
 .help-footer{font-family:var(--font-mono);font-size:10px;color:var(--text-dim);letter-spacing:.05em;}
 .help-more{display:inline-block;margin-top:18px;font-family:var(--font-mono);font-size:11px;letter-spacing:.08em;color:var(--brand-red);text-decoration:none;border-bottom:1px solid transparent;transition:border-color .2s;}
@@ -562,8 +572,8 @@ html.guide-html body{height:auto;min-height:100%;overflow:visible;}
 .pub-panel{width:440px;max-width:calc(100vw - 40px);max-height:calc(100vh - 80px);overflow-y:auto;background:var(--surface);border:1px solid var(--glass-b2);border-radius:16px;padding:26px;position:relative;display:flex;flex-direction:column;gap:12px;transform:translateY(14px);transition:transform .28s cubic-bezier(.34,1.2,.64,1);}
 .pub-bd.on .pub-panel{transform:translateY(0);}
 .pub-title{font-size:16px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--text);margin-bottom:2px;}
-.pub-close{position:absolute;top:14px;right:14px;width:28px;height:28px;border-radius:50%;border:1px solid var(--glass-b);background:var(--glass);color:var(--text-mid);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;line-height:1;transition:all .2s;}
-.pub-close:hover{background:var(--glass-b);color:var(--text);}
+.pub-close{position:absolute;top:14px;right:14px;width:28px;height:28px;border-radius:50%;border:1px solid var(--control-line);background:var(--control);color:var(--control-text);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;line-height:1;transition:all .2s;}
+.pub-close:hover{background:var(--control-hover);color:var(--text);}
 .pub-note{font-family:var(--font-mono);font-size:11px;color:var(--text-mid);line-height:1.6;letter-spacing:.03em;margin-bottom:12px;}
 .pub-input{width:100%;padding:9px 12px;border-radius:8px;border:1px solid var(--glass-b);background:var(--glass);color:var(--text);font-family:var(--font-mono);font-size:12px;letter-spacing:.03em;}
 .pub-input::placeholder{color:var(--text-dim);}
@@ -578,11 +588,11 @@ html.guide-html body{height:auto;min-height:100%;overflow:visible;}
 .pub-as{font-family:var(--font-mono);font-size:11px;color:var(--text-mid);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .pub-link{border:none;background:none;color:var(--blue);font-family:var(--font-mono);font-size:10px;letter-spacing:.06em;cursor:pointer;padding:0;flex-shrink:0;}
 .pub-actions{display:flex;justify-content:flex-end;gap:8px;}
-.pub-btn{padding:8px 16px;border-radius:8px;border:1px solid rgba(59,127,255,.35);background:rgba(59,127,255,.14);color:var(--blue);font-family:var(--font-mono);font-size:11px;letter-spacing:.08em;cursor:pointer;transition:all .2s;}
-.pub-btn:hover{background:rgba(59,127,255,.24);border-color:rgba(59,127,255,.5);}
+.pub-btn{padding:8px 16px;border-radius:8px;border:1px solid rgba(59,127,255,.45);background:var(--control);color:var(--blue);font-family:var(--font-mono);font-size:11px;letter-spacing:.08em;cursor:pointer;transition:all .2s;}
+.pub-btn:hover{background:var(--control-hover);border-color:rgba(59,127,255,.7);}
 .pub-btn:disabled{opacity:.4;cursor:not-allowed;}
-.pub-btn.ghost{background:transparent;border-color:var(--glass-b);color:var(--text-mid);}
-.pub-btn.ghost:hover{background:var(--glass-b);color:var(--text);}
+.pub-btn.ghost{background:var(--control);border-color:var(--control-line);color:var(--control-text);}
+.pub-btn.ghost:hover{background:var(--control-hover);color:var(--text);}
 .pub-status{font-family:var(--font-mono);font-size:11px;color:var(--text-mid);letter-spacing:.04em;line-height:1.5;overflow-wrap:anywhere;}
 .pub-status a{color:var(--blue);}
 .pub-status:empty{display:none;}

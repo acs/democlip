@@ -63,6 +63,24 @@ test('each annotation kind — arrow, image and text — is placed over a sectio
   // timeline section carries only the scissors — no kind buttons to be crowded by the next.
   await expect(page.locator('#annotate-bar')).toHaveClass(/on/);
   await expect(page.locator('#annotate-bar .annotate-row')).toHaveCount(3);
+  // A control is an opaque surface from the palette: the clip's settings control, the
+  // annotate rows and the source buttons all wear the same `--control` surface, border and
+  // label, so a kind reads over the picture as a source does in the toolbar — and none of
+  // them shows the page through.
+  const look = (selector: string) => page.locator(selector).first().evaluate(el => {
+    const s = getComputedStyle(el);
+    return { color: s.color, background: s.backgroundColor, border: s.borderTopColor, font: s.fontFamily };
+  });
+  // Park the pointer off the controls, so what is read is the resting look and not a
+  // `:hover`; `expect.poll` waits out the 0.2 s colour transition a moving pointer starts.
+  await page.mouse.move(4, 4);
+  const source = await look('#screen-btn');
+  expect(source.background).toMatch(/^rgb\(/);            // an opaque surface, not glass
+  await expect.poll(() => look('#annotate-bar .annotate-row')).toEqual(source);
+  await expect.poll(async () => {
+    const { color, background, border } = await look('#props-btn');
+    return { color, background, border };
+  }).toEqual({ color: source.color, background: source.background, border: source.border });
   await section(page);
   await expect(page.locator('#tl-marks .tl-act.ok')).toHaveCount(1);
   await expect(page.locator('#tl-marks .tl-act.ann')).toHaveCount(0);
