@@ -29,8 +29,10 @@ src/
                images (the picture store and its decoded cache), Bluesky, YouTube
   ui/          the DOM and the interaction: renders the model, owns no rules
     annotating/ the annotation plugin seam: the plugin registry, the plugin and the
-                canvas every kind is edited through, the properties inspector and the
-                text entry, and one file per kind
+                canvas every kind is edited through, the annotate options (the vertical
+                column that offers every kind on the picture), the unit of an
+                annotation's duration, the properties inspector and the text entry, and
+                one file per kind
     agent/      the automation surface: the app's own operations in one object,
                 published only when the page asks (`?agent=1`). It adds no rule — it
                 calls the flows and the clip, exactly as a button does

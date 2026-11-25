@@ -24,7 +24,7 @@ import { ctx, el, toast } from '../dom.js';
 import { Span } from '../../domain/clip/Span.js';
 import type { Annotation, AnnotationHandle, Point } from '../../domain/annotation/Annotation.js';
 import { copyControl, drawAnnotations, removeControl, settingsControl } from './annotation-layer.js';
-import { pluginOf, propertiesOf, type AnnotationPlugin, type CreationContext } from './annotation-plugin.js';
+import { pluginOf, propertiesFor, type AnnotationPlugin, type CreationContext } from './annotation-plugin.js';
 import { inspector } from './properties-inspector.js';
 import { annotationColour } from '../clip/clip-properties.js';
 import { drawFrame } from '../recording/preview.js';
@@ -267,9 +267,10 @@ export class AnnotationCanvas {
           this.duplicate(picked);
           return;
         }
-        // The settings control is drawn only for a kind with properties, so it is a
-        // press target only then — a kind with none has no dead spot beside it.
-        if (propertiesOf(picked).length > 0) {
+        // The settings control is drawn only for a kind with something to change, so it is a
+        // press target only then — a kind with none has no dead spot beside it. Every
+        // hand-placed annotation has a duration, so every one offers a control.
+        if (propertiesFor(picked, session.clip).length > 0) {
           const settings = settingsControl(picked, w, h, scale);
           if (settings && this.canvasDistance(settings, p) <= slopPx * scale) {
             inspector.toggle(picked);            // the inspector is the panel's owner
@@ -423,7 +424,8 @@ export class AnnotationCanvas {
     if (currentPhase() !== 'review' || el.rv.readyState < 1) return;
     const w = el.cv.width, h = el.cv.height;
     try { drawFrame(el.rv, reviewFrame(el.rv)); } catch { return; }        // a frame still decoding
-    drawAnnotations(ctx, w, h, session.clip.annotationsAt(player.time()), this.selectedId);
+    drawAnnotations(ctx, w, h, session.clip.annotationsAt(player.time()), this.selectedId, undefined,
+      annotation => propertiesFor(annotation, session.clip).length > 0);
     const draft = this.preview();
     if (draft) pluginOf(draft.kind)?.renderer.draw(ctx, draft, w, h);
   }

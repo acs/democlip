@@ -16,10 +16,19 @@ const PNG = Buffer.from(
   'base64',
 );
 
+/** The player is ready and not mid-seek, so a timeline click is not swallowed (a seek drops `readyState`). */
+async function ready(page: Page): Promise<void> {
+  await page.waitForFunction(() => {
+    const rv = document.getElementById('rv') as HTMLVideoElement | null;
+    return !!rv && rv.readyState >= 2 && !rv.seeking;
+  });
+}
+
 /** Bound a section on the timeline, so the kind's action is offered. */
 async function section(page: Page): Promise<void> {
   const strip = await page.locator('#thumbs').boundingBox();
   if (!strip) throw new Error('no thumbnail strip');
+  await ready(page);
   const y = strip.y + strip.height / 2;
   await page.mouse.click(strip.x + strip.width * 0.25, y);
   await page.mouse.click(strip.x + strip.width * 0.5, y);
@@ -50,8 +59,14 @@ test('each annotation kind — arrow, image and text — is placed over a sectio
   await page.locator('#props-btn').click();
 
   // An arrow, drawn across the picture — and in the clip's colour, not the kind's own red.
+  // The kinds are offered by the annotate options on the picture, one row each, and the
+  // timeline section carries only the scissors — no kind buttons to be crowded by the next.
+  await expect(page.locator('#annotate-bar')).toHaveClass(/on/);
+  await expect(page.locator('#annotate-bar .annotate-row')).toHaveCount(3);
   await section(page);
-  await page.locator('[data-act="add"][data-kind="arrow"]').click();
+  await expect(page.locator('#tl-marks .tl-act.ok')).toHaveCount(1);
+  await expect(page.locator('#tl-marks .tl-act.ann')).toHaveCount(0);
+  await page.locator('#annotate-bar .annotate-row[data-kind="arrow"]').click();
   const preview = await page.locator('#preview').boundingBox();
   if (!preview) throw new Error('no preview');
   const at = (fx: number, fy: number) => ({ x: preview.x + preview.width * fx, y: preview.y + preview.height * fy });
@@ -68,7 +83,7 @@ test('each annotation kind — arrow, image and text — is placed over a sectio
   // An image, chosen from a file.
   await section(page);
   const chooser = page.waitForEvent('filechooser');
-  await page.locator('[data-act="add"][data-kind="image"]').click();
+  await page.locator('#annotate-bar .annotate-row[data-kind="image"]').click();
   await (await chooser).setFiles({ name: 'dot.png', mimeType: 'image/png', buffer: PNG });
   await expect(page.locator('#tl-annots > *')).toHaveCount(2);
 
@@ -79,11 +94,23 @@ test('each annotation kind — arrow, image and text — is placed over a sectio
   await page.locator('#clip-prop-menu .prop-row[data-id="annotationColour"] .colour-choice[data-value="#3182ce"]').click();
   await page.locator('#props-btn').click();
   await section(page);
-  await page.locator('[data-act="add"][data-kind="text"]').click();
+  await page.locator('#annotate-bar .annotate-row[data-kind="text"]').click();
   await page.locator('#text-entry-input').fill('Hello');
   await page.locator('#text-entry-add').click();
   await expect(page.locator('#tl-annots > *')).toHaveCount(3);
   expect(await colourOf(page, 'text')).toBe('#3182ce');
+
+  // The picked annotation's stretch is drawn on the lane as the active band, and a cut
+  // section selected beside it is shown at the same time — the two do not replace each other.
+  await expect(page.locator('#text-entry')).toBeHidden();   // its backdrop would take the press
+  await expect(page.locator('#tl-annots .tl-annot-band.on')).toHaveCount(1);
+  await ready(page);
+  const track = (await page.locator('#thumbs').boundingBox())!;
+  const y = track.y + track.height / 2;
+  await page.mouse.click(track.x + track.width * 0.65, y);
+  await page.mouse.click(track.x + track.width * 0.85, y);
+  await expect(page.locator('#tl-marks .tl-sel')).toHaveCount(1);
+  await expect(page.locator('#tl-annots .tl-annot-band.on')).toHaveCount(1);
 });
 
 /** Bound the whole clip as the section, so the text kind's action is offered and its stretch holds. */
@@ -96,8 +123,7 @@ async function wholeClip(page: Page): Promise<void> {
 }
 
 /** Park the playhead in the middle of the clip: the canvas only picks what the moment shows. */
-async function parkInside(page: Page): Promise<void> {
-  const strip = await page.locator('#thumbs').boundingBox();
+async function parkInside(page: Page): Promise<void> {  const strip = await page.locator('#thumbs').boundingBox();
   if (!strip) throw new Error('no thumbnail strip');
   const shown = () => page.evaluate(async url => {
     const { session, player } = await import(/* @vite-ignore */ url);
@@ -113,6 +139,21 @@ async function parkInside(page: Page): Promise<void> {
     } catch { /* the click missed the strip; ask again */ }
   }
   expect(await shown()).toBe(1);
+}
+
+/** Click the timeline until the playhead settles near `seconds` of a 10 s clip. */
+async function parkAt(page: Page, seconds: number): Promise<void> {
+  const strip = (await page.locator('#thumbs').boundingBox())!;
+  const y = strip.y + strip.height / 2;
+  const at = () => page.evaluate(async url => (await import(/* @vite-ignore */ url)).player.time(), HOOKS);
+  for (let attempt = 0; attempt < 5; attempt++) {
+    await page.mouse.click(strip.x + strip.width * (seconds / 10), y);
+    try {
+      await expect.poll(at, { timeout: 3_000 }).toBeCloseTo(seconds, 0);
+      return;
+    } catch { /* the click landed before the take was ready; ask again */ }
+  }
+  expect(await at()).toBeCloseTo(seconds, 0);
 }
 
 /** A press-and-drag of the mouse, from one point to another. */
@@ -151,7 +192,7 @@ test('a text keeps the words’ shape when it is dragged small, and a press insi
   await app.review();
   await wholeClip(page);
 
-  await page.locator('[data-act="add"][data-kind="text"]').click();
+  await page.locator('#annotate-bar .annotate-row[data-kind="text"]').click();
   await page.locator('#text-entry-input').fill('Africa-Toto');
   await page.locator('#text-entry-add').click();
   // The entry fades out; until it has, its backdrop is still over the picture and takes the press.
@@ -223,4 +264,41 @@ test('a text keeps the words’ shape when it is dragged small, and a press insi
   expect(floored.height).toBeCloseTo(0.02, 3);
   expect(floored.boxPx).toBeGreaterThan(floored.drawnPx * 0.9);
   expect(floored.boxPx).toBeLessThan(floored.drawnPx * 1.1);
+});
+
+test('a kind placed with no stretch selected starts at the playhead with the default duration', async ({ page }) => {
+  const app = boot(page);
+  await app.goto();
+
+  // Outside the review there are no annotate options at all.
+  await expect(page.locator('#annotate-bar')).not.toHaveClass(/on/);
+
+  const takes = await makeTakes(page, { width: 1280, height: 720, seconds: 10 });
+  await app.seed(takes);
+  await app.review();
+  await expect(page.locator('#annotate-bar .annotate-row')).toHaveCount(3);
+
+  // Put the playhead a quarter in with nothing selected — one click sets a mark, not a
+  // section — and place an arrow from the column.
+  await parkAt(page, 2.5);
+  await page.locator('#annotate-bar .annotate-row[data-kind="arrow"]').click();
+  const preview = (await page.locator('#preview').boundingBox())!;
+  await page.mouse.move(preview.x + preview.width * 0.3, preview.y + preview.height * 0.3);
+  await page.mouse.down();
+  await page.mouse.move(preview.x + preview.width * 0.7, preview.y + preview.height * 0.7, { steps: 8 });
+  await page.mouse.up();
+
+  // It is shown for the default two seconds, with no stretch selected at all — and it is the
+  // picked one, so its whole stretch is the active band. Where the moment itself lands is the
+  // playhead's, and a seek still settling can move that under a cross-read assertion, so this
+  // asserts the rule it is about — the default length with nothing selected — and not the instant.
+  const span = await page.evaluate(async url => {
+    const { session } = await import(/* @vite-ignore */ url);
+    const one = session.clip.annotations.all[0];
+    return one ? { s: one.span.s, e: one.span.e, total: session.clip.total() } : null;
+  }, HOOKS);
+  expect(span).not.toBeNull();
+  expect((span!.e - span!.s) * span!.total).toBeCloseTo(2, 1);   // DEFAULT_ANNOTATION_S
+  await expect(page.locator('#tl-marks .tl-sel')).toHaveCount(0); // no stretch was needed
+  await expect(page.locator('#tl-annots .tl-annot-band.on')).toHaveCount(1);
 });

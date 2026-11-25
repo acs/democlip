@@ -14,6 +14,12 @@ import { Span } from '../clip/Span.js';
 
 export type AnnotationId = string;
 
+/** The length a new annotation is given when nothing is selected, in seconds. */
+export const DEFAULT_ANNOTATION_S = 2;
+
+/** The shortest stretch worth keeping an annotation over, in seconds. */
+export const MIN_ANNOTATION_S = 0.1;
+
 /** A point, as fractions of the picture. */
 export interface Point {
   readonly x: number;
@@ -72,6 +78,20 @@ export abstract class Annotation {
    * stretch is given, because where a copy goes is not the copy's business.
    */
   abstract duplicated(span: Span): Annotation;
+
+  /**
+   * The same annotation over a new **duration**, in seconds of the clip. The start is
+   * kept and the end is clamped inside the clip, so an annotation never shows past the
+   * clip; null when the clip has no length or the duration is below `min`. Whatever a
+   * kind carries beyond its stretch — its colour, its shape, its words — is kept, because
+   * this delegates to the kind's own `withSpan`.
+   */
+  withDuration(seconds: number, total: number, min: number = MIN_ANNOTATION_S): Annotation | null {
+    if (!(total > 0) || !Number.isFinite(seconds)) return null;
+    const length = Math.min(seconds, (1 - this.span.s) * total);   // the end may not pass 1
+    if (!(length >= min)) return null;
+    return this.withSpan(Span.of(this.span.s, this.span.s + length / total));
+  }
 
   /** Is a point (fractions of the picture) on it, within `tolerancePx`? */
   abstract hitTest(x: number, y: number, w: number, h: number, tolerancePx: number): boolean;

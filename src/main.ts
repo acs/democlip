@@ -19,6 +19,7 @@ import { initTimeline, updateTimeUI, updateSizeUI } from './ui/clip/timeline-ui.
 import { initTimelineMarks } from './ui/cutting/marks.js';
 import { initAnnotationCanvas } from './ui/annotating/annotation-canvas.js';
 import './ui/annotating/plugins.js';        // registers every kind in the view
+import { initAnnotateOptions } from './ui/annotating/annotate-options.js';
 import { initAnnotationLane } from './ui/annotating/annotation-lane.js';
 import { initWatermark } from './ui/clip/watermark.js';
 import { inspector } from './ui/annotating/properties-inspector.js';
@@ -102,9 +103,10 @@ function init(): void {
   initTimelineMarks();
   initTimeline();   // the timeline listens to the clip
 
-  // Annotate the picture: the section's action arms a kind, and the shared canvas
-  // edits whatever is placed — the arrow today, an image beside it.
+  // Annotate the picture: the annotate options offer every kind on the picture, and the
+  // shared canvas edits whatever is placed — the arrow today, an image beside it.
   initAnnotationCanvas();
+  initAnnotateOptions();  // the kinds are offered in a column on the picture, not the section
   initAnnotationLane();   // and the timeline shows where the annotations are
   initWatermark();        // and a clip that wears a logo wears it over the whole clip
   inspector.init();       // and a picked annotation's settings open its properties

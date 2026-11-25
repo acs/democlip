@@ -143,3 +143,116 @@ test.describe('on a phone', () => {
     await expect(menu).toHaveClass(/on/);
   });
 });
+
+// A 1×1 PNG: enough for the image kind to decode and place.
+const PNG = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
+  'base64',
+);
+
+/** The picked annotation's duration, in seconds of the clip, from the app's own model. */
+const durationOf = (page: Page): Promise<number> =>
+  page.evaluate(async url => {
+    const { session } = await import(/* @vite-ignore */ url);
+    const one = session.clip.annotations.all[0];
+    return one ? one.span.length * session.clip.total() : 0;
+  }, HOOKS);
+
+/** The played time on the joined clip, in seconds — where the playhead holds. */
+const playerTime = (page: Page): Promise<number> =>
+  page.evaluate(async url => {
+    const { player } = await import(/* @vite-ignore */ url);
+    return player.time();
+  }, HOOKS);
+
+/** Wait until the playhead has stopped moving — a seek in flight would move it under a click. */
+async function settled(page: Page): Promise<void> {
+  await expect.poll(async () => {
+    const before = await playerTime(page);
+    await page.waitForTimeout(150);
+    const after = await playerTime(page);
+    return Math.abs(before - after) < 0.05;
+  }, { timeout: 5_000 }).toBe(true);
+}
+
+/** Click the timeline until the playhead settles near `seconds` — a click that lands before
+ *  the take is ready is the machine's, not a change in what the app does. */
+async function parkAt(page: Page, seconds: number): Promise<void> {
+  const strip = (await page.locator('#thumbs').boundingBox())!;
+  const y = strip.y + strip.height / 2;
+  const fraction = seconds / 10;
+  for (let attempt = 0; attempt < 5; attempt++) {
+    await page.mouse.click(strip.x + strip.width * fraction, y);
+    try {
+      await expect.poll(() => playerTime(page), { timeout: 3_000 }).toBeCloseTo(seconds, 0);
+      return;
+    } catch { /* the click landed before the take was ready; ask again */ }
+  }
+  expect(await playerTime(page)).toBeCloseTo(seconds, 0);
+}
+
+/** Press the picked annotation's settings control, wherever the layer draws it. */
+async function openSettings(
+  page: Page,
+  preview: { x: number; y: number; width: number; height: number },
+): Promise<void> {
+  const spot = await page.evaluate(async url => {
+    const { session, canvas, settingsControl } = await import(/* @vite-ignore */ url);
+    const cv = document.getElementById('preview') as HTMLCanvasElement;
+    const annotation = canvas.selectedId ? session.clip.annotations.byId(canvas.selectedId) : null;
+    if (!annotation) return null;
+    const scale = cv.clientWidth > 0 ? cv.width / cv.clientWidth : 1;
+    const s = settingsControl(annotation, cv.width, cv.height, scale);
+    return s ? { x: s.x, y: s.y } : null;
+  }, HOOKS);
+  if (!spot) throw new Error('no settings control on the picked annotation');
+  await page.mouse.click(preview.x + preview.width * spot.x, preview.y + preview.height * spot.y);
+}
+
+test('a picked annotation’s duration is a seconds value in its preferences, kept by the one undo', async ({ page }) => {
+  const app = boot(page);
+  await app.goto();
+  const takes = await makeTakes(page, { width: 1280, height: 720, seconds: 10 });
+  await app.seed(takes);
+  await app.review();
+
+  // An arrow placed with nothing selected starts at the default two seconds. The playhead is
+  // put a third of the way in and left to settle, so the annotation's own moment is known.
+  await settled(page);
+  await parkAt(page, 3);
+  await settled(page);
+
+  await page.locator('#annotate-bar .annotate-row[data-kind="arrow"]').click();
+  const preview = (await page.locator('#preview').boundingBox())!;
+  await page.mouse.move(preview.x + preview.width * 0.3, preview.y + preview.height * 0.3);
+  await page.mouse.down();
+  await page.mouse.move(preview.x + preview.width * 0.7, preview.y + preview.height * 0.7, { steps: 8 });
+  await page.mouse.up();
+  await settled(page);
+
+  // Its settings control opens the properties, with the shared duration row.
+  await openSettings(page, preview);
+  const row = page.locator('#prop-menu .prop-row[data-id="duration"]');
+  await expect(row).toBeVisible();
+  const readout = row.locator('.prop-duration-text');
+  await expect(readout).toHaveText('2.00s');
+
+  // Stepping up lengthens the annotation; the one undo takes that last step back.
+  await row.locator('.prop-step[aria-label="Longer"]').click();
+  await expect(readout).toHaveText('2.10s');
+  expect(await durationOf(page)).toBeCloseTo(2.1, 1);
+
+  await page.locator('#cut-undo').click();
+  await expect(readout).toHaveText('2.00s');
+  expect(await durationOf(page)).toBeCloseTo(2, 1);
+
+  // The image declared no property of its own but now offers the duration, so it too has a
+  // settings control and a panel — the shared descriptor, proved on the kind that had none.
+  const chooser = page.waitForEvent('filechooser');
+  await page.locator('#annotate-bar .annotate-row[data-kind="image"]').click();
+  await (await chooser).setFiles({ name: 'dot.png', mimeType: 'image/png', buffer: PNG });
+  await expect(page.locator('#tl-annots > *')).toHaveCount(2);   // the image is placed and picked
+  await settled(page);
+  await openSettings(page, preview);
+  await expect(page.locator('#prop-menu .prop-row[data-id="duration"]')).toBeVisible();
+});

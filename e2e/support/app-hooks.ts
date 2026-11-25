@@ -16,3 +16,7 @@ export { openReview } from '../../src/ui/clip/review-flow.js';
 export { capture } from '../../src/infra/capture.js';
 // The loudness rule, so a check can measure an exported file with the app's own numbers.
 export { measure } from '../../src/domain/sound/Loudness.js';
+// The picked annotation's own settings control, so a check can press it wherever the
+// layer draws it...
+export { canvas } from '../../src/ui/annotating/annotation-canvas.js';
+export { settingsControl } from '../../src/ui/annotating/annotation-layer.js';

@@ -24,12 +24,11 @@ import type { ClipEvent } from '../../domain/clip/Clip.js';
 import { el } from '../dom.js';
 import { Span } from '../../domain/clip/Span.js';
 import { updateSizeUI } from '../clip/timeline-ui.js';
-import { fractionAtX as fractionAt, keptLengthNow, keptOf, player, timelineTrack } from '../clip/clip.js';
+import { fractionAtX as fractionAt, keptLengthNow, keptOf, player, stretchLayout, timelineTrack } from '../clip/clip.js';
 import { playback } from '../clip/playback.js';
 import { typingIn } from '../../util.js';
 import { MIN_SECTION, selection } from './selection.js';
-import { canvas } from '../annotating/annotation-canvas.js';
-import { pluginOf, plugins } from '../annotating/annotation-plugin.js';
+import { pluginOf } from '../annotating/annotation-plugin.js';
 
 const DRAG_MIN   = 3;     // px of travel before a press counts as a drag
 const EDGE_GRIP  = 7;     // px near a section's edge that resizes instead of moves
@@ -104,22 +103,17 @@ export function renderMarks(): void {
   let html = '';
 
   if (section) {
-    html += `<div class="tl-sel" style="left:${at(section.s * d)};width:${pctWidth(section)}">`
+    const sel = stretchLayout(section);
+    html += `<div class="tl-sel" style="left:${sel.left};width:${sel.width}">`
           + `<em>CUT ${stamp(section.s * d)}–${stamp(section.e * d)}</em></div>`;
     // the two answers sit on the section itself, clamped so they stay reachable
     const centre = (keptOf(section.s * d) + keptOf(section.e * d)) / 2 / Math.max(0.001, keptLengthNow()) * 100;
     html += `<span class="tl-acts" style="left:${Math.max(7, Math.min(93, centre)).toFixed(2)}%">`
           + `<button class="tl-act ok" data-act="cut" title="Cut this section out" aria-label="Cut this section out">`
           + `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4L8.12 15.88"/><path d="M14.47 14.48L20 20"/><path d="M8.12 8.12L12 12"/></svg></button>`
-          // One button per kind, from the plugin register: adding a kind adds its own
-          // button here, and nothing in this module names a kind. A **sound-only** clip
-          // has no picture to draw one on, and its file holds none, so the buttons are
-          // not offered at all.
-          + (session.clip.hasPicture()
-            ? plugins().map(plugin =>
-                `<button class="tl-act ann" data-act="add" data-kind="${plugin.id}" title="${plugin.action.title}" aria-label="${plugin.action.title}">${plugin.action.icon}</button>`
-              ).join('')
-            : '')
+          // The kinds are offered by the annotate options on the picture
+          // (`ui/annotating/annotate-options.ts`), so one place adds a kind and no row
+          // here can be crowded by the ones already there.
           + `<button class="tl-act no" data-act="keep" title="Undo the selection" aria-label="Undo the selection">`
           + `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-5"/></svg></button>`
           + `</span>`;
@@ -154,11 +148,6 @@ function undoLabel(): string {
   return (pluginOf(change.annotation.kind)?.action.label ?? 'ANNOTATION').toUpperCase();
 }
 
-function pctWidth(section: Span): string {
-  const kept = Math.max(0.001, keptLengthNow());
-  return (((keptOf(section.e * session.clip.total()) - keptOf(section.s * session.clip.total())) / kept) * 100).toFixed(3) + '%';
-}
-
 // The scissors and the undo are drawn with the section, so they are read here
 // rather than bound to an element that is replaced on every repaint.
 function onActionClick(evt: MouseEvent): void {
@@ -166,7 +155,6 @@ function onActionClick(evt: MouseEvent): void {
   if (!act) return;
   evt.stopPropagation();
   if (act.dataset.act === 'cut')           approveCut();
-  else if (act.dataset.act === 'add')      addAnnotation(act.dataset.kind ?? '');
   else                                     dismissSelection();
 }
 
@@ -182,15 +170,9 @@ function approveCut(): void {
   afterEdits(section.s * session.clip.total());        // a time in the recording
 }
 
-// Annotate: the section is the stretch, and a kind's action arms it — the user then
-// makes one over the picture (draws an arrow, chooses a picture), and it belongs to
-// that stretch. What happens next is the kind's plugin, not this module.
-function addAnnotation(kindId: string): void {
-  if (!canEdit()) return;
-  const section = selection.section();
-  if (!section) return;
-  canvas.add(kindId, section);
-}
+// Annotate: the kinds are offered by the annotate options on the picture, and the stretch
+// they are made over is chosen there — the selected section, or the playhead and the
+// default. Nothing of that is this module's, which is left to cutting.
 
 // The undo: leave the section in and drop the selection.
 function dismissSelection(): void {
