@@ -9,8 +9,9 @@ words, and the words we do not use.
   `trace_path`, `get_code_snippet`, `query_graph`, `get_architecture`) over grep
   for anything structural. The project is not indexed by default — run
   `index_repository` once (mode `fast` browses fine) if you want it.
-- **Making a change:** the **Project workflow** skill — one change per pull
-  request, and CI owns the version, so never bump `package.json` by hand — and the
+- **Making a change:** the **Project workflow** skill — a branch starts from the
+  remote `main` (`origin/main`), one change per pull request, and CI owns the
+  version, so never bump `package.json` by hand — and the
   **Verification** skill: a rule in `src/domain/` is proved by a unit test, and
   anything drawn, played or encoded needs a browser harness.
 - **The logo and the name:** the **Branding** skill — the mark is an image and the

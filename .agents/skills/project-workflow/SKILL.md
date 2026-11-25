@@ -1,6 +1,6 @@
 ---
 name: Project workflow
-description: How changes are made in DemoClip — one change per pull request, branch and commit conventions, what a pull request body contains (the post-mortem a regression fix carries among it), and that CI owns the version. Use when starting work, committing or opening a pull request, or fixing a regression.
+description: How changes are made in DemoClip — one change per pull request, that a branch starts from the remote `main`, branch and commit conventions, what a pull request body contains (the post-mortem a regression fix carries among it), and that CI owns the version. Use when starting work, committing or opening a pull request, or fixing a regression.
 ---
 
 # Project workflow
@@ -13,6 +13,17 @@ GitHub retargets a pull request at `main` only when its **base branch is deleted
 which this repository does automatically on merge (`delete_branch_on_merge`). Three
 stacked, merged without checking, put two branches' work in the wrong place and left
 `main` without it.
+
+## A branch starts from the remote `main`
+
+The remote is the source of truth: a local `main`, and the commit a checkout or a
+worktree sits on, may be behind it. Before the first commit, `git fetch origin` and
+branch from `origin/main` — `git switch -c feat/… origin/main` — so the change is
+built on what is actually there rather than on a stale checkout. A worktree or
+branch that starts behind is brought level first: `git merge --ff-only origin/main`
+when it has no commits of its own, a rebase onto `origin/main` when it has. Rebase
+onto the latest `origin/main` before the pull request opens, so the diff a reviewer
+sees is the change and nothing else, and open it with `main` as the base.
 
 ## Branches and commits
 
