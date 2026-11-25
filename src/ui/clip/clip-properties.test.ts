@@ -8,16 +8,17 @@ import type { Clip } from '../../domain/clip/Clip.js';
 // no change to the panel or anywhere else — which is what the seam exists for.
 
 describe('the clip property register', () => {
-  it('offers the title, the description, the logo, the switches, the annotation colour and the size, in order', () => {
+  it('offers the title, the description, the logo, the switches, the annotation colour, the size and the export resolution, in order', () => {
     // The switch sits below the three things the card draws, because it is their switch.
     expect(clipProperties().map(property => property.id)).toEqual([
-      'title', 'description', 'logo', 'addToExport', 'annotationColour', 'soundBoost', 'size',
+      'title', 'description', 'logo', 'addToExport', 'annotationColour', 'soundBoost', 'size', 'exportResolution',
     ]);
     expect(clipProperty('title')?.label).toBe('Title');
     expect(clipProperty('description')?.control).toBe('long-text');
     expect(clipProperty('addToExport')?.control).toBe('toggle');
     expect(clipProperty('annotationColour')?.control).toBe('colour');
     expect(clipProperty('size')?.readOnly).toBe(true);
+    expect(clipProperty('exportResolution')?.control).toBe('choice');
   });
 
   it('answers null for a property this build does not offer', () => {
@@ -108,10 +109,47 @@ describe('the clip property register', () => {
     expect(size.value(ClipProperties.EMPTY)).toBe('');
   });
 
-  it('marks the logo, the switch and the annotation colour as what a profile may control', () => {
+  it('offers the export resolution as a list of the app\'s levels, with the clip size above them', () => {
+    const resolution = clipProperty('exportResolution')!;
+    expect(resolution.control).toBe('choice');
+    expect(resolution.seedable).toBe(true);
+    // The list is the property's own, so neither the panel nor a profile's sheet names it: **Clip
+    // size** (the default) first, then every level the app offers, high to low.
+    expect(resolution.choices).toEqual([
+      { value: '', label: 'Clip size' },
+      { value: '2160', label: '2160p' },
+      { value: '1440', label: '1440p' },
+      { value: '1080', label: '1080p' },
+      { value: '720', label: '720p' },
+      { value: '480', label: '480p' },
+    ]);
+  });
+
+  it('takes one of the app\'s levels, and nothing else, or the clip size', () => {
+    const resolution = clipProperty('exportResolution')!;
+    expect(resolution.value(ClipProperties.EMPTY)).toBe('');
+    const chosen = resolution.with(ClipProperties.EMPTY, '1080')!;
+    expect(resolution.value(chosen)).toBe('1080');
+    // An empty value is the clip size — the one representation of "unset", so the default holds.
+    expect(resolution.value(resolution.with(chosen, '')!)).toBe('');
+    // A value the app does not offer is refused rather than kept: a profile written elsewhere or
+    // an agent is the other way a value arrives.
+    expect(resolution.with(ClipProperties.EMPTY, '999')).toBeNull();
+    expect(resolution.with(ClipProperties.EMPTY, '1080p')).toBeNull();
+  });
+
+  it('does not offer the export resolution to a clip with no picture to write', () => {
+    const resolution = clipProperty('exportResolution')!;
+    // An empty clip is not blocked: a person or a profile may set it before the first take.
+    expect(resolution.blocked?.(ClipProperties.EMPTY)).toBeNull();
+    const soundOnly = { takes: { count: () => 1 }, hasPicture: () => false } as unknown as Clip;
+    expect(resolution.blocked?.(ClipProperties.EMPTY, soundOnly)).toMatch(/sound-only/i);
+  });
+
+  it('marks the logo, the switch, the annotation colour, the boost and the export resolution as what a profile may control', () => {
     // What a profile may declare; the title, the description and the read-only size are never a
     // profile's.
-    expect(seedableClipProperties().map(property => property.id)).toEqual(['logo', 'addToExport', 'annotationColour', 'soundBoost']);
+    expect(seedableClipProperties().map(property => property.id)).toEqual(['logo', 'addToExport', 'annotationColour', 'soundBoost', 'exportResolution']);
   });
 
   it('makes a new annotation red until the clip is told another colour', () => {

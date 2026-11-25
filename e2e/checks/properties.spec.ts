@@ -54,7 +54,7 @@ test('the panel gives the clip a title and a description, kept across a reload, 
   // them all, so a person reads what it will add before asking for it.
   const ids = await page.locator('#clip-prop-menu .prop-row').evaluateAll(rows =>
     rows.map(row => (row as HTMLElement).dataset.id));
-  expect(ids).toEqual(['title', 'description', 'logo', 'addToExport', 'annotationColour', 'soundBoost', 'size']);
+  expect(ids).toEqual(['title', 'description', 'logo', 'addToExport', 'annotationColour', 'soundBoost', 'size', 'exportResolution']);
 
   // With nothing on the card, the switch is drawn disabled — and it says why, so a person
   // reads what to do rather than guessing at the grey. The fields beside it are never

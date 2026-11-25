@@ -22,7 +22,6 @@ import { currentPhase } from '../../state.js';
 import { session } from '../../session.js';
 import { capture } from '../../infra/capture.js';
 import { clock, el } from '../dom.js';
-import { estimateSoundText, estimateWebmText } from '../clip/size-estimate.js';
 import { drawWebcamOverlay } from './webcam.js';
 import { keptLengthNow, keptOf } from '../clip/clip.js';
 import { waveform } from '../clip/waveform.js';
@@ -108,9 +107,9 @@ export class LiveTimeline {
     this.paintWave(span);
     el.playhead.style.left = ((head / span) * 100).toFixed(2) + '%';
     el.tLiveTime.textContent = clock(elapsed);
-    el.tSize.textContent = capture.sources.screen || capture.sources.webcam
-      ? estimateWebmText(head, el.cv.width, el.cv.height)
-      : estimateSoundText(head);
+    // No size is shown while a take records: the figure belongs to the Export button, which is
+    // not on screen until the clip is in the review (`view-lifetime.ts`), and the review sets its
+    // own when it opens (`review-flow.ts`).
   }
 
   private elapsedSeconds(): number {

@@ -19,6 +19,7 @@ import { beginEncoding, endEncoding, encodingAt } from '../clip/timeline-ui.js';
 import { playback } from '../clip/playback.js';
 import { keep } from '../keeping/keep.js';
 import { FADE_S } from '../clip/fade.js';
+import { exportPicture } from '../../domain/clip/ExportResolution.js';
 import type { ExportTarget } from '../../domain/export/ExportTarget.js';
 import type { AnnotationExport } from '../../domain/clip/ExportPlan.js';
 
@@ -29,9 +30,10 @@ const exportVideo = new ExportVideo({
   download: downloadPort,
   clock,
   fadeSeconds: FADE_S,
-  // The clip's own size: the export canvas is this, and each take is drawn fitted
-  // into it. Falls back to the preview canvas if the clip somehow has no size yet.
-  picture: () => session.clip.size() ?? { width: el.cv.width, height: el.cv.height },
+  // The picture the file is written at: the clip's **export resolution**, or its clip size when it
+  // holds none — so the export canvas is that size and each take is drawn fitted into it, at the
+  // aspect the review shows. Falls back to the preview canvas if the clip somehow has no size yet.
+  picture: () => exportPicture(session.clip.properties, session.clip.size()) ?? { width: el.cv.width, height: el.cv.height },
 });
 
 /**

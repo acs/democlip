@@ -17,6 +17,7 @@ import { el } from '../dom.js';
 import { VideoDetails } from '../../domain/youtube/VideoDetails.js';
 import { Visibility } from '../../domain/youtube/Visibility.js';
 import { FADE_S } from '../clip/fade.js';
+import { exportPicture } from '../../domain/clip/ExportResolution.js';
 
 export type YouTubeProgress = YouTubePublicationProgress;
 
@@ -95,9 +96,10 @@ export async function uploadClip(settings: YouTubeSettings, handlers: YouTubeHan
 
     const api = await youtube();
     const service = await api.youtubeService();
-    // The clip's own size: the encoder is given it so every take is written at the size
-    // the review showed.
-    const picture = session.clip.size() ?? { width: el.cv.width || 1280, height: el.cv.height || 720 };
+    // The picture the file is written at: the clip's **export resolution**, or its clip size when
+    // it holds none — the encoder is given it so every take is written at one size.
+    const picture = exportPicture(session.clip.properties, session.clip.size())
+      ?? { width: el.cv.width || 1280, height: el.cv.height || 720 };
     // The same card the export puts at its head, when the clip asks for one — a published
     // video is an exported video too — with its logo decoded before the first frame.
     const intro = introFor(session.clip);

@@ -209,6 +209,31 @@ describe('setClipProperty', () => {
     expect(editor.undo()).toEqual({ ok: true, change: 'property-changed' });
     expect(clip.properties.get('description')).toBe('');
   });
+
+  it('sets the export resolution, takes an unoffered size for nothing, and is undone like the rest', () => {
+    const clip = clipOf(10);
+    const editor = editorOf(clip);
+    expect(editor.setClipProperty('exportResolution', '720')).toEqual({ ok: true, value: '720' });
+    expect(clip.properties.get('exportResolution')).toBe('720');
+    // A size the app does not offer — from a hand-written record or an agent — is refused.
+    expect(editor.setClipProperty('exportResolution', '999')).toMatchObject({ ok: false });
+    expect(clip.properties.get('exportResolution')).toBe('720');
+    // The person's own choice is what the one undo takes back.
+    expect(editor.undo()).toEqual({ ok: true, change: 'property-changed' });
+    expect(clip.properties.get('exportResolution')).toBe('');
+  });
+
+  it('refuses an export resolution a profile fixes, naming the profile', () => {
+    const clip = clipOf(10);
+    const editor = createEditor(clip, () => ({ reason: 'not in this check' }),
+      id => (id === 'exportResolution' ? 'DemoClipTV' : null));
+    const refused = editor.setClipProperty('exportResolution', '1080');
+    expect(refused.ok).toBe(false);
+    if (!refused.ok) expect(refused.reason).toMatch(/DemoClipTV/);
+    expect(clip.properties.get('exportResolution')).toBe('');
+    // An item no profile fixes is the person's still.
+    expect(editorOf(clip).setClipProperty('exportResolution', '1080')).toEqual({ ok: true, value: '1080' });
+  });
 });
 
 describe('remove and undo', () => {

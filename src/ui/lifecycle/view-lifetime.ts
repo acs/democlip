@@ -44,7 +44,7 @@ export function initViewLifetime(): void {
     player.forget();
     el.timeline.classList.remove('on', 'sound-only');
     el.idleOv.classList.remove('gone');
-    el.btnExp.style.display = 'none';
+    el.expStack.style.display = 'none';
     el.propsBtn.style.display = 'none';
     playback.reset();
     waveform.clear();
