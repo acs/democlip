@@ -97,6 +97,58 @@ export async function loudnessOf(page: Page, bytes: Buffer): Promise<{ lufs: num
 }
 
 /**
+ * The bytes of a take the app is holding — the **recording itself**, before any export and so
+ * before the sound boost has had it. A check that reads what the mix came to, rather than what
+ * a file came to, needs this one.
+ */
+export async function takeBytes(page: Page, index = 0): Promise<Buffer> {
+  const base64 = await page.evaluate(async ({ url, at }) => {
+    const { session } = await import(/* @vite-ignore */ url);
+    const take = session.clip.takes.at(at);
+    if (!take) return '';
+    return await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result).split(',')[1] ?? '');
+      reader.onerror = () => reject(reader.error);
+      reader.readAsDataURL(take.blob);
+    });
+  }, { url: HOOKS, at: index });
+  return Buffer.from(base64, 'base64');
+}
+
+/**
+ * How loud one tone is in a sound, as its amplitude: the signal is correlated with a sine of
+ * that frequency over a whole number of its periods, which is exact for a steady tone and
+ * blind to the others in the mix as long as they are not a harmonic of it. It is what lets a
+ * check put two distinguishable tones in — the shared tab's and the microphone's — and read
+ * each one's level back out of the recording.
+ */
+export async function toneLevel(page: Page, bytes: Buffer, hz: number): Promise<number> {
+  return page.evaluate(async ({ base64, hz }) => {
+    const binary = atob(base64);
+    const data = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) data[i] = binary.charCodeAt(i);
+    const context = new OfflineAudioContext(1, 1, 48_000);
+    const audio = await context.decodeAudioData(data.buffer);
+    const samples = audio.getChannelData(0);
+    const period = audio.sampleRate / hz;
+    const periods = Math.floor(samples.length / period);
+    if (!(periods > 1)) return 0;
+    // A window of whole periods, taken from the middle so the take's own edges are not read.
+    const count = Math.floor(periods * period);
+    const from = Math.floor((samples.length - count) / 2);
+    let real = 0;
+    let imaginary = 0;
+    for (let i = 0; i < count; i++) {
+      const angle = (i / audio.sampleRate) * hz * 2 * Math.PI;
+      real += samples[from + i] * Math.cos(angle);
+      imaginary += samples[from + i] * Math.sin(angle);
+    }
+    return (2 * Math.hypot(real, imaginary)) / count;
+  }, { base64: bytes.toString('base64'), hz });
+}
+
+/**
  * Decode a file at a moment and count the pixels of a band of the frame: `light`, the
  * near-white ones (the words a card draws), and `painted`, the ones the picture put
  * there at all — so a frame that failed to decode cannot pass for an empty one.
