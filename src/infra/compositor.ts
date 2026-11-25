@@ -10,8 +10,11 @@
 import type { CompositorInput, CompositorPort, CompositorSession } from '../application/ports/CompositorPort.js';
 import type { CropRegion } from '../domain/capture/CropRegion.js';
 
-const SYSTEM_GAIN = 0.8;
-const MIC_GAIN = 1.0;
+// Tab/system audio (music, a video…) is usually mastered loud, while a mic voice is quiet,
+// so the mix trims the system feed and lifts the mic — and compresses the mic after the
+// boost so it cannot clip. Tune these two to taste.
+const SYSTEM_GAIN = 0.4;
+const MIC_GAIN = 3;
 
 export class CompositorAdapter implements CompositorPort {
   private video: HTMLVideoElement | null = null;
@@ -132,10 +135,19 @@ export class CompositorAdapter implements CompositorPort {
     systemGain.gain.value = SYSTEM_GAIN;
     const micGain = context.createGain();
     micGain.gain.value = MIC_GAIN;
+    // The lift is the mic's to have and the compressor is what keeps it honest: a voice close
+    // to the microphone would otherwise clip the take, and a clipped take is worse than a
+    // quiet one — the boost can lift a quiet mix, but nothing gives back a squared-off voice.
+    const compressor = context.createDynamicsCompressor();
+    compressor.threshold.value = -10;
+    compressor.knee.value = 10;
+    compressor.ratio.value = 4;
+    compressor.attack.value = 0.003;
+    compressor.release.value = 0.25;
     if (system.length) {
       context.createMediaStreamSource(new MediaStream(system)).connect(systemGain).connect(destination);
     }
-    context.createMediaStreamSource(new MediaStream(mic)).connect(micGain).connect(destination);
+    context.createMediaStreamSource(new MediaStream(mic)).connect(micGain).connect(compressor).connect(destination);
     void context.resume();
     return destination.stream.getAudioTracks();
   }

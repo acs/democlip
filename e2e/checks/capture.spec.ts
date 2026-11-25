@@ -9,8 +9,8 @@
 import { expect, test, type Page } from '@playwright/test';
 import { boot } from '../helpers/app.js';
 import { makeTakes } from '../fixtures/takes.js';
-import { exportFile, hasSound, probeFile } from '../helpers/exports.js';
-import { askedFor, installStandInShare, installSuspendedAudio } from '../helpers/stand-ins.js';
+import { exportFile, hasSound, probeFile, takeBytes, toneLevel } from '../helpers/exports.js';
+import { askedFor, installStandInMic, installStandInShare, installSuspendedAudio } from '../helpers/stand-ins.js';
 import { pageModule } from '../helpers/page-module.js';
 import { watchBubble, previewBubble, lastWebcamDraw, compositedBubble, type BubbleArc } from '../helpers/bubble.js';
 
@@ -600,4 +600,54 @@ test('a silent picture take after a sound take does not lose the sound', async (
   const file = await probeFile(page, bytes, 'video/webm');
   expect(file.width).toBeGreaterThan(0);
   expect(await hasSound(page, bytes)).toBe(true);
+});
+
+// A shared tab's audio is mastered loud while a voice is quiet, so the mix trims the tab
+// (×0.4) and lifts the microphone (×3, then a compressor, so the lift cannot clip).
+//
+// That balance was lost once: the module move that rewrote the mix carried its *shape* over and
+// not its two numbers — the mic came out about 15.6 dB down against the tab — so a voice
+// recorded beside a video could not be heard. Nothing caught it, because no check had ever put a
+// **known** voice and a **known** tab together and read the two levels back out.
+//
+// So the two are made distinguishable on purpose: the stand-in share's audio is its own tone
+// (440 Hz, full scale), the stand-in microphone's is another (700 Hz, quiet), and each one's
+// amplitude in the recording is read on its own.
+test('the microphone is lifted over the shared tab’s audio, and the tab is trimmed', async ({ page }) => {
+  await installStandInShare(page);                                       // 440 Hz, full scale
+  await installStandInMic(page, { frequency: 700, amplitude: 0.05 });    // a quiet voice
+  const app = boot(page);
+  await app.goto();
+
+  await page.locator('#screen-btn').click();
+  await expect(page.locator('#s-text')).toContainText('Live');
+  await expect(page.locator('#mic-btn')).toBeEnabled();
+  await page.locator('#mic-btn').click();
+  await expect(page.locator('#mic-btn')).toHaveAttribute('aria-pressed', 'true');
+
+  await page.locator('#rec-btn').click();
+  await expect(page.locator('#s-text')).toHaveText('Recording');
+  await page.waitForTimeout(1_500);
+  await page.locator('#rec-btn').click();
+  await expect.poll(() => app.clipLength(), { timeout: 10_000 }).toBeGreaterThan(0.2);
+
+  // The recording itself, before any export: the sound boost puts one gain over the whole mix
+  // and would hide the balance this is about.
+  const bytes = await takeBytes(page);
+  const tab = await toneLevel(page, bytes, 440);
+  const voice = await toneLevel(page, bytes, 700);
+
+  // The bounds are loose on purpose: the level comes back through a lossy encode and a
+  // correlation over a window, so a decibel of drift is expected. What they hold is the two
+  // constants — the tab trimmed to well under the full scale it was played at, and the voice
+  // lifted well above the quiet level it came in at — and the pre-fix mix (0.78 and 0.05)
+  // misses both by a wide margin.
+  // The tab's own audio, trimmed from the full scale it was played at.
+  expect(tab).toBeGreaterThan(0.28);
+  expect(tab).toBeLessThan(0.55);
+  // The voice, lifted from the quiet level it came in at.
+  expect(voice).toBeGreaterThan(0.1);
+  expect(voice).toBeLessThan(0.25);
+  // Which is the whole point of both: the voice stands over the tab it was played under.
+  expect(voice).toBeGreaterThan(tab * 0.25);
 });

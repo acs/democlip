@@ -76,8 +76,55 @@ export async function installStandInShare(page: Page, options: StandInShareOptio
   }, options);
 }
 
-/** The constraints the app passed to `getDisplayMedia`, or null if it was not asked. */
-export async function askedFor(page: Page): Promise<DisplayMediaStreamOptions | null> {
+export interface StandInMicOptions {
+  /**
+   * The tone's frequency, in Hz. A value of the check's own, so a mix of this and the share's
+   * audio can be read one tone at a time.
+   */
+  frequency?: number;
+  /** The tone's amplitude, 0…1 — a quiet one, as a voice a little far from the microphone. */
+  amplitude?: number;
+}
+
+/**
+ * A **synthesized microphone**: an audio request to `getUserMedia` comes back as a steady tone
+ * of a known frequency and level. Chromium's fake device is a beep of no known shape, which is
+ * enough to prove that *a* sound arrives and not enough to say how loud a voice lands beside a
+ * shared tab's own audio. A request carrying a picture is passed through to the real one.
+ *
+ * Install before `boot.goto()`, so the stand-in is in place before the app loads.
+ */
+export async function installStandInMic(page: Page, options: StandInMicOptions = {}): Promise<void> {
+  await page.addInitScript((opts: StandInMicOptions) => {
+    const media = navigator.mediaDevices;
+    if (!media) return;
+    const real = media.getUserMedia.bind(media);
+
+    media.getUserMedia = async (constraints?: MediaStreamConstraints) => {
+      if (!constraints?.audio) return real(constraints);      // a picture is the browser's own
+
+      const context = new AudioContext();
+      const destination = context.createMediaStreamDestination();
+      const oscillator = context.createOscillator();
+      oscillator.frequency.value = opts.frequency ?? 700;
+      const gain = context.createGain();
+      gain.gain.value = opts.amplitude ?? 0.05;
+      oscillator.connect(gain).connect(destination);
+      oscillator.start();
+      void context.resume();                                  // a context built outside a gesture
+
+      const track = destination.stream.getAudioTracks()[0];
+      const stream = new MediaStream(track ? [track] : []);
+      if (constraints.video) {
+        const video = await real({ video: constraints.video });
+        for (const one of video.getVideoTracks()) stream.addTrack(one);
+      }
+      return stream;
+    };
+  }, options);
+}
+
+/** The constraints the app passed to `getDisplayMedia`, or null if it was not asked. */export async function askedFor(page: Page): Promise<DisplayMediaStreamOptions | null> {
   return page.evaluate(() => (window as unknown as AskedWindow).__e2eAskedFor ?? null);
 }
 
