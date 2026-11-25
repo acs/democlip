@@ -63,6 +63,16 @@ test('each annotation kind — arrow, image and text — is placed over a sectio
   // timeline section carries only the scissors — no kind buttons to be crowded by the next.
   await expect(page.locator('#annotate-bar')).toHaveClass(/on/);
   await expect(page.locator('#annotate-bar .annotate-row')).toHaveCount(3);
+  // The clip's control is a target of its own: it wears a label like the kinds do, and the
+  // column leaves a wider gap above the kinds than the kinds leave between them.
+  await expect(page.locator('#props-btn')).toContainText('CLIP');
+  const spacing = await page.evaluate(() => {
+    const clip = document.getElementById('props-btn')!.getBoundingClientRect();
+    const bar = document.getElementById('annotate-bar')!.getBoundingClientRect();
+    const rows = [...document.querySelectorAll('#annotate-bar .annotate-row')].map(row => row.getBoundingClientRect());
+    return { clipToKinds: bar.top - clip.bottom, kindToKind: rows[1].top - rows[0].bottom };
+  });
+  expect(spacing.clipToKinds).toBeGreaterThan(spacing.kindToKind);
   // A control is an opaque surface from the palette: the clip's settings control, the
   // annotate rows and the source buttons all wear the same `--control` surface, border and
   // label, so a kind reads over the picture as a source does in the toolbar — and none of

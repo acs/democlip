@@ -142,27 +142,23 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 .rec-badge.on{opacity:1;}
 .rec-badge-dot{width:5px;height:5px;border-radius:50%;background:var(--crimson);animation:blink 1s infinite;}
 
-/* The clip's own settings, in the corner of the picture the clip is seen on — beside
-   the thing, as a picked annotation's settings control is drawn on it. It is a control
-   from the palette: an opaque `--control` surface with a `--control-line` border and a
-   `--control-text` mark, lifted by a shadow so it reads over the picture. Shown only in
-   the review, where nothing is recording and the REC badge's corner is free. */
-.clip-props{position:absolute;top:12px;right:12px;z-index:4;width:26px;height:26px;padding:0;border-radius:50%;border:1px solid var(--control-line);background:var(--control);color:var(--control-text);box-shadow:var(--control-shadow);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:all .2s;-webkit-tap-highlight-color:transparent;}
-.clip-props:hover{background:var(--control-hover);color:var(--text);}
-.clip-props:active{transform:scale(.97);}
-.clip-props svg{pointer-events:none;}
-
-/* The annotate options: a vertical column of kind rows below the clip's settings control.
-   A row is a control from the palette like every other button — the opaque `--control`
-   surface, the `--control-line` border and the `--control-text` label in the mono face —
-   so a kind reads over the picture. */
-.annotate-bar{position:absolute;top:46px;right:12px;z-index:4;display:none;flex-direction:column;gap:6px;align-items:flex-end;}
+/* The clip's own settings and the annotate options, one column in the corner of the picture
+   the clip is seen on: the clip's control above, the kinds below it. The clip's control is
+   the clip's answer to the settings control a picked annotation wears, in the same place
+   beside the same pencil mark, and the kinds are its rows. Every one is a control from the
+   palette — an opaque `--control` surface with a `--control-line` border and a `--control-text`
+   label — so it reads over the picture. The column's own gap is wider than the kinds' so the
+   clip control reads as a target of its own, and the column takes no click itself: only its
+   controls do, so the picture between them is still the picture. Shown only in the review,
+   where nothing is recording and the REC badge's corner is free. */
+.corner-actions{position:absolute;top:12px;right:12px;z-index:4;display:flex;flex-direction:column;align-items:flex-end;gap:16px;pointer-events:none;}
+.clip-props,.annotate-row{display:inline-flex;align-items:center;gap:7px;padding:7px 12px;border-radius:9px;border:1px solid var(--control-line);background:var(--control);color:var(--control-text);box-shadow:var(--control-shadow);cursor:pointer;font-family:var(--font-mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;transition:all .2s;white-space:nowrap;-webkit-tap-highlight-color:transparent;pointer-events:auto;}
+.clip-props:hover,.annotate-row:hover{background:var(--control-hover);color:var(--text);}
+.clip-props:active,.annotate-row:active{transform:scale(.97);}
+.clip-props svg,.annotate-row svg{flex-shrink:0;pointer-events:none;}
+.annotate-bar{display:none;flex-direction:column;gap:6px;align-items:flex-end;}
 .annotate-bar.on{display:flex;}
-.annotate-row{display:inline-flex;align-items:center;gap:7px;padding:7px 12px;border-radius:9px;border:1px solid var(--control-line);background:var(--control);color:var(--control-text);box-shadow:var(--control-shadow);cursor:pointer;font-family:var(--font-mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;transition:all .2s;white-space:nowrap;-webkit-tap-highlight-color:transparent;}
-.annotate-row:hover{background:var(--control-hover);color:var(--text);}
-.annotate-row:active{transform:scale(.97);}
-.annotate-row svg{flex-shrink:0;pointer-events:none;}
-.annotate-lbl{pointer-events:none;white-space:nowrap;}
+.annotate-lbl,.clip-props-lbl{pointer-events:none;white-space:nowrap;}
 
 /* ── TIMELINE ── */
 .timeline{width:100%;max-width:1160px;flex-shrink:0;background:var(--surface-2);backdrop-filter:blur(20px);border:1px solid var(--glass-b);border-radius:12px;padding:11px 16px;margin-bottom:9px;opacity:0;transform:translateY(8px);transition:opacity .35s,transform .35s;pointer-events:none;}
