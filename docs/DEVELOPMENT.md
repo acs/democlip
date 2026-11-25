@@ -16,6 +16,7 @@ npm install
 | `npm run typecheck` | Type-checks without emitting |
 | `npm run lint` | ESLint (use `npm run lint:fix` to auto-fix) |
 | `npm test` | Runs the Vitest unit tests (`npm run test:watch` to watch) |
+| `npm run test:mcp` | Builds (type-checks) and tests the **MCP server**, the second package in this repository — the root `npm test` and `npm run typecheck` do not reach `mcp/` |
 
 The dev server disables the service worker — its cache-first strategy would
 shadow HMR — so use `npm run preview` to exercise the real PWA locally.
@@ -35,7 +36,8 @@ over http is upgraded.
 
 Linting runs on every commit through a Husky pre-commit hook, and the CI
 workflow runs lint, type-check, tests and the build on every push and pull
-request. A separate `e2e` job runs the end-to-end suite in a headless Chromium.
+request. A separate `e2e` job runs the end-to-end suite in a headless Chromium,
+and a third installs, builds and tests the MCP server package.
 
 Unit tests live beside the rules they prove (`src/domain/`, `src/application/`);
 anything drawn, played or encoded is proven by a committed check in the

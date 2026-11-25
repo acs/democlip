@@ -16,6 +16,7 @@
     "lint:fix": "eslint . --fix",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:mcp": "npm --prefix mcp run build && npm --prefix mcp test",
     "test:e2e": "playwright test --config e2e/playwright.config.ts",
     "prepare": "husky"
   },

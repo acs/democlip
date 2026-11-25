@@ -82,8 +82,19 @@ or major release, done before merging. See `docs/VERSIONING.md`.
 ## Before pushing
 
 ```
-npm run lint && npm run typecheck && npx vitest run && npm run build
+npm run lint && npm run typecheck && npx vitest run && npm run build && npm run test:mcp
 ```
+
+**The MCP server is a second package, and this gate used to miss it.** `mcp/` is released with
+the app from this repository, keeps its own `node_modules`, its own build and its own suite —
+and none of the root run reaches them: `npx vitest run` is the app's tests alone, and the root
+`tsc --noEmit` covers `src` and `web`. A change to a tool an agent is offered passed this gate
+and failed in CI for exactly that. So the gate ends with `npm run test:mcp`, which is that
+package's build (its type-check — `vitest` transpiles without checking types) and then its own
+suite: **about three seconds**. `npm --prefix mcp ci` is run once beforehand, since the root
+install does not cover the second package; `mcp/` is installed and built by the same commands CI
+uses, and its integration test builds the app itself when the build on disk is not this
+checkout's.
 
 The pre-commit hook runs `eslint --fix` on staged files. Temporary `verify-*.html`
 harnesses are deleted before the commit — they are never part of a change.
