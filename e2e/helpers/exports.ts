@@ -272,3 +272,26 @@ export async function frameDiff(
     return differs;
   }, { left: a.toString('base64'), right: b.toString('base64'), type: mime, at, box });
 }
+
+/**
+ * A file's sound energy in one window of it, as its RMS amplitude. The check a sound annotation
+ * needs reads **where** a sound landed and compares it with the recording alone: the window the
+ * sound plays over is louder than a window it does not, and two files differing only by the
+ * annotation carry the same energy where the sound is not.
+ */
+export async function rmsIn(page: Page, bytes: Buffer, from: number, to: number): Promise<number> {
+  return page.evaluate(async ({ base64, from, to }) => {
+    const binary = atob(base64);
+    const data = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) data[i] = binary.charCodeAt(i);
+    const context = new OfflineAudioContext(2, 1, 48_000);
+    const audio = await context.decodeAudioData(data.buffer);
+    const samples = audio.getChannelData(0);
+    const a = Math.max(0, Math.floor(from * audio.sampleRate));
+    const b = Math.min(samples.length, Math.floor(to * audio.sampleRate));
+    if (!(b > a)) return 0;
+    let sum = 0;
+    for (let i = a; i < b; i++) sum += samples[i] * samples[i];
+    return Math.sqrt(sum / (b - a));
+  }, { base64: bytes.toString('base64'), from, to });
+}

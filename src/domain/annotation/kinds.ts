@@ -12,6 +12,7 @@
 import type { Annotation, StoredAnnotation } from './Annotation.js';
 import { Arrow } from './Arrow.js';
 import { ImageAnnotation } from './ImageAnnotation.js';
+import { SoundAnnotation } from './SoundAnnotation.js';
 import { TextAnnotation } from './TextAnnotation.js';
 
 /** A kind is the class itself: its id, and how to rebuild one. */
@@ -45,3 +46,6 @@ registerKind(ImageAnnotation);
 
 // The text is the third kind, added the same way.
 registerKind(TextAnnotation);
+
+// The sound is the fourth kind, added the same way — a kind with no shape.
+registerKind(SoundAnnotation);

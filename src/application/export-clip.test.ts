@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { planExport } from './export-clip.js';
 import { Clip } from '../domain/clip/Clip.js';
 import { Arrow } from '../domain/annotation/Arrow.js';
+import { SoundAnnotation } from '../domain/annotation/SoundAnnotation.js';
 import { Span } from '../domain/clip/Span.js';
 import { IntroCard } from '../domain/clip/IntroCard.js';
 import { Take } from '../domain/clip/Take.js';
@@ -74,6 +75,17 @@ describe('planExport', () => {
     const off = clipWithSound(4);
     off.setProperty('soundBoost', 'false');
     expect(planExport(off, settings)?.soundBoost).toBe(false);
+  });
+
+  it('carries the clip’s sound annotations, so every encoder mixes them', () => {
+    const clip = clipWithSound(4);
+    clip.addAnnotation(SoundAnnotation.create(Span.of(0.25, 0.5), 'gong')!);
+    const plan = planExport(clip, settings);
+    expect(plan?.soundings().map(s => s.sound)).toEqual(['gong']);
+    // and a carried export still plays the sound, though it draws no annotations
+    const carried = planExport(clip, { ...settings, annotations: 'carried' });
+    expect(carried?.annotations.count).toBe(0);
+    expect(carried?.soundings().length).toBe(1);
   });
 
   it('plans nothing when there is nothing to write', () => {

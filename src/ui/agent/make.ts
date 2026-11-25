@@ -17,7 +17,9 @@
 import { Arrow } from '../../domain/annotation/Arrow.js';
 import { ImageAnnotation } from '../../domain/annotation/ImageAnnotation.js';
 import { newAnnotationId } from '../../domain/annotation/Annotation.js';
+import { SoundAnnotation } from '../../domain/annotation/SoundAnnotation.js';
 import { TextAnnotation } from '../../domain/annotation/TextAnnotation.js';
+import { DEFAULT_STOCK_SOUND, STOCK_SOUNDS } from '../../domain/sound/StockSounds.js';
 import type { AnnotationColour } from '../../domain/annotation/AnnotationColour.js';
 import type { Span } from '../../domain/clip/Span.js';
 import { images } from '../../infra/images.js';
@@ -33,6 +35,7 @@ export const makeAnnotation: MakeAnnotation = (kind, params, span, colour) => {
   if (kind === Arrow.id) return makeArrow(params, span, colour);
   if (kind === TextAnnotation.id) return makeText(params, span, colour);
   if (kind === ImageAnnotation.id) return makeImage(params, span);
+  if (kind === SoundAnnotation.id) return makeSound(params, span);
   return {
     reason: `the app cannot make a ${kind} from data alone`,
   };
@@ -68,6 +71,15 @@ function makeText(params: AnnotationParams, span: Span, colour: AnnotationColour
   const y = fractionIn(params, 'y') ?? (1 - box.height) / 2;
   const annotation = TextAnnotation.create(span, { text, x, y, width: box.width, height: box.height }, undefined, colour);
   if (!annotation) return { reason: 'a text needs a box inside the picture' };
+  return { annotation };
+}
+
+function makeSound(params: AnnotationParams, span: Span): Made {
+  const wanted = typeof params.sound === 'string' && params.sound ? params.sound : DEFAULT_STOCK_SOUND;
+  const annotation = SoundAnnotation.create(span, wanted);
+  if (!annotation) {
+    return { reason: `a sound must be one the app has: ${STOCK_SOUNDS.map(s => s.name).join(', ')}` };
+  }
   return { annotation };
 }
 

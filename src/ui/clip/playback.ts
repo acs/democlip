@@ -23,6 +23,7 @@ import { clampToClip, typingIn } from '../../util.js';
 import { keptLengthNow, keptOf, player, reviewFrame } from './clip.js';
 import { FADE_S, elementAudio, fadeIn, fadeOut, fadeReset } from './fade.js';
 import { boostNow } from './boost.js';
+import { resetSounds, tickSounds, unlockSounds } from './sounds.js';
 import { DISSOLVE_S, dissolve } from './dissolve.js';
 
 const PLAY_ICON  = '<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>';
@@ -75,6 +76,7 @@ export class Playback {
   hold(time: number): void {
     if (currentPhase() !== 'review' || el.rv.readyState < 1) return;
     if (this.playing) this.pause();
+    resetSounds();
     const t = clampToClip(time, 0, session.clip.total());
     this.askedSkip = 0;
     this.updatePlayhead(t);
@@ -96,6 +98,8 @@ export class Playback {
     this.joinFaded = false;
     fadeReset();               // starting again at full, whatever a pause left behind
     dissolve.clear();              // ...and with no dissolve owed from an earlier join
+    resetSounds();                 // ...and no sound owed from before the pause
+    unlockSounds();                // the sounds' own context is awoken on this press
     // The element's sound is routed through the boost's gain node to be boosted, and that
     // graph is otherwise made lazily by the fades — which a clip with no join never reaches.
     // So it is made here, on the press that started playback, whenever a boost is in force.
@@ -117,6 +121,7 @@ export class Playback {
     if (!el.rv.paused) el.rv.pause();
     fadeReset();               // a fade must never be left half-applied
     dissolve.clear();              // ...nor a dissolve
+    resetSounds();                 // ...nor a sound playing
     this.cancelLoop();
     this.updateTransport();
     this.updatePlayhead();
@@ -129,6 +134,7 @@ export class Playback {
     this.cancelLoop();
     fadeReset();
     dissolve.clear();
+    resetSounds();
     this.updateTransport();
     this.updatePlayhead(0);
   }
@@ -138,6 +144,7 @@ export class Playback {
     if (currentPhase() !== 'review' || el.rv.readyState < 1) return;
     const t = clampToClip(time, 0, session.clip.total());
     this.askedSkip = 0;
+    resetSounds();
     this.updatePlayhead(t);
     if (this.playing) void player.seek(t);
     else             void player.seekAndDraw(t);
@@ -220,6 +227,7 @@ export class Playback {
 
     // The recording in the video has run out: carry on into the next one, so the
     // joined clip plays as a whole. Its last frame is held, to dissolve away from.
+    // The sound annotations keep playing across the join: kept time is continuous there.
     if (player.ended()) {
       dissolve.holdFrame();
       void player.next(this.playing).then(joined => {
@@ -248,6 +256,7 @@ export class Playback {
       });
     }
     this.updatePlayhead();          // video frames on the preview canvas
+    tickSounds(keptOf(player.time()));   // and the sound annotations, at the moment they fall
     this.playRaf = requestAnimationFrame(() => this.loop());   // audio comes from the (unmuted) element
   }
 

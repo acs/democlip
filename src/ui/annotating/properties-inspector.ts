@@ -14,13 +14,17 @@
 import { session } from '../../session.js';
 import { el, toast } from '../dom.js';
 import { COLOURS } from '../../domain/annotation/AnnotationColour.js';
+import { STOCK_SOUNDS } from '../../domain/sound/StockSounds.js';
 import type { Annotation } from '../../domain/annotation/Annotation.js';
 import { propertiesFor, type AnnotationProperty } from './annotation-plugin.js';
 import { DURATION_STEP_S } from './duration-property.js';
 import { textEntry } from './text-entry.js';
+import { previewStockSound } from '../clip/sounds.js';
 
 const GAP = 8;      // between the annotation's box and the panel
 const EDGE = 8;     // the least the panel may sit from a viewport edge
+
+const PLAY_ICON = '<svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>';
 
 class PropertiesInspector {
   private id: string | null = null;
@@ -92,8 +96,23 @@ class PropertiesInspector {
   private place(): void {
     const annotation = this.id ? session.clip.annotations.byId(this.id) : null;
     if (!annotation) return;
+    const width = el.propMenu.offsetWidth;
+    const height = el.propMenu.offsetHeight;
+
     const handles = annotation.handles();
-    if (handles.length === 0) return;
+    if (handles.length === 0) {
+      // A kind with nothing on the picture — a **sound** — has no box to sit beside. The panel
+      // goes in the corner of the preview, over the picture rather than over the transport, so
+      // opening it to choose a sound does not cover the play button. With no picture at all
+      // (a sound-only clip) it falls back to the lane.
+      const rect = el.cv.getBoundingClientRect();
+      const anchor = rect.width > 0 ? rect : el.tlAnnots.getBoundingClientRect();
+      const x = Math.max(EDGE, Math.min(anchor.left + GAP, window.innerWidth - width - EDGE));
+      const y = Math.max(EDGE, Math.min(anchor.top + GAP, window.innerHeight - height - EDGE));
+      el.propMenu.style.left = `${Math.round(x)}px`;
+      el.propMenu.style.top = `${Math.round(y)}px`;
+      return;
+    }
 
     const rect = el.cv.getBoundingClientRect();
     const xs = handles.map(handle => handle.x);
@@ -102,8 +121,6 @@ class PropertiesInspector {
     const right = rect.left + Math.max(...xs) * rect.width;
     const top = rect.top + Math.min(...ys) * rect.height;
 
-    const width = el.propMenu.offsetWidth;
-    const height = el.propMenu.offsetHeight;
     const roomRight = window.innerWidth - right - GAP;
     const x = roomRight >= width + EDGE ? right + GAP : Math.max(EDGE, left - width - GAP);
     const y = Math.max(EDGE, Math.min(top, window.innerHeight - height - EDGE));
@@ -126,7 +143,43 @@ class PropertiesInspector {
     name.textContent = property.label;
     host.append(name, property.control === 'colour' ? this.swatches(property, annotation)
       : property.control === 'duration' ? this.seconds(property, annotation)
+      : property.control === 'sound' ? this.sounds(property, annotation)
       : this.words(property, annotation));
+    return host;
+  }
+
+  /** A `sound` property: a drop-down of the app's stock sounds, and one play button for the chosen one. */
+  private sounds(property: AnnotationProperty, annotation: Annotation): HTMLElement {
+    const host = document.createElement('div');
+    host.className = 'prop-sounds';
+    const current = property.value(annotation);
+
+    const select = document.createElement('select');
+    select.className = 'prop-sound-select';
+    select.setAttribute('aria-label', property.label);
+    for (const sound of STOCK_SOUNDS) {
+      const option = document.createElement('option');
+      option.value = sound.name;
+      option.textContent = sound.label;
+      option.selected = sound.name === current;
+      select.append(option);
+    }
+    // Choosing in the list is choosing the sound: it is applied at once, and is what the one
+    // play button plays.
+    select.addEventListener('change', () => this.apply(property, annotation, select.value));
+
+    const play = document.createElement('button');
+    play.type = 'button';
+    play.className = 'prop-sound-play';
+    play.title = 'Play the chosen sound';
+    play.setAttribute('aria-label', 'Play the chosen sound');
+    play.innerHTML = PLAY_ICON;
+    play.addEventListener('click', event => {
+      event.stopPropagation();
+      previewStockSound(select.value);
+    });
+
+    host.append(select, play);
     return host;
   }
 

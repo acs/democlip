@@ -383,6 +383,12 @@ export class AnnotationCanvas {
     this.disarm();
     session.clip.addAnnotation(annotation);      // the clip announces it; the views follow
     this.pick(annotation.id);
+    // A kind with no box on the picture — a **sound** — has no settings control to open its
+    // preferences from, so making one opens them: it plays at once, and choosing which sound it
+    // is is one press away. A drawn kind opens its panel from the control on its own box.
+    if (annotation.handles().length === 0 && propertiesFor(annotation, session.clip).length > 0) {
+      inspector.open(annotation);
+    }
   }
 
   private disarm(): void {

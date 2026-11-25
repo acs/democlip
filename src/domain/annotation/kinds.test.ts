@@ -4,6 +4,7 @@ import { Span } from '../clip/Span.js';
 import { AnnotationSet } from './AnnotationSet.js';
 import { Arrow } from './Arrow.js';
 import { Annotation, type AnnotationHandle, type StoredAnnotation } from './Annotation.js';
+import { SoundAnnotation } from './SoundAnnotation.js';
 import { annotationFrom, registerKind, registeredKinds } from './kinds.js';
 
 // A throwaway second kind, the one the register exists for. It lives only in this
@@ -63,5 +64,13 @@ describe('the annotation family', () => {
     expect({ x: dot.x, y: dot.y }).toEqual({ x: 1, y: 0 });
     expect(AnnotationSet.EMPTY.add(dot).at(0.25).map(a => a.kind)).toEqual(['dot']);
     expect(annotationFrom(dot.stored())?.kind).toBe('dot');
+  });
+
+  it('reads a sound annotation back, and leaves out a sound this build does not serve', () => {
+    expect(registeredKinds()).toContain('sound');
+    const sound = SoundAnnotation.create(Span.of(0.1, 0.3), 'gong', 's1');
+    expect(annotationFrom(sound!.stored())?.kind).toBe('sound');
+    // a name the app does not serve is left out, as an unknown kind is
+    expect(annotationFrom({ id: 'x', kind: 'sound', s: 0, e: 1, geometry: { sound: 'applause' } })).toBeNull();
   });
 });
