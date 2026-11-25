@@ -125,6 +125,19 @@ describe('ExportPlan', () => {
     expect(plan.outputTimeOf(9)).toBeCloseTo(8);
   });
 
+  it('says which moments a cut took away, which the frame loop writes nothing for', () => {
+    // The same 3s-4s cut out of 10s. It is half-open like every other range here: its start
+    // is gone and its end is the first kept moment. A frame loop that read only `outputTimeOf`
+    // drew the cut's frames at 3 and handed them to the encoder as samples of no duration —
+    // the cut's own pictures, in the file. It asks this first.
+    const plan = planOf();
+    expect(plan.isCut(2)).toBe(false);
+    expect(plan.isCut(3)).toBe(true);                 // the cut's own start is gone
+    expect(plan.isCut(3.5)).toBe(true);
+    expect(plan.isCut(4)).toBe(false);                // its end is the second stretch
+    expect(plan.isCut(9)).toBe(false);
+  });
+
   it('knows where each take begins on the recording', () => {
     expect(planOf().startOf(1)).toBeCloseTo(5);
   });

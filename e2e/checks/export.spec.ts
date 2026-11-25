@@ -11,7 +11,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { boot } from '../helpers/app.js';
 import { makeFile, makeTakes, type FixtureFile } from '../fixtures/takes.js';
-import { exportFile, frameCounts, hasSound, loudnessOf, probeFile } from '../helpers/exports.js';
+import { exportFile, frameCounts, hasSound, loudnessOf, probeFile, videoPackets } from '../helpers/exports.js';
 
 /** Choose a file through the Import button, the way a person does. */
 async function importFile(page: Page, file: FixtureFile): Promise<void> {
@@ -51,6 +51,47 @@ test('exporting writes a file with a real duration, in the take’s own size —
   expect(mp4.duration).toBeGreaterThan(0.5);
   expect(mp4.duration).toBeLessThan(2);
   expect({ width: mp4.width, height: mp4.height }).toEqual({ width: 854, height: 480 });
+});
+
+// A cut leaves the file: the frames inside it are not written at all. They used to be — the
+// plan maps a moment inside a cut to the time just before it, and the frame loop drew each
+// such frame there, handing the encoder a frame of no duration that a player never lands on.
+// The file literally carried the cut's own pictures. The plan now says which moments a cut
+// took away, and the loop writes nothing for them.
+test('a cut leaves the file: its frames are not written, WebM or MP4', async ({ page }) => {
+  const app = boot(page);
+  await app.gotoAgent();
+  const takes = await makeTakes(page, { width: 854, height: 480, seconds: 3 });
+  await app.seed(takes);
+  await app.review();
+
+  const hasMp4 = await canEncodeMp4(page);
+
+  // The take whole, before any cut: every frame the recording holds, for the count to compare
+  // against — so the check does not have to guess the fixture's frame rate.
+  const wholeWebm = await videoPackets(page, await exportFile(page, '#exp-webm'));
+  const wholeMp4 = hasMp4 ? await videoPackets(page, await exportFile(page, '#exp-mp4')) : [];
+
+  // The middle 0.9s out, through the app's own operation — a cut is a fraction of the clip.
+  const cut = await page.evaluate(async () => {
+    const surface = (globalThis as unknown as {
+      democlip?: { edit: { cut: (from: number, to: number) => { ok: boolean } } };
+    }).democlip;
+    return surface?.edit.cut(0.2, 0.5);
+  });
+  expect(cut?.ok).toBe(true);
+
+  // The file holds the kept frames alone, so it has about the cut's own worth fewer — 0.9s at
+  // the fixture's frame rate. It used to hold every frame the take had, the cut's own among
+  // them, each written at the moment before the cut and lasting nothing.
+  const keptWebm = await videoPackets(page, await exportFile(page, '#exp-webm'));
+  expect(keptWebm.length).toBeLessThan(wholeWebm.length - 20);
+  expect(keptWebm.length).toBeGreaterThan(wholeWebm.length - 35);
+
+  test.skip(!hasMp4, 'this browser cannot encode MP4 (AVC) offline');
+  const keptMp4 = await videoPackets(page, await exportFile(page, '#exp-mp4'));
+  expect(keptMp4.length).toBeLessThan(wholeMp4.length - 20);
+  expect(keptMp4.length).toBeGreaterThan(wholeMp4.length - 35);
 });
 
 /** Choose an export resolution in the clip's settings, the way a person does. */

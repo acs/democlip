@@ -58,6 +58,30 @@ export async function probeFile(
   }, { base64: bytes.toString('base64'), type: mime });
 }
 
+const FILE_PROBE = pageModule('e2e/support/file-probe.ts');
+
+/** One video packet of a file: when it starts, in seconds, and how long it lasts. */
+export interface VideoPacket {
+  timestamp: number;
+  duration: number;
+}
+
+/**
+ * A file's video packets, in decode order, read with Mediabunny — the library the export
+ * writes through. A check that a cut left the file needs the packets themselves: a frame the
+ * export wrote at the moment before the cut is a packet of no duration, which no `<video>`
+ * shows, because a player never lands on it.
+ */
+export async function videoPackets(page: Page, bytes: Buffer): Promise<VideoPacket[]> {
+  return page.evaluate(async ({ base64, url }) => {
+    const binary = atob(base64);
+    const data = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) data[i] = binary.charCodeAt(i);
+    const mod = await import(/* @vite-ignore */ url);
+    return mod.videoPackets(data.buffer);
+  }, { base64: bytes.toString('base64'), url: FILE_PROBE });
+}
+
 /** Whether a file's sound can be decoded — a sound-only export has one, a picture-only file does not. */export async function hasSound(page: Page, bytes: Buffer): Promise<boolean> {
   return page.evaluate(async (base64) => {
     const binary = atob(base64);
