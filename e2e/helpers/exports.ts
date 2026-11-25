@@ -117,11 +117,17 @@ export async function takeBytes(page: Page, index = 0): Promise<Buffer> {
 }
 
 /**
- * How loud one tone is in a sound, as its amplitude: the signal is correlated with a sine of
- * that frequency over a whole number of its periods, which is exact for a steady tone and
- * blind to the others in the mix as long as they are not a harmonic of it. It is what lets a
- * check put two distinguishable tones in — the shared tab's and the microphone's — and read
- * each one's level back out of the recording.
+ * How loud one tone is in a sound, as its amplitude. The sound is cut into windows and the
+ * signal correlated with a sine of that frequency over a whole number of its periods in each,
+ * which is exact for a steady tone and blind to the others in the mix as long as they are not
+ * harmonics of it. The answer is the **median** of the windows: the level that tone holds at.
+ *
+ * Not one average over the whole sound. A take's first moments carry the encoder's ramp, a
+ * source's own audio can dip, and either drags an average down until a correct mix reads as a
+ * quiet one — which is exactly what made the check that reads a voice against a shared tab's
+ * audio fail about once in five runs, at 0.26 where the mix holds 0.40. The median ignores a
+ * window or two of noise at either end, so what a check compares is the level the two constants
+ * in the mix decide.
  */
 export async function toneLevel(page: Page, bytes: Buffer, hz: number): Promise<number> {
   return page.evaluate(async ({ base64, hz }) => {
@@ -131,20 +137,30 @@ export async function toneLevel(page: Page, bytes: Buffer, hz: number): Promise<
     const context = new OfflineAudioContext(1, 1, 48_000);
     const audio = await context.decodeAudioData(data.buffer);
     const samples = audio.getChannelData(0);
-    const period = audio.sampleRate / hz;
-    const periods = Math.floor(samples.length / period);
-    if (!(periods > 1)) return 0;
-    // A window of whole periods, taken from the middle so the take's own edges are not read.
-    const count = Math.floor(periods * period);
-    const from = Math.floor((samples.length - count) / 2);
-    let real = 0;
-    let imaginary = 0;
-    for (let i = 0; i < count; i++) {
-      const angle = (i / audio.sampleRate) * hz * 2 * Math.PI;
-      real += samples[from + i] * Math.cos(angle);
-      imaginary += samples[from + i] * Math.sin(angle);
-    }
-    return (2 * Math.hypot(real, imaginary)) / count;
+
+    /** This tone's amplitude in one stretch, over a whole number of its periods. */
+    const levelOf = (from: number, to: number): number => {
+      const period = audio.sampleRate / hz;
+      const periods = Math.floor((to - from) / period);
+      if (!(periods > 1)) return 0;
+      const count = Math.floor(periods * period);
+      let real = 0;
+      let imaginary = 0;
+      for (let i = 0; i < count; i++) {
+        const angle = (i / audio.sampleRate) * hz * 2 * Math.PI;
+        real += samples[from + i] * Math.cos(angle);
+        imaginary += samples[from + i] * Math.sin(angle);
+      }
+      return (2 * Math.hypot(real, imaginary)) / count;
+    };
+
+    const windows = 8;
+    const span = Math.floor(samples.length / windows);
+    if (!(span > 1)) return 0;
+    const levels = Array.from({ length: windows }, (_, at) => levelOf(at * span, (at + 1) * span))
+      .sort((a, b) => a - b);
+    const middle = levels.length / 2;
+    return (levels[middle - 1]! + levels[middle]!) / 2;
   }, { base64: bytes.toString('base64'), hz });
 }
 
