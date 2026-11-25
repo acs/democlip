@@ -43,7 +43,7 @@ export function refreshBoost(): void {
   const plan = planExport(clip, { fadeSeconds: FADE_S, annotations: 'drawn', intro: null });
   if (!plan) { set(1); return; }
   const mine = ++revision;
-  void boostGain(plan.pieces, plan.takes, true)
+  void boostGain(plan, true)
     .then(value => { if (mine === revision) set(value); })
     .catch(() => { if (mine === revision) set(1); });
 }

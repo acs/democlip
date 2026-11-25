@@ -26,6 +26,19 @@ export interface ExportPiece {
   at: number;     // seconds into the output file
 }
 
+/**
+ * One kept stretch in the seconds of **the take it belongs to**: what a decoder that opens one
+ * take at a time indexes by. It is the same stretch as the `ExportPiece` it came from — `at` is
+ * unchanged — with the two units the plan holds told apart, so no adapter has to remember which
+ * one a number is in.
+ */
+export interface LocalPiece {
+  takeIndex: number;
+  from: number;   // seconds of that take, inclusive
+  to: number;     // seconds of that take, exclusive
+  at: number;     // seconds into the output file
+}
+
 /** One take that survives the cuts: how far into it to decode, and where it lands. */
 export interface ExportStep {
   takeIndex: number;
@@ -158,6 +171,25 @@ export class ExportPlan {
   /** Where a take begins on the recording's own timeline. */
   startOf(takeIndex: number): number {
     return this.starts[takeIndex] ?? 0;
+  }
+
+  /**
+   * The kept stretches in each take's own seconds. A piece's `from` and `to` are the
+   * **recording's** — the clip's timeline, where the cuts and the annotations live — while
+   * anything that opens one take at a time indexes by that take's own; the two are one
+   * subtraction apart, and this is the one place it is made, so a decoder cannot read a piece's
+   * times as its own by mistake.
+   */
+  localPieces(): readonly LocalPiece[] {
+    return this.pieces.map(piece => {
+      const start = this.startOf(piece.takeIndex);
+      return {
+        takeIndex: piece.takeIndex,
+        from: Math.max(0, piece.from - start),
+        to: Math.max(0, piece.to - start),
+        at: piece.at,
+      };
+    });
   }
 
   /**

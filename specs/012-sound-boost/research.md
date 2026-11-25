@@ -173,6 +173,30 @@ whole, ignoring the cuts — rejected: a clip whose loud part is cut away would 
 the wrong level. Compute the gain in the view and pass it to the encoder — rejected: the
 publish paths encode too, and a value threaded through every caller can disagree.
 
+## A kept stretch carries two units, and the plan owns the difference
+
+**Decision**: `ExportPlan` gains **`localPieces()`** — each kept stretch with `from`/`to` in its
+**own take's** seconds — and everything that opens one take at a time (the measurement, a
+decoder) reads that. `ExportPiece.from`/`to` stay the **recording's**, which is where the cuts
+and the annotations live.
+
+**Why**: the plan's own header says both units live there so "no caller has to convert between
+them by hand", and the first cut of the measurement did exactly that. Read against a single
+take's buffer, a piece of the **second** take (5 s…10 s of the recording) lands past that take's
+end: the take is silently measured as nothing, so a clip of two takes is brought to the target by
+its **first take's** loudness alone. One gain then applies to both, and the louder take is lifted
+far past the ceiling — the file clips and the waveform saturates at the top. The mistake is
+invisible in a one-take fixture, which is what the check had. Naming the take-local stretch makes
+it impossible to write, and the conversion is unit-tested in node, where the browser half cannot
+be.
+
+**Alternatives considered**: keep the subtraction in the adapter and be careful — rejected: that
+is what was done, it was wrong, and nothing caught it. Hand the measurement the takes and let it
+sum the durations — rejected: it is a second derivation of the plan's own `starts`, which is the
+drift the plan's header warns about. Change `ExportPiece.from`/`to` to the take's seconds —
+rejected: `renderAudio`, `addBlackFrames` and the annotation times all read them as the
+recording's.
+
 ## The cost of the measurement
 
 **Decision**: the measurement is one pass over the clip's kept sound. In the **export** it

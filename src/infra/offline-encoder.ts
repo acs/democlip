@@ -370,7 +370,7 @@ async function renderAudio(plan: ExportPlan): Promise<AudioBuffer | null> {
   // the mix, measured from the takes the mix was decoded from, so the export measures exactly
   // what the review does and pays no second decode for it.
   if (!plan.soundBoost) return mixed;
-  const gain = gainOf(measureKept(decoded, plan.pieces));
+  const gain = gainOf(measureKept(decoded, plan.localPieces()));
   if (gain === 1) return mixed;
   for (let c = 0; c < mixed.numberOfChannels; c++) {
     const data = mixed.getChannelData(c);

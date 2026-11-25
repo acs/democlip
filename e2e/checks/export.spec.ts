@@ -200,11 +200,20 @@ async function waveformPixels(page: Page): Promise<number> {
 // boosted sound, because it asks the same rule; a check cannot capture the page's audio, so
 // that half is the shared-rule tests and a real session (`quickstart.md`). The **waveform** is
 // read here instead: it is drawn at the level the sound is heard at, so it moves with the switch.
+//
+// **Two takes of different levels, deliberately**: the loudness is measured over the whole kept
+// sound, and reading a piece's times against the wrong take's buffer once made a clip of two
+// takes measured by its first alone — one gain, far too large, over both. One take hides it.
 test('the sound is boosted by default, and the switch gives the recording back', async ({ page }) => {
   const app = boot(page);
   await app.goto();
-  // Quiet on purpose: about −29 LUFS, the level a microphone a little far leaves.
-  const takes = await makeTakes(page, { width: 640, height: 360, seconds: 1, hasAudio: true, level: 0.05 });
+  // Quiet on purpose, and 6 dB apart: about −30 and −24 LUFS, the level a microphone a little
+  // far leaves, and the two levels that catch a measurement that stops at the first take.
+  const takes = await makeTakes(
+    page,
+    { width: 640, height: 360, seconds: 1, hasAudio: true, level: 0.03 },
+    { width: 640, height: 360, seconds: 1, hasAudio: true, level: 0.06 },
+  );
   await app.seed(takes);
   await app.review();
 

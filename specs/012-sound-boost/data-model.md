@@ -106,12 +106,19 @@ the register and ignores an item it does not know).
 | field | type | rule |
 |---|---|---|
 | `soundBoost` | boolean | **new**: is the clip's sound to be boosted? Given by `planExport` from `boostsSound(clip.properties)` |
+| `localPieces()` | `readonly LocalPiece[]` | **new**: the kept stretches in each **take's own** seconds — `from`/`to` minus `startOf(takeIndex)` — since a piece's own times are the recording's and a decoder that opens one take indexes by that take's. `at` is unchanged |
 | `pieces`, `steps`, `takes`, `total`, `audio`, `soundOnly`, `intro`, `introSeconds`, `fadeSeconds`, `annotations` | as today | unchanged |
 
 **Rule**: `soundBoost` is a value the plan carries, not a property of the takes — it is the
 clip's own setting, and every encoder that asks the plan gets the one answer. It is
 **independent of `audio`**: a clip with no kept sound has `audio === false` and the boost does
 nothing, whatever the switch says.
+
+**Rule (the two units)**: the plan holds the recording's seconds and the take's, and already
+says so of itself ("no caller has to convert between them by hand"). `localPieces()` is that
+conversion in one place, and nothing that opens a single take may do it by hand: a piece of the
+**second** take runs 5s…10s of the recording and 0s…5s of that take, so reading its times
+against that take's buffer lands past its end and silently measures nothing of it.
 
 ## `planExport` — `src/application/export-clip.ts`
 
@@ -123,12 +130,14 @@ the boost with no caller threading it.
 
 | member | rule |
 |---|---|
-| `boostGain(pieces, takes, boost): Promise<number>` | decode the **kept** stretches of the given takes, one at a time, `Loudness.measure`, `SoundBoost.gainFor`; `1` when off, when there is no sound, or when the decode fails |
+| `boostGain(plan: ExportPlan, boost: boolean): Promise<number>` | decode the **kept** stretches of the plan's takes, one at a time, `Loudness.measure`, `SoundBoost.gainFor`; `1` when off, when there is no sound, or when the decode fails |
+| `measureKept(decoded, pieces: readonly LocalPiece[]): Measurement` | the measurement of already-decoded takes, over `plan.localPieces()` — the stretches in their **own take's** seconds, which is what a single-take decoder indexes by |
 
 **Rules**
 
 - It decodes only the pieces' `from`…`to` ranges of each take, in order, so the samples it
-  measures are exactly the ones the file holds.
+  measures are exactly the ones the file holds — and in each take's **own** seconds, from
+  `localPieces()`, never the recording's.
 - In the **export** it adds no decode: `renderAudio` has already decoded the takes for the mix,
   and the measurement is arithmetic over those same samples. In the **review** it is one
   full-rate decode of the clip's sound, which is the cost the feature adds.
@@ -153,8 +162,9 @@ the boost with no caller threading it.
 Unchanged in what it renders; one step added at its end.
 
 **Rule**: after the mix is rendered and `plan.soundBoost && plan.audio`, the encoder asks
-`boostGain(plan.pieces, plan.takes)` and multiplies every sample of the rendered `AudioBuffer`
-by it before handing it to the encoder. The video export and the sound-only export both come
+`gainOf(measureKept(decoded, plan.localPieces()))` — the gain from the buffers it mixed from, in
+their own takes' seconds — and multiplies every sample of the rendered `AudioBuffer` by it
+before handing it to the encoder. The video export and the sound-only export both come
 through `renderAudio`, so both are covered by the one step, and the takes are already decoded
 for the mix — so the measurement adds no decode to an export.
 
@@ -209,6 +219,7 @@ for the mix — so the measurement adds no decode to an export.
 | silence measures as silence and gains nothing | `Loudness.measure`, `SoundBoost.gainFor` | `Loudness.test.ts`, `SoundBoost.test.ts` |
 | the measurement is EBU R128 (the standard's vectors) | `Loudness.measure` | `Loudness.test.ts` |
 | the plan carries the clip's boost | `planExport`, `ExportPlan.of` | `export-clip.test.ts`, `ExportPlan.test.ts` |
+| a kept stretch is in its own take's seconds | `ExportPlan.localPieces` | `ExportPlan.test.ts` |
 | the encoded sound is boosted, and the picture is not | `renderAudio` | the `export.spec.ts` check |
 | the review and the file get the same gain | one `boostGain`, two callers | the check's numbers, and the shared-rule unit tests |
 | a profile fixing the boost off yields an un-boosted clip | the profile seam | the `profiles.spec.ts` check |
