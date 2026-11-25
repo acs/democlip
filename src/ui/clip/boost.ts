@@ -16,6 +16,7 @@ import { planExport } from '../../application/export-clip.js';
 import { boostGain } from '../../infra/sound-boost.js';
 import { boostsSound } from '../../domain/sound/SoundBoost.js';
 import { FADE_S, setBoostGain } from './fade.js';
+import { waveform } from './waveform.js';
 
 /** The gain the review's sound sits at now: 1 until a measurement says otherwise. */
 let gain = 1;
@@ -56,6 +57,9 @@ export function clearBoost(): void {
 function set(value: number): void {
   gain = value;
   setBoostGain(value);
+  // The bars are the sound at the level it is heard: the review plays the boosted sound, so
+  // the waveform under it shows the same level rather than a level nobody will hear.
+  waveform.setGain(value);
 }
 
 /**

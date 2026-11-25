@@ -56,7 +56,7 @@ about the container, the bitrate, the duration or the tracks moves.
 | the graph | `element → fade gain → boost gain → destination`; the join fades are the first node's, the boost the second's |
 | when it is measured | when the review first needs the boost — on opening, the switch being on by default — and again when the clip's sound changes (a take, a cut); the switch alone does not re-measure, it applies or drops the cached gain |
 | with the boost off, or no sound | the boost node sits at **1** — the recorded sound, unchanged |
-| the waveform | unchanged: the recording's own shape, not the boosted one |
+| the waveform | **the level the sound is heard at**: the bars are scaled by the same gain the review plays and the file carries, so a quiet recording reads as the boosted one, and the shape is unchanged. The live timeline scales the bars it carries from the clip the same way |
 | the size estimate | unchanged: the encoder's bitrate sets the size, not the boost |
 
 The review's gain and the encoder's gain are the **same number**, from the same kept

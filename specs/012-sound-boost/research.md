@@ -223,20 +223,39 @@ the fades ramp to a constant `1`, and changing what `1` means would touch every 
 app. A second `<audio>` element or a decoded playback buffer — rejected: it would duplicate
 the transport, the cuts and the joins for one multiply.
 
+## The waveform is drawn at the level the sound is heard at
+
+**Decision**: the **waveform's bars** are scaled by the same gain the review plays and the file
+carries, so a quiet take the boost lifts reads as tall as it will sound. The bars redraw when
+the gain or the sound moves; the shape itself is untouched, because the gain is one number.
+
+**Why**: the bars are drawn **absolutely** — the tallest bar is the recording's own peak, and
+the drawing does not normalise to it — so a very quiet recording, the very case the boost exists
+for, would otherwise be a nearly flat line while the review played it at the target. The waveform
+is the review's picture of the sound, and the review *is* the boosted sound; leaving it at the
+recording's level would make the one surface the person watches while listening disagree with the
+ear. Scaling it costs nothing, because a constant gain leaves the shape — which is what the bars
+are read for, cutting above all — exactly as it was.
+
+**Bounded**: the gain is capped by the peak ceiling, so a boosted bar lands below the top, and the
+drawing clamps to the canvas anyway. The **live timeline** scales the bars it carries from the
+clip the same way, because they are that clip's sound; the take being recorded is not scaled,
+since it has not been measured — the review measures it once it is a take.
+
+**Alternatives considered**: the recording's own level — the first cut of this plan, and rejected
+once it was read properly: the shape is the same either way, so it buys nothing and costs the one
+thing the waveform is for at a quiet level. Normalising the bars to the tallest — rejected: it
+loses the absolute level altogether, so a quiet and a loud recording would draw alike.
+
 ## What is deliberately not changed
 
-**Decision**: the **waveform** and the **size estimate** are unchanged, and the takes are
-never re-encoded. The bars are the recording's shape — a constant gain scales every bar
-alike, and the drawing already normalises to the tallest — and the file's size is set by the
-encoder's bitrate, which the boost does not touch.
+**Decision**: the **size estimate** is unchanged, and the takes are never re-encoded. The file's
+size is set by the encoder's bitrate, which the boost does not touch: the same second at the same
+bitrate, whether the sound is boosted or not.
 
-**Why**: drawing a boosted waveform would tell the person the recording had changed when it
-had not, and the recording is exactly what the switch-off case returns. The file's size does
-not move: the same second at the same bitrate.
-
-**Alternatives considered**: redraw the bars at the boosted level — rejected: it is the same
-shape, and it would say the recording changed. Re-encode the takes with the boost baked in —
-rejected: it would break the non-destructive promise the switch rests on.
+**Why**: a size estimate that moved with the switch would say the file grew when it did not, and
+baking the boost into a take would break the non-destructive promise the switch rests on — the
+recorded sound is what "off" gives back.
 
 ## Where a later treatment would go
 

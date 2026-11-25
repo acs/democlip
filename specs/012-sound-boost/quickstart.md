@@ -43,12 +43,14 @@ npm run test:e2e -- e2e/checks/profiles.spec.ts --grep "boost"
 The first check is the sound of the file:
 
 1. **On by default** — seed a **quiet** fixture take, open the clip's settings: **Boost the
-   sound** is on, without anything having been pressed.
+   sound** is on, without anything having been pressed. The waveform's bars are taller than
+   with the switch off, because the waveform is drawn at the level the sound is heard at.
 2. **The file is boosted** — export WebM and read it back: its integrated loudness, measured
    in the page with the app's own `Loudness`, is within **±1 LU of −16 LUFS**, and no sample
    passes −1.5 dBFS.
 3. **Off gives it back** — turn the switch off and export again: the file's loudness is the
-   fixture's own, below the boosted one, and the picture of the two files is the same.
+   fixture's own, below the boosted one, the bars are back at the recording's level, and the
+   picture of the two files is the same.
 
 The second check is the profile's guardrail: a profile that fixes **Boost the sound** off
 makes a clip whose row reads as fixed by the profile, with nothing to press, and whose export
@@ -81,7 +83,8 @@ npm run dev
 Open the address Vite prints. Then:
 
 1. Record a take with the microphone a little far — a quiet one — and press ▶ in the review:
-   the voice plays at a confident loudness, not the quiet level you recorded.
+   the waveform's bars are drawn as tall as the boosted voice, and the voice plays at a
+   confident loudness, not the quiet level you recorded.
 2. Open the clip's **settings**: **Boost the sound** is **on**. Turn it **off**, press ▶
    again: you hear exactly what you recorded.
 3. Turn it **on**, then **Export ▾ → WebM file** and play the file: it sounds like the review

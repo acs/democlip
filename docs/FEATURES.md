@@ -16,7 +16,7 @@ round trip, and for the app itself, named as [`GLOSSARY.md`](GLOSSARY.md) names 
 - **Tab / system audio** — requested on every capture (`audio: true` plus Chrome's `systemAudio: 'include'` hint, so the audio option is offered); the browser owns that checkbox, so the app says so when a share comes back silent, and **New** returns to the picker to redo it
 - **Add more takes** — pressing Record after a recording appends the new one to the end of the clip; the share is kept between takes, so there is no second picker and **every take in a clip comes from the same source** (the same tab, window or screen). **A short fade either side of the join, and a dissolve across it**, soften the change from one take to the next. New starts a new clip; if a source ends, turn it back on and the next take still adds on
 - **Live timeline** — the timeline is there while a take records, filling in with the picture and the sound as they are captured (drawn from the live preview and the recorded stream's own levels, never by decoding the half-written file), and it becomes the timeline you cut on when you stop
-- **Audio track** — a waveform of the recording under the thumbnails, shown when the clip has sound
+- **Audio track** — a waveform of the recording under the thumbnails, shown when the clip has sound; it is drawn at the **level the sound is heard at**, so a quiet take the **sound boost** lifts reads as tall as it will sound
 
 ## Import
 

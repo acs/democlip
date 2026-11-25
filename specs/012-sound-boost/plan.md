@@ -155,7 +155,7 @@ src/
 │   │   ├── fade.ts                  # a second gain node — the boost — after the fade node
 │   │   ├── boost.ts                 # NEW: the review's side — the gain node, refreshed
 │   │   └── review-flow.ts           # the review asks the boost to refresh when it opens
-│   └── clip/waveform.ts             # unchanged: the bars are the recording's shape
+│   └── clip/waveform.ts             # the bars at the level the sound is heard at
 ├── main.ts                          # wires the boost's refresh, if not via the review flow
 mcp/src/tools.ts                     # set_clip_property takes "soundBoost"; the description says so
 docs/GLOSSARY.md                     # "sound boost", and the profile's items

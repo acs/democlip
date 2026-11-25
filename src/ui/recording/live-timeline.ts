@@ -179,19 +179,22 @@ export class LiveTimeline {
     ctx.fillStyle = light ? 'rgba(59,127,255,0.55)' : 'rgba(96,148,255,0.7)';
     const mid = h / 2;
     const bar = (peak: number, when: number, bw: number) => {
-      const barH = Math.max(1, peak * (h - 4));
+      const barH = Math.max(1, Math.min(peak, 1) * (h - 4));
       ctx.fillRect((when / span) * w, mid - barH / 2, bw, barH);
     };
 
     if (this.echo && this.echo.length) {
-      // every bar of the clip so far, over the recording's own time
+      // every bar of the clip so far, over the recording's own time — at the level the clip
+      // is heard at, which is the boost's when the clip is boosted. The take being recorded
+      // has no boost yet: it has not been measured, and the review will measure it once it is.
+      const echoGain = waveform.gainNow();
       const gone = session.clip.cuts.scaled(session.clip.total());
       const step = session.clip.total() / this.echo.length;
       const bw = Math.max(0.7, (w / span) * step);
       for (let i = 0; i < this.echo.length; i++) {
         const at = (i + 0.5) * step;
         if (gone.contains(at)) continue;                   // cut away: not in the clip
-        bar(this.echo[i], keptOf(at), bw);
+        bar(this.echo[i] * echoGain, keptOf(at), bw);
       }
     }
 
