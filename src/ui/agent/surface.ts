@@ -51,6 +51,9 @@ export interface AnnotationSummary {
   readonly id: string;
   readonly kind: string;
   readonly span: { readonly s: number; readonly e: number };
+  /** The annotation's own shape, as it is written down — a magnifier's centre, radius and zoom,
+   *  an arrow's points. Plain numbers and names; no rule is added by reading it. */
+  readonly geometry: unknown;
   readonly properties: readonly AnnotationPropertySummary[];
 }
 

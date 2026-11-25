@@ -4,6 +4,7 @@ import { Span } from '../clip/Span.js';
 import { AnnotationSet } from './AnnotationSet.js';
 import { Arrow } from './Arrow.js';
 import { Annotation, type AnnotationHandle, type StoredAnnotation } from './Annotation.js';
+import { Magnifier } from './Magnifier.js';
 import { SoundAnnotation } from './SoundAnnotation.js';
 import { annotationFrom, registerKind, registeredKinds } from './kinds.js';
 
@@ -72,5 +73,13 @@ describe('the annotation family', () => {
     expect(annotationFrom(sound!.stored())?.kind).toBe('sound');
     // a name the app does not serve is left out, as an unknown kind is
     expect(annotationFrom({ id: 'x', kind: 'sound', s: 0, e: 1, geometry: { sound: 'applause' } })).toBeNull();
+  });
+
+  it('reads a magnifier back, and leaves out a lens this build cannot use', () => {
+    expect(registeredKinds()).toContain('magnifier');
+    const lens = Magnifier.create(Span.of(0.1, 0.3), { x: 0.5, y: 0.5, radius: 0.2, zoom: 2 }, 'm1');
+    expect(annotationFrom(lens!.stored())?.kind).toBe('magnifier');
+    // a shape that is not a lens is left out, as an unknown kind is
+    expect(annotationFrom({ id: 'x', kind: 'magnifier', s: 0, e: 1, geometry: { x: 0.5, y: 0.5, radius: 0.001, zoom: 2 } })).toBeNull();
   });
 });

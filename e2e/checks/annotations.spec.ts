@@ -5,8 +5,9 @@
 
 import { expect, test, type Page } from '@playwright/test';
 import { boot } from '../helpers/app.js';
+import { openSettings } from '../helpers/annotations.js';
 import { makeTakes } from '../fixtures/takes.js';
-import { exportFile, hasSound, rmsIn } from '../helpers/exports.js';
+import { exportFile, frameCounts, hasSound, meanLumaIn, rmsIn } from '../helpers/exports.js';
 import { pageModule } from '../helpers/page-module.js';
 
 const HOOKS = pageModule('e2e/support/app-hooks.ts');
@@ -26,13 +27,13 @@ async function ready(page: Page): Promise<void> {
 }
 
 /** Bound a section on the timeline, so the kind's action is offered. */
-async function section(page: Page): Promise<void> {
+async function section(page: Page, from = 0.25, to = 0.5): Promise<void> {
   const strip = await page.locator('#thumbs').boundingBox();
   if (!strip) throw new Error('no thumbnail strip');
   await ready(page);
   const y = strip.y + strip.height / 2;
-  await page.mouse.click(strip.x + strip.width * 0.25, y);
-  await page.mouse.click(strip.x + strip.width * 0.5, y);
+  await page.mouse.click(strip.x + strip.width * from, y);
+  await page.mouse.click(strip.x + strip.width * to, y);
 }
 
 /** The colour an annotation of this kind is drawn in, read from the clip's own annotation. */
@@ -63,7 +64,7 @@ test('each annotation kind — arrow, image and text — is placed over a sectio
   // The kinds are offered by the annotate options on the picture, one row each, and the
   // timeline section carries only the scissors — no kind buttons to be crowded by the next.
   await expect(page.locator('#annotate-bar')).toHaveClass(/on/);
-await expect(page.locator('#annotate-bar .annotate-row')).toHaveCount(4);
+await expect(page.locator('#annotate-bar .annotate-row')).toHaveCount(5);
   // The clip's control is a target of its own: it wears a label like the kinds do, and the
   // column leaves a wider gap above the kinds than the kinds leave between them. Every row is
   // the same width — the widest label's — so the column is a list and not ragged buttons.
@@ -176,6 +177,22 @@ async function parkInside(page: Page): Promise<void> {  const strip = await page
   expect(await shown()).toBe(1);
 }
 
+/** Park on a fraction of a 4-second clip and let the seek settle. */
+async function parkAtFraction(page: Page, fraction: number): Promise<void> {
+  const strip = (await page.locator('#thumbs').boundingBox())!;
+  const y = strip.y + strip.height / 2;
+  const at = () => page.evaluate(async url => (await import(/* @vite-ignore */ url)).player.time(), HOOKS);
+  for (let attempt = 0; attempt < 4; attempt++) {
+    await ready(page);
+    await page.mouse.click(strip.x + strip.width * fraction, y);
+    try {
+      await expect.poll(at, { timeout: 3_000 }).toBeCloseTo(fraction * 4, 1);
+      return;
+    } catch { /* the seek did not land; ask again */ }
+  }
+  await expect.poll(at).toBeCloseTo(fraction * 4, 1);
+}
+
 /** Click the timeline until the playhead settles near `seconds` of a 10 s clip. */
 async function parkAt(page: Page, seconds: number): Promise<void> {
   const strip = (await page.locator('#thumbs').boundingBox())!;
@@ -198,6 +215,54 @@ async function drag(page: Page, from: { x: number; y: number }, to: { x: number;
   await page.mouse.move(to.x, to.y, { steps: 10 });
   await page.mouse.up();
 }
+
+/** The preview's own pixels in a band: how many are light and their mean luma. */
+const previewBand = (page: Page, band: { x: number; y: number; width: number; height: number }) =>
+  page.evaluate(box => {
+    const cv = document.querySelector<HTMLCanvasElement>('#preview')!;
+    const data = cv.getContext('2d')!.getImageData(
+      Math.round(box.x * cv.width), Math.round(box.y * cv.height),
+      Math.round(box.width * cv.width), Math.round(box.height * cv.height),
+    ).data;
+    let light = 0;
+    let sum = 0;
+    for (let i = 0; i < data.length; i += 4) {
+      if (data[i] > 200 && data[i + 1] > 200 && data[i + 2] > 200) light++;
+      sum += 0.2126 * data[i] + 0.7152 * data[i + 1] + 0.0722 * data[i + 2];
+    }
+    return { light, mean: sum / (data.length / 4) };
+  }, band);
+
+/** The magnifier's own numbers, read from the clip's model. */
+const magnifier = (page: Page) => page.evaluate(async url => {
+  const one = (await import(/* @vite-ignore */ url)).session.clip.annotations.all
+    .find((a: { kind: string }) => a.kind === 'magnifier') as
+    { kind: string; geometry: { x: number; y: number; radius: number; zoom: number }; colour: string } | undefined;
+  if (!one) return null;
+  return { kind: one.kind, ...one.geometry, colour: one.colour };
+}, HOOKS);
+
+/** The preview's pixel at a fraction of the picture, as red, green and blue. */
+const pixelAt = (page: Page, fx: number, fy: number) => page.evaluate(([x, y]) => {
+  const cv = document.querySelector<HTMLCanvasElement>('#preview')!;
+  const d = cv.getContext('2d')!.getImageData(Math.round(x * cv.width), Math.round(y * cv.height), 1, 1).data;
+  return { r: d[0], g: d[1], b: d[2] };
+}, [fx, fy] as [number, number]);
+
+/** The annotation kinds the clip store has written down — the debounced write, awaited. */
+const kept = (page: Page) => page.evaluate(async () => {
+  const db = await new Promise<IDBDatabase>((resolve, reject) => {
+    const opened = indexedDB.open('democlip');
+    opened.onsuccess = () => resolve(opened.result);
+    opened.onerror = () => reject(opened.error);
+  });
+  const meta = await new Promise<{ annotations?: { kind: string }[] } | undefined>((resolve, reject) => {
+    const request = db.transaction('meta', 'readonly').objectStore('meta').get('current');
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+  return meta?.annotations?.map(annotation => annotation.kind) ?? [];
+});
 
 /** The one text annotation: its box, and the width the words are actually drawn at. */
 const read = (page: Page) => page.evaluate(async url => {
@@ -311,7 +376,7 @@ test('a kind placed with no stretch selected starts at the playhead with the def
   const takes = await makeTakes(page, { width: 1280, height: 720, seconds: 10 });
   await app.seed(takes);
   await app.review();
-  await expect(page.locator('#annotate-bar .annotate-row')).toHaveCount(4);
+  await expect(page.locator('#annotate-bar .annotate-row')).toHaveCount(5);
 
   // Put the playhead a quarter in with nothing selected — one click sets a mark, not a
   // section — and place an arrow from the column.
@@ -447,4 +512,272 @@ test('the preferences choose the sound from a drop-down, and one play button pla
   const before = await heard();
   await page.locator('#prop-menu .prop-sound-play').click();
   await expect.poll(heard, { timeout: 5_000 }).toBeGreaterThan(before);
+});
+
+// ── The magnifier ─────────────────────────────────────────────────────────────
+
+// A band over the picture's centre, where the frame's number sits, and a corner band the
+// spotlight leaves dark. Both are fractions of the picture; the lens band is square in
+// pixels on a 16:9 picture, so 0.16 wide and 0.16 × 16/9 tall.
+const LENS_BAND = { x: 0.42, y: 0.358, width: 0.16, height: 0.284 };
+const CORNER_BAND = { x: 0.02, y: 0.02, width: 0.10, height: 0.18 };
+
+test('a magnifier enlarges the detail in its lens and dims the rest, in the review and in the file', async ({ page }) => {
+  const app = boot(page);
+  await app.goto();
+  const takes = await makeTakes(page, { width: 1280, height: 720, seconds: 4 });
+  await app.seed(takes);
+  await app.review();
+
+  // Hold the clip's middle: the lens's stretch starts there, and the frame's number is in
+  // the middle of the picture, so the lens covers the detail.
+  await parkAtFraction(page, 0.5);
+
+  // The picture without a lens: the number's light and the corner's brightness are the
+  // baseline every later reading is compared with.
+  const before = await previewBand(page, LENS_BAND);
+  const beforeCorner = await previewBand(page, CORNER_BAND);
+
+  // Place the lens by dragging from the detail's centre out to its rim.
+  await page.locator('#annotate-bar .annotate-row[data-kind="magnifier"]').click();
+  const preview = (await page.locator('#preview').boundingBox())!;
+  const at = (fx: number, fy: number) => ({ x: preview.x + preview.width * fx, y: preview.y + preview.height * fy });
+  await drag(page, at(0.5, 0.5), at(0.7, 0.5));
+
+  // The lane mark and the model: the centre, the radius as the shorter side's fraction and
+  // the default 2× zoom.
+  await expect(page.locator('#tl-annots > *')).toHaveCount(1);
+  const placed = await magnifier(page);
+  expect(placed?.kind).toBe('magnifier');
+  expect(placed?.x).toBeCloseTo(0.5, 2);
+  expect(placed?.y).toBeCloseTo(0.5, 2);
+  expect(placed?.radius).toBeCloseTo(0.3556, 2);
+  expect(placed?.zoom).toBe(2);
+
+  // The review: the detail in the lens is the frame's number, larger than before; the corner
+  // outside the lens is darker than before.
+  await expect.poll(async () => (await previewBand(page, LENS_BAND)).light).toBeGreaterThan(before.light * 1.5);
+  await expect.poll(async () => (await previewBand(page, CORNER_BAND)).mean).toBeLessThan(beforeCorner.mean * 0.9);
+
+  // It is kept: the write is debounced, so wait for the store; a reload brings the same
+  // circle, radius and zoom back. The restored review opens at the clip's start, so park
+  // on the lens's stretch again before the file is read.
+  await expect.poll(() => kept(page)).toContain('magnifier');
+  await page.reload();
+  await expect.poll(async () => (await magnifier(page))?.kind).toBe('magnifier');
+  const back = await magnifier(page);
+  expect(back?.x).toBeCloseTo(0.5, 2);
+  expect(back?.y).toBeCloseTo(0.5, 2);
+  expect(back?.radius).toBeCloseTo(0.3556, 2);
+  expect(back?.zoom).toBe(2);
+  await parkAtFraction(page, 0.5);
+  const restored = (await page.locator('#preview').boundingBox())!;
+
+  // The file: the same lens and the same dim over the stretch, and the picture untouched
+  // outside it. The file is read at 2.5 s — the middle of the stretch — and at 0.5 s.
+  const withLens = await exportFile(page, '#exp-webm');
+  const lensLight = (await frameCounts(page, withLens, 'video/webm', 2.5, LENS_BAND)).light;
+  expect(lensLight).toBeGreaterThan(before.light * 1.5);
+  const cornerMid = await meanLumaIn(page, withLens, 'video/webm', 2.5, CORNER_BAND);
+  expect(cornerMid).toBeLessThan(beforeCorner.mean * 0.9);
+  const cornerEarly = await meanLumaIn(page, withLens, 'video/webm', 0.5, CORNER_BAND);
+
+  // Delete the lens: the restored review has nothing selected, so pick the lens first, then
+  // delete it. The file loses the lens and the dim, and the early stretch is the same.
+  await page.mouse.click(restored.x + restored.width * 0.5, restored.y + restored.height * 0.5);
+  await page.keyboard.press('Delete');
+  await expect(page.locator('#tl-annots > *')).toHaveCount(0);
+  const without = await exportFile(page, '#exp-webm');
+  expect((await frameCounts(page, without, 'video/webm', 2.5, LENS_BAND)).light).toBeLessThan(lensLight * 0.75);
+  expect(await meanLumaIn(page, without, 'video/webm', 2.5, CORNER_BAND)).toBeGreaterThan(cornerMid * 1.1);
+  expect(await meanLumaIn(page, without, 'video/webm', 0.5, CORNER_BAND)).toBeCloseTo(cornerEarly, -1);
+
+  // The one undo brings the lens back.
+  await page.locator('#cut-undo').click();
+  await expect(page.locator('#tl-annots > *')).toHaveCount(1);
+});
+
+test('a magnifier’s preferences correct its zoom, colour and duration, and its body and rim are dragged', async ({ page }) => {
+  const app = boot(page);
+  await app.goto();
+  const takes = await makeTakes(page, { width: 1280, height: 720, seconds: 4 });
+  await app.seed(takes);
+  await app.review();
+  // Park early enough that the clip has room past the default 2 s stretch, so the duration
+  // can be stepped longer without the clip's end refusing it.
+  await parkAtFraction(page, 0.25);
+
+  // Place the lens over the detail.
+  await page.locator('#annotate-bar .annotate-row[data-kind="magnifier"]').click();
+  const preview = (await page.locator('#preview').boundingBox())!;
+  const at = (fx: number, fy: number) => ({ x: preview.x + preview.width * fx, y: preview.y + preview.height * fy });
+  await drag(page, at(0.5, 0.5), at(0.7, 0.5));
+  await expect(page.locator('#tl-annots > *')).toHaveCount(1);
+
+  // Its settings control opens the panel: Colour, Zoom and Duration, in that order.
+  await openSettings(page, preview);
+  await expect(page.locator('#prop-menu')).toHaveClass(/on/);
+  const ids = await page.locator('#prop-menu .prop-row').evaluateAll(rows =>
+    rows.map(row => (row as HTMLElement).dataset.id));
+  expect(ids).toEqual(['colour', 'zoom', 'duration']);
+
+  // The zoom starts at 2×; stepping it up enlarges the detail in the review and the model.
+  const zoom = page.locator('#prop-menu .prop-row[data-id="zoom"]');
+  await expect(zoom.locator('.prop-duration-text')).toHaveText('2×');
+  const before = (await previewBand(page, LENS_BAND)).light;
+  await zoom.locator('.prop-step[aria-label="Higher"]').click();
+  await expect(zoom.locator('.prop-duration-text')).toHaveText('2.5×');
+  expect((await magnifier(page))?.zoom).toBe(2.5);
+  await expect.poll(async () => (await previewBand(page, LENS_BAND)).light).toBeGreaterThan(before);
+
+  // The colour is the rim's: the green swatch paints the rim green.
+  await page.locator('#prop-menu .prop-row[data-id="colour"] .prop-swatch[title="#38a169"]').click();
+  expect((await magnifier(page))?.colour).toBe('#38a169');
+  await expect.poll(async () => {
+    const rim = await pixelAt(page, 0.5, 0.5 - 0.3556);
+    return rim.g > rim.r;
+  }).toBe(true);
+
+  // The duration steps in tenths and the model follows.
+  const duration = page.locator('#prop-menu .prop-row[data-id="duration"]');
+  await expect(duration.locator('.prop-duration-text')).toHaveText('2.00s');
+  await duration.locator('.prop-step[aria-label="Longer"]').click();
+  await expect(duration.locator('.prop-duration-text')).toHaveText('2.10s');
+
+  // Moving the body keeps the centre's numbers and the zoom, and changes the centre.
+  await drag(page, at(0.5, 0.5), at(0.55, 0.55));
+  const moved = await magnifier(page);
+  expect(moved?.x).toBeCloseTo(0.55, 2);
+  expect(moved?.y).toBeCloseTo(0.55, 2);
+  expect(moved?.zoom).toBe(2.5);
+
+  // Resizing from the rim's right grip widens the lens around the same centre.
+  const radiusBefore = moved!.radius;
+  await drag(page, at(0.55 + 0.2, 0.55), at(0.55 + 0.3, 0.55));
+  const resized = await magnifier(page);
+  expect(resized!.radius).toBeGreaterThan(radiusBefore);
+
+  // Copy and paste: a second lens, the same numbers, at the playhead; delete takes it away
+  // and the one undo brings it back.
+  await page.keyboard.press('Meta+c');
+  await page.keyboard.press('Meta+v');
+  await expect(page.locator('#tl-annots > *')).toHaveCount(2);
+  await page.keyboard.press('Delete');
+  await expect(page.locator('#tl-annots > *')).toHaveCount(1);
+  await page.locator('#cut-undo').click();
+  await expect(page.locator('#tl-annots > *')).toHaveCount(2);
+
+  // A reload keeps both lenses' numbers — the write is debounced, so wait for the store.
+  await expect.poll(async () => (await kept(page)).filter(kind => kind === 'magnifier').length).toBe(2);
+  await page.reload();
+  await expect.poll(async () => page.evaluate(async url => {
+    const { session } = await import(/* @vite-ignore */ url);
+    return session.clip.annotations.all.filter((a: { kind: string }) => a.kind === 'magnifier').length;
+  }, HOOKS)).toBe(2);
+});
+
+// ── the family proof ──────────────────────────────────────────────────────────
+//
+// The magnifier is an annotation like the others: a cut takes its stretch as it takes any
+// annotation's, a sound-only clip offers no kind that needs a picture, and a picture that is
+// not 16:9 still gets a round lens. These are what adding the kind must not change.
+
+test('a cut through a magnifier’s stretch takes the lens and its dim, and the undo brings them back', async ({ page }) => {
+  const app = boot(page);
+  await app.goto();
+  const takes = await makeTakes(page, { width: 1280, height: 720, seconds: 4 });
+  await app.seed(takes);
+  await app.review();
+
+  // The lens is placed over the whole clip, so the cut below takes only part of its stretch
+  // and the rest is left on the lane.
+  await wholeClip(page);
+  await page.locator('#annotate-bar .annotate-row[data-kind="magnifier"]').click();
+  const preview = (await page.locator('#preview').boundingBox())!;
+  const at = (fx: number, fy: number) => ({ x: preview.x + preview.width * fx, y: preview.y + preview.height * fy });
+  await drag(page, at(0.5, 0.5), at(0.7, 0.5));
+  await expect(page.locator('#tl-annots > *')).toHaveCount(1);
+
+  // Placing the lens spent the section — the clip announces the new annotation, and the
+  // selection clears with it — so the cut's stretch is bounded now: the **third** second,
+  // whose frame is blue-dominant, so the rim's absence reads as the frame's own colour.
+  await section(page, 0.5, 0.75);
+
+  // Inside the lens's stretch the rim is the annotation's red; the frame's own hue at 1.5 s
+  // is not. The playhead is moved without touching the timeline, so the section stays bounded.
+  await page.evaluate(async url => {
+    const { player } = await import(/* @vite-ignore */ url);
+    await player.seekAndDraw(1.5);
+  }, HOOKS);
+  await expect.poll(async () => {
+    const rim = await pixelAt(page, 0.5, 0.5 - 0.3556);
+    return rim.r > rim.b;
+  }).toBe(true);
+
+  // Cut that second: the frame the playhead lands on is inside the cut, so the rim is gone and
+  // the picture's own colour is there — and the lens is still on the lane over what is left of
+  // its stretch.
+  await page.locator('#tl-marks .tl-act.ok').click();
+  await expect(page.locator('#tl-annots > *')).toHaveCount(1);
+  await expect.poll(async () => {
+    const rim = await pixelAt(page, 0.5, 0.5 - 0.3556);
+    return rim.r < rim.b;
+  }).toBe(true);
+
+  // The one undo brings the cut back, and the lens with it.
+  await page.locator('#cut-undo').click();
+  await expect.poll(async () => {
+    const rim = await pixelAt(page, 0.5, 0.5 - 0.3556);
+    return rim.r > rim.b;
+  }).toBe(true);
+});
+
+test('a sound-only clip offers no magnifier, because there is no picture to read', async ({ page }) => {
+  const app = boot(page);
+  await app.goto();
+  const takes = await makeTakes(page, { soundOnly: true, seconds: 2 });
+  await app.seed(takes);
+  await app.reviewSoundOnly();
+
+  // The sound kind is the only one a sound-only clip offers: the drawn kinds need a picture.
+  await expect(page.locator('#annotate-bar .annotate-row')).toHaveCount(1);
+  await expect(page.locator('#annotate-bar .annotate-row[data-kind="sound"]')).toHaveCount(1);
+  await expect(page.locator('#annotate-bar .annotate-row[data-kind="magnifier"]')).toHaveCount(0);
+});
+
+test('a magnifier on a 2:1 picture is still a round lens, with its grips on the rim', async ({ page }) => {
+  const app = boot(page);
+  await app.goto();
+  const takes = await makeTakes(page, { width: 1200, height: 600, seconds: 4 });
+  await app.seed(takes);
+  await app.review();
+  await parkAtFraction(page, 0.5);
+
+  // A square band in pixels: 240 × 240 on a 1200 × 600 picture, so 0.2 wide and 0.4 tall.
+  const band = { x: 0.4, y: 0.3, width: 0.2, height: 0.4 };
+  const before = await previewBand(page, band);
+
+  // Drag to a 0.2 radius of the shorter side: 120 px on both axes, so the band stays square.
+  await page.locator('#annotate-bar .annotate-row[data-kind="magnifier"]').click();
+  const preview = (await page.locator('#preview').boundingBox())!;
+  const at = (fx: number, fy: number) => ({ x: preview.x + preview.width * fx, y: preview.y + preview.height * fy });
+  await drag(page, at(0.5, 0.5), at(0.6, 0.5));
+  await expect(page.locator('#tl-annots > *')).toHaveCount(1);
+  const lens = await magnifier(page);
+  expect(lens?.radius).toBeCloseTo(0.2, 2);
+
+  // The lens enlarges the detail and dims the corner, exactly as on a 16:9 picture.
+  await expect.poll(async () => (await previewBand(page, band)).light).toBeGreaterThan(before.light * 1.5);
+  await expect.poll(async () => {
+    const corner = await previewBand(page, { x: 0.02, y: 0.02, width: 0.16, height: 0.18 });
+    return corner.mean;
+  }).toBeLessThan(before.mean * 0.9);
+
+  // The rim and the two grips are the annotation's red; the picture's own hue is not.
+  const rim = await pixelAt(page, 0.5, 0.3);
+  expect(rim.r).toBeGreaterThan(rim.b);
+  const left = await pixelAt(page, 0.4, 0.5);
+  const right = await pixelAt(page, 0.6, 0.5);
+  expect(left.r).toBeGreaterThan(left.b);
+  expect(right.r).toBeGreaterThan(right.b);
 });

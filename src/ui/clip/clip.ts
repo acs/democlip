@@ -22,7 +22,7 @@ import { session } from '../../session.js';
 import { currentPhase } from '../../state.js';
 import { ctx, el } from '../dom.js';
 import { drawFrame, drawSoundOnly, seekTo } from '../recording/preview.js';
-import { drawAnnotations } from '../annotating/annotation-layer.js';
+import { drawAnnotations, pictureFor } from '../annotating/annotation-layer.js';
 import type { Frame } from '../../domain/clip/ClipSize.js';
 import type { Span } from '../../domain/clip/Span.js';
 
@@ -114,7 +114,10 @@ export class Player {
     return this.seek(time).then(() => {
       if (!session.clip.hasPicture()) { drawSoundOnly(); return; }
       drawFrame(el.rv, reviewFrame(el.rv));
-      drawAnnotations(ctx, el.cv.width, el.cv.height, session.clip.annotationsAt(time));
+      const shown = session.clip.annotationsAt(time);
+      // A still frame is drawn the same as a playing one: a lens reads the picture
+      // beneath it, so the copy is taken before any mark is on it.
+      drawAnnotations(ctx, el.cv.width, el.cv.height, shown, null, undefined, undefined, pictureFor(ctx, shown));
     });
   }
 

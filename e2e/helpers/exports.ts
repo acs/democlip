@@ -241,6 +241,57 @@ export async function frameCounts(
 }
 
 /**
+ * Decode a file at a moment and read the mean luma of a band, 0–255. The spotlight a
+ * magnifier draws is a darkening, so the check reads how much darker a band became.
+ */
+export async function meanLumaIn(
+  page: Page,
+  bytes: Buffer,
+  mime: string,
+  at: number,
+  box: Band = WHOLE,
+): Promise<number> {
+  return page.evaluate(async ({ base64, type, at, box }) => {
+    const binary = atob(base64);
+    const data = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) data[i] = binary.charCodeAt(i);
+    const url = URL.createObjectURL(new Blob([data], { type }));
+    const video = document.createElement('video');
+    video.preload = 'auto';
+    video.muted = true;
+    video.src = url;
+    await new Promise<void>(resolve => {
+      video.addEventListener('loadeddata', () => resolve(), { once: true });
+      setTimeout(resolve, 3000);
+    });
+    video.currentTime = at;
+    await new Promise<void>(resolve => {
+      video.addEventListener('seeked', () => resolve(), { once: true });
+      setTimeout(resolve, 3000);
+    });
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const context = canvas.getContext('2d')!;
+    context.drawImage(video, 0, 0);
+    const pixels = context.getImageData(
+      Math.round(box.x * canvas.width),
+      Math.round(box.y * canvas.height),
+      Math.round(box.width * canvas.width),
+      Math.round(box.height * canvas.height),
+    ).data;
+    let sum = 0;
+    let count = 0;
+    for (let i = 0; i < pixels.length; i += 4) {
+      sum += 0.2126 * pixels[i] + 0.7152 * pixels[i + 1] + 0.0722 * pixels[i + 2];
+      count++;
+    }
+    URL.revokeObjectURL(url);
+    return count > 0 ? sum / count : 0;
+  }, { base64: bytes.toString('base64'), type: mime, at, box });
+}
+
+/**
  * Decode the same moment of two files and count the pixels of a band that differ. It
  * says nothing about what colour a mark is, only that the band is not the same picture —
  * so any mark the app ships is held to the same standard.

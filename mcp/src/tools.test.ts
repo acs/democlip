@@ -82,7 +82,7 @@ describe('the tool list', () => {
     // An image's shape is data too, but its picture is not: it comes from the clipboard,
     // through its own tool, and is never something the agent invents.
     expect(byName.get('annotate')!.inputSchema.properties).toMatchObject({
-      kind: { enum: ['arrow', 'text', 'sound'] },
+      kind: { enum: ['arrow', 'text', 'sound', 'magnifier'] },
     });
     expect(byName.get('add_image')!.inputSchema.properties).toMatchObject({
       span: { type: 'object' },

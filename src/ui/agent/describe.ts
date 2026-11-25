@@ -26,6 +26,7 @@ export function describeClip(clip: Clip, controlling: Controlling = () => null):
     id: annotation.id,
     kind: annotation.kind,
     span: { s: annotation.span.s, e: annotation.span.e },
+    geometry: annotation.stored().geometry,
     properties: propertiesOf(annotation).map(property => ({
       id: property.id,
       label: property.label,

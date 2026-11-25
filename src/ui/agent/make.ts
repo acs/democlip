@@ -16,6 +16,7 @@
 
 import { Arrow } from '../../domain/annotation/Arrow.js';
 import { ImageAnnotation } from '../../domain/annotation/ImageAnnotation.js';
+import { Magnifier, DEFAULT_ZOOM } from '../../domain/annotation/Magnifier.js';
 import { newAnnotationId } from '../../domain/annotation/Annotation.js';
 import { SoundAnnotation } from '../../domain/annotation/SoundAnnotation.js';
 import { TextAnnotation } from '../../domain/annotation/TextAnnotation.js';
@@ -36,6 +37,7 @@ export const makeAnnotation: MakeAnnotation = (kind, params, span, colour) => {
   if (kind === TextAnnotation.id) return makeText(params, span, colour);
   if (kind === ImageAnnotation.id) return makeImage(params, span);
   if (kind === SoundAnnotation.id) return makeSound(params, span);
+  if (kind === Magnifier.id) return makeMagnifier(params, span, colour);
   return {
     reason: `the app cannot make a ${kind} from data alone`,
   };
@@ -79,6 +81,20 @@ function makeSound(params: AnnotationParams, span: Span): Made {
   const annotation = SoundAnnotation.create(span, wanted);
   if (!annotation) {
     return { reason: `a sound must be one the app has: ${STOCK_SOUNDS.map(s => s.name).join(', ')}` };
+  }
+  return { annotation };
+}
+
+function makeMagnifier(params: AnnotationParams, span: Span, colour: AnnotationColour): Made {
+  const x = fractionIn(params, 'x') ?? 0.5;
+  const y = fractionIn(params, 'y') ?? 0.5;
+  const radius = typeof params.radius === 'number' && Number.isFinite(params.radius) ? params.radius : 0.2;
+  const zoom = typeof params.zoom === 'number' && Number.isFinite(params.zoom) ? params.zoom : DEFAULT_ZOOM;
+  const annotation = Magnifier.create(span, { x, y, radius, zoom }, undefined, colour);
+  if (!annotation) {
+    return {
+      reason: 'a magnifier needs a centre inside the picture, a radius from 4% to 50% of the shorter side, and a zoom from 1.5 to 8',
+    };
   }
   return { annotation };
 }
