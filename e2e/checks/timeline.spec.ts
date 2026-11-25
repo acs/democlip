@@ -107,6 +107,10 @@ test('a section becomes a cut, one undo puts it back, and the clip is kept with 
 
   await clickAt(0.5);
   await expect(page.locator('#t-cut')).toContainText('CUT');
+  // The section offers the cut alone: the keep/undo button is gone, and a click outside
+  // the section is what drops the selection.
+  await expect(page.locator('#tl-marks .tl-act')).toHaveCount(1);
+  await expect(page.locator('#tl-marks [data-act="keep"]')).toHaveCount(0);
   await page.locator('[data-act="cut"]').click();
   await expect(page.locator('#cut-undo')).toBeVisible();
   await expect(page.locator('#t-clip')).toHaveText('3.00s');   // 1 s of the 4 removed

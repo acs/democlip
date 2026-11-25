@@ -8,7 +8,6 @@
 //   click                     drop a mark (and play from there)
 //   click again               bound the section between the two marks
 //   scissors / click inside   approve it — the section becomes a cut and leaves
-//   undo                      leave it in; the selection is dropped
 //   drag a mark / the section  move what is selected; the frame under it follows
 //
 // An approved cut is taken out of the timeline and what is left closes up, so
@@ -23,7 +22,6 @@ import { session } from '../../session.js';
 import type { ClipEvent } from '../../domain/clip/Clip.js';
 import { el } from '../dom.js';
 import { Span } from '../../domain/clip/Span.js';
-import { updateSizeUI } from '../clip/timeline-ui.js';
 import { fractionAtX as fractionAt, keptLengthNow, keptOf, player, stretchLayout, timelineTrack } from '../clip/clip.js';
 import { playback } from '../clip/playback.js';
 import { typingIn } from '../../util.js';
@@ -106,16 +104,14 @@ export function renderMarks(): void {
     const sel = stretchLayout(section);
     html += `<div class="tl-sel" style="left:${sel.left};width:${sel.width}">`
           + `<em>CUT ${stamp(section.s * d)}–${stamp(section.e * d)}</em></div>`;
-    // the two answers sit on the section itself, clamped so they stay reachable
+    // The section offers the cut and nothing else: the annotation kinds are placed from
+    // the annotate options on the picture (`ui/annotating/annotate-options.ts`), and a
+    // click outside the section starts a new pair. The one answer sits on the section
+    // itself, clamped so it stays reachable.
     const centre = (keptOf(section.s * d) + keptOf(section.e * d)) / 2 / Math.max(0.001, keptLengthNow()) * 100;
     html += `<span class="tl-acts" style="left:${Math.max(7, Math.min(93, centre)).toFixed(2)}%">`
           + `<button class="tl-act ok" data-act="cut" title="Cut this section out" aria-label="Cut this section out">`
           + `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4L8.12 15.88"/><path d="M14.47 14.48L20 20"/><path d="M8.12 8.12L12 12"/></svg></button>`
-          // The kinds are offered by the annotate options on the picture
-          // (`ui/annotating/annotate-options.ts`), so one place adds a kind and no row
-          // here can be crowded by the ones already there.
-          + `<button class="tl-act no" data-act="keep" title="Undo the selection" aria-label="Undo the selection">`
-          + `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-5"/></svg></button>`
           + `</span>`;
   }
   selection.marks.forEach((m, i) => {
@@ -128,7 +124,7 @@ export function renderMarks(): void {
   });
   host.innerHTML = html;
 
-  // the actions: approve or leave the selection, or take the last change back
+  // the actions: approve the selection, or take the last change back
   if (section) {
     el.tCut.textContent = `CUT ${stamp(section.s * d)}–${stamp(section.e * d)}`;
     el.cutUndo.style.display = 'none';
@@ -153,17 +149,15 @@ function undoLabel(): string {
   return (pluginOf(change.annotation.kind)?.action.label ?? 'ANNOTATION').toUpperCase();
 }
 
-// The scissors and the undo are drawn with the section, so they are read here
-// rather than bound to an element that is replaced on every repaint.
+// The scissors is drawn with the section, so it is read here rather than bound to an
+// element that is replaced on every repaint.
 function onActionClick(evt: MouseEvent): void {
-  const act = (evt.target as HTMLElement | null)?.closest<HTMLElement>('.tl-act');
-  if (!act) return;
+  if (!(evt.target as HTMLElement | null)?.closest<HTMLElement>('.tl-act')) return;
   evt.stopPropagation();
-  if (act.dataset.act === 'cut')           approveCut();
-  else                                     dismissSelection();
+  approveCut();
 }
 
-// ── Approving, dismissing, undoing ───────────────────────────────────────────
+// ── Approving and undoing ────────────────────────────────────────────────────
 
 // The scissors: take the section out. The timeline closes up over it, and the
 // playhead lands where the section was.
@@ -178,13 +172,6 @@ function approveCut(): void {
 // Annotate: the kinds are offered by the annotate options on the picture, and the stretch
 // they are made over is chosen there — the selected section, or the playhead and the
 // default. Nothing of that is this module's, which is left to cutting.
-
-// The undo: leave the section in and drop the selection.
-function dismissSelection(): void {
-  selection.marks = [];
-  renderMarks();
-  updateSizeUI();
-}
 
 // Put the last change back — a cut, or an arrow — and follow the playhead. The clip
 // says which it was; nothing here has to remember.

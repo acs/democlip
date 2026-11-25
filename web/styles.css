@@ -174,19 +174,17 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 .tl-dur{color:var(--text-dim);}
 #t-cut{color:var(--crimson);}
 
-/* The cut actions: approve the selected section, leave it in, or put a cut back.
-   They appear beside the range they act on, in the header. */
+/* The cut action: put the last cut back, beside the range it acts on, in the header. */
 .tl-cut{display:none;align-items:center;gap:6px;font-family:var(--font-mono);font-size:10px;letter-spacing:.08em;white-space:nowrap;}
 .tl-cut.on{display:inline-flex;}
 .tl-act{width:19px;height:19px;flex-shrink:0;border-radius:50%;border:1px solid var(--control-line);background:var(--control);color:var(--control-text);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;padding:0;transition:all .15s;}
 .tl-act:hover{background:var(--control-hover);color:var(--text);transform:scale(1.12);}
 .tl-act.ok{color:var(--green);border-color:rgba(34,197,94,.55);}
-.tl-act.no{color:var(--crimson);border-color:rgba(229,62,62,.55);}
 .tl-act.ann{color:var(--amber);border-color:rgba(245,158,11,.55);}
 .tl-act.undo{color:var(--control-text);}
 .tl-act svg{pointer-events:none;}
 
-/* The scissors and the undo, sitting on the selected section itself */
+/* The scissors, sitting on the selected section itself */
 .tl-acts{position:absolute;top:50%;transform:translate(-50%,-50%);display:inline-flex;gap:5px;padding:3px 5px;border-radius:999px;background:var(--control);border:1px solid var(--control-line);pointer-events:auto;box-shadow:0 2px 12px rgba(0,0,0,.5);}
 .tl-acts .tl-act{width:17px;height:17px;}
 .tl-acts .tl-act svg{width:11px;height:11px;}
