@@ -15,6 +15,7 @@ import type { Segment } from './Clip.js';
 import type { Take } from './Take.js';
 import { AnnotationSet } from '../annotation/AnnotationSet.js';
 import type { Annotation } from '../annotation/Annotation.js';
+import type { SoundAnnotation } from '../annotation/SoundAnnotation.js';
 import { TimelineMap } from './TimelineMap.js';
 import type { IntroCard } from './IntroCard.js';
 
@@ -49,6 +50,53 @@ export interface ExportStep {
 
 /** Where an export puts a clip's annotations: drawn into the picture, or carried beside it. */
 export type AnnotationExport = 'drawn' | 'carried';
+
+/**
+ * One kept part of one sound annotation, where the file will hold it: the stock sound to play,
+ * where it lands in the file (`at`), how far into that sound this part begins (`from`), and how
+ * long it lasts (`length`). A sound whose stretch a cut runs through becomes two of these — one
+ * per kept part — so the cut takes its part of a sound exactly as it takes its part of a picture,
+ * and the part after the cut resumes the sound where it had got to.
+ */
+export interface Sounding {
+  readonly sound: string;
+  readonly at: number;      // output seconds, past any title card
+  readonly from: number;    // seconds into the stock sound
+  readonly length: number;  // seconds
+}
+
+/**
+ * The kept parts of the sound annotations, in the file's own seconds. A sound annotation's
+ * stretch is a fraction of the **recording**; each kept piece it covers becomes a `Sounding`,
+ * so a cut leaves a gap the sound does not play over. The two units are the plan's business, as
+ * `localPieces()` is — a caller never maps a span itself.
+ */
+function soundingsFor(
+  sound: readonly SoundAnnotation[],
+  pieces: readonly ExportPiece[],
+  offset: number,
+  recordingLength: number,
+  map: TimelineMap,
+): Sounding[] {
+  if (!(recordingLength > 0)) return [];
+  const out: Sounding[] = [];
+  for (const annotation of sound) {
+    const s = annotation.span.s * recordingLength;
+    const e = annotation.span.e * recordingLength;
+    for (const piece of pieces) {
+      const from = Math.max(s, piece.from);
+      const to = Math.min(e, piece.to);
+      if (!(to > from)) continue;
+      out.push({
+        sound: annotation.geometry.sound,
+        at: offset + map.keptOf(from),
+        from: from - s,
+        length: to - from,
+      });
+    }
+  }
+  return out.sort((a, b) => a.at - b.at || (a.sound < b.sound ? -1 : a.sound > b.sound ? 1 : 0));
+}
 
 /** What an export needs that is not the clip: how a join fades and where annotations go. */
 export interface ExportSettings {
@@ -88,6 +136,12 @@ export class ExportPlan {
      * independent of `audio`: a plan with no sound has the flag and nothing to do with it.
      */
     readonly soundBoost: boolean,
+    /**
+     * The clip's **sound annotations**, kept ones or not; `soundings()` narrows them to the
+     * kept parts. Independent of `annotations`, which is what is **drawn** — a carried export
+     * draws none and still carries the sounds, because a sound has nothing to draw.
+     */
+    readonly sound: readonly SoundAnnotation[] = [],
   ) {}
 
   /**
@@ -109,12 +163,12 @@ export class ExportPlan {
     annotations: AnnotationSet = AnnotationSet.EMPTY,
     intro: IntroCard | null = null,
     soundBoost = false,
+    sound: readonly SoundAnnotation[] = [],
   ): ExportPlan {
     // The kept takes' own facts decide what the file holds: a picture from any take that
     // has one, and sound from any take that carries an audio track. A sound-only file has
     // no picture for a **title card** to be drawn on, so the card is not part of the plan.
     const soundOnly = !segments.some(seg => !!takes[seg.takeIndex]?.picture);
-    const audio = segments.some(seg => !!takes[seg.takeIndex]?.hasAudio);
     const card = soundOnly ? null : intro;
     const offset = card?.seconds ?? 0;
     const starts: number[] = [];
@@ -127,6 +181,11 @@ export class ExportPlan {
       pieces.push({ takeIndex: seg.takeIndex, from: seg.from, to: seg.to, at: offset + total });
       total += seg.to - seg.from;
     }
+
+    // A clip whose takes are silent still has sound to write if it holds a sound
+    // annotation: the added sound is the file's audio.
+    const audio = segments.some(seg => !!takes[seg.takeIndex]?.hasAudio)
+      || soundingsFor(sound, pieces, offset, map.length, map).length > 0;
 
     // Where each take first lands on the output timeline: that is where a join
     // is, and so where a dissolve has to start.
@@ -147,8 +206,18 @@ export class ExportPlan {
 
     return new ExportPlan(
       pieces, steps, takes, to, offset + total, audio, settings.fadeSeconds,
-      annotations, map, starts, card, offset, soundOnly, soundBoost,
+      annotations, map, starts, card, offset, soundOnly, soundBoost, sound,
     );
+  }
+
+  /**
+   * Where the sound annotations land in the file, in its own seconds — one entry per kept
+   * part of each. A cut through a stretch leaves a gap the sound does not play over, so the
+   * file and the review place a sound at the same moment. The plan owns the recording-to-file
+   * conversion, as `localPieces()` does; a caller never maps a span itself.
+   */
+  soundings(): readonly Sounding[] {
+    return soundingsFor(this.sound, this.pieces, this.introSeconds, this.map.length, this.map);
   }
 
   /**

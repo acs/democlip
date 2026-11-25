@@ -47,13 +47,18 @@ function spanForNew(): Span {
   return Span.of(start, start + length).movedTo(start);   // pulled back when it would pass the end
 }
 
-/** Draw the kind rows, or nothing when there is no picture to annotate. */
+/** Draw the kind rows, or nothing when there is nothing to annotate. */
 function render(): void {
-  // A **sound-only** clip has no picture to draw on, and its file holds none, so the kinds
-  // are not offered at all — the same reason the section's buttons used to be hidden for one.
-  const can = currentPhase() === 'review' && session.clip.total() > 0 && session.clip.hasPicture();
+  // A clip with no picture has no picture to draw a kind on, so the drawn kinds are not
+  // offered — but a kind with nothing to draw, the **sound**, is: it is heard, and a
+  // sound-only clip is a first-class home for it. The kind says whether it needs a picture.
+  const canReview = currentPhase() === 'review' && session.clip.total() > 0;
+  const kinds = session.clip.hasPicture()
+    ? plugins()
+    : plugins().filter(plugin => plugin.needsPicture === false);
+  const can = canReview && kinds.length > 0;
   el.annotateBar.classList.toggle('on', can);
-  el.annotateBar.replaceChildren(...(can ? plugins().map(row) : []));
+  el.annotateBar.replaceChildren(...(can ? kinds.map(row) : []));
 }
 
 function row(plugin: AnnotationPlugin): HTMLElement {

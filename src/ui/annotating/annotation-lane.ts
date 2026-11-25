@@ -21,6 +21,7 @@ import { el } from '../dom.js';
 import { keptLengthNow, keptOf, stretchLayout } from '../clip/clip.js';
 import { playback } from '../clip/playback.js';
 import { canvas, onSelectionChange } from './annotation-canvas.js';
+import { inspector } from './properties-inspector.js';
 import { pluginOf } from './annotation-plugin.js';
 
 const DEFAULT_ICON = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="7"/></svg>';
@@ -36,6 +37,18 @@ export function initAnnotationLane(): void {
 }
 
 function onClick(e: MouseEvent): void {
+  // A picked boxless annotation's controls live on its band, since it has nothing on the
+  // picture to hang them off. A press on one is that control's, not the timeline's.
+  const control = (e.target as HTMLElement | null)?.closest<HTMLElement>('.tl-annot-ctl');
+  if (control) {
+    e.stopPropagation();
+    const id = control.dataset.id ?? '';
+    const annotation = session.clip.annotations.byId(id);
+    if (!annotation) return;
+    if (control.dataset.act === 'remove') session.clip.removeAnnotation(id);
+    else { canvas.pick(id); inspector.open(annotation); }
+    return;
+  }
   const mark = (e.target as HTMLElement | null)?.closest<HTMLElement>('.tl-annot');
   if (!mark) return;
   // The lane sits inside the timeline, whose own click drops a mark on the clip. A
@@ -90,8 +103,19 @@ export function renderLane(): void {
     const label = plugin?.action.label ?? 'Annotation';
     if (on) {
       const place = stretchLayout(annotation.span);
+      // A picked annotation with nothing on the picture — a sound — carries its own
+      // controls on its band: remove and settings, so a touch screen that has no Delete key
+      // can still edit it. Its settings open the shared inspector. There is no copy control:
+      // a sound has no place on the picture to shift a copy to, so a copy would land exactly
+      // on the original — a copy is made from the keyboard (⌘/Ctrl+C, ⌘/Ctrl+V at the playhead).
+      const controls = annotation.handles().length === 0
+        ? `<div class="tl-annot-ctls">`
+          + `<button type="button" class="tl-annot-ctl" data-act="remove" data-id="${annotation.id}" title="Remove">×</button>`
+          + `<button type="button" class="tl-annot-ctl" data-act="settings" data-id="${annotation.id}" title="Settings">✎</button>`
+          + `</div>`
+        : '';
       band = `<div class="tl-annot-band on" style="left:${place.left};width:${place.width}"`
-           + ` title="${label} from ${s.toFixed(2)}s — the stretch you are editing"></div>`;
+           + ` title="${label} from ${s.toFixed(2)}s — the stretch you are editing">${controls}</div>`;
       continue;
     }
     const x = (s / kept) * width;

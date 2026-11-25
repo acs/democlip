@@ -20,6 +20,9 @@ import { fitsBudget as budgetFits, specFor, videoBitrate } from './export-target
 import type { VideoCodecChoice } from './export-target.js';
 import { firstPresentedSample } from './first-sample.js';
 import { gainOf, measureKept } from './sound-boost.js';
+import { stockSounds } from './stock-sounds.js';
+import type { Sounding } from '../domain/clip/ExportPlan.js';
+import { SOUND_LEVEL } from '../domain/sound/StockSounds.js';
 
 const AUDIO_BITRATE = 128_000;
 const KEYFRAME_S = 2;
@@ -369,14 +372,52 @@ async function renderAudio(plan: ExportPlan): Promise<AudioBuffer | null> {
   // The clip's own switch: bring the sound to the target with peak safety. It is one gain over
   // the mix, measured from the takes the mix was decoded from, so the export measures exactly
   // what the review does and pays no second decode for it.
-  if (!plan.soundBoost) return mixed;
-  const gain = gainOf(measureKept(decoded, plan.localPieces()));
-  if (gain === 1) return mixed;
-  for (let c = 0; c < mixed.numberOfChannels; c++) {
-    const data = mixed.getChannelData(c);
-    for (let i = 0; i < data.length; i++) data[i] *= gain;
+  if (plan.soundBoost) {
+    const gain = gainOf(measureKept(decoded, plan.localPieces()));
+    if (gain !== 1) {
+      for (let c = 0; c < mixed.numberOfChannels; c++) {
+        const data = mixed.getChannelData(c);
+        for (let i = 0; i < data.length; i++) data[i] *= gain;
+      }
+    }
   }
+  // The **sound annotations**, added over the boosted recording: they are not measured by the
+  // boost and not lifted by it, so placing one never changes the recording's loudness. Each is
+  // added at the moment the plan answers, in the file's own seconds, a cut already taken out.
+  await addSounds(mixed, plan.soundings());
   return mixed;
+}
+
+/** Add the sound annotations' stock sounds over the already-rendered mix. */
+async function addSounds(target: AudioBuffer, soundings: readonly Sounding[]): Promise<void> {
+  if (!soundings.length) return;
+  for (const sounding of soundings) {
+    const source = await stockSounds.buffer(sounding.sound);
+    if (!source) continue;                       // a sound the app cannot read is silence, not a failure
+    addStockSound(target, source, sounding, SOUND_LEVEL);
+  }
+}
+
+/**
+ * One kept part of one sound, added into `target`: `length` seconds of `source` from `from`,
+ * at `at`, scaled by `gain`. Both buffers are at the mixing rate and mono or stereo, so a mono
+ * sound is heard through both channels, as the review plays it.
+ */
+function addStockSound(target: AudioBuffer, source: AudioBuffer, sounding: Sounding, gain: number): void {
+  const rate = target.sampleRate;
+  const start = Math.max(0, Math.round(sounding.at * rate));
+  const from = Math.max(0, Math.round(sounding.from * source.sampleRate));
+  const count = Math.min(
+    Math.round(sounding.length * rate),
+    source.length - from,
+    target.length - start,
+  );
+  if (!(count > 0)) return;
+  for (let c = 0; c < target.numberOfChannels; c++) {
+    const out = target.getChannelData(c);
+    const src = source.getChannelData(Math.min(c, source.numberOfChannels - 1));
+    for (let i = 0; i < count; i++) out[start + i] += src[from + i] * gain;
+  }
 }
 
 /** A take's sound, or null when it has none (an imported video, a silent file). */

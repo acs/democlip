@@ -7,6 +7,7 @@ import { TimelineMap } from './TimelineMap.js';
 import { Span } from './Span.js';
 import { AnnotationSet } from '../annotation/AnnotationSet.js';
 import { Arrow } from '../annotation/Arrow.js';
+import { SoundAnnotation } from '../annotation/SoundAnnotation.js';
 
 // Two 5s takes, so the clip is 10s and a join falls halfway along it. They carry a
 // picture, as a recorded or imported take does; the sound-only case has takes of its own.
@@ -38,6 +39,41 @@ const arrow = (id: string, s: number, e: number): Arrow => {
   if (!made) throw new Error('the test arrow should be usable');
   return made;
 };
+
+const sound = (id: string, s: number, e: number, name = 'chime'): SoundAnnotation => {
+  const made = SoundAnnotation.create(Span.of(s, e), name, id);
+  if (!made) throw new Error('the test sound should be usable');
+  return made;
+};
+
+describe('the plan’s sound annotations', () => {
+  it('answers where a sound lands in the file, in its own seconds — one entry per kept part', () => {
+    // A sound over 2s…6s of the recording, with 3s…4s cut out: three kept parts, so three
+    // soundings, each resuming the sound where the last left off.
+    const plan = ExportPlan.of(parts().segments, takes, 10, parts().map,
+      { fadeSeconds: 0.08, annotations: 'drawn' }, AnnotationSet.EMPTY, null, false, [sound('s1', 0.2, 0.6)]);
+    expect(plan.soundings()).toEqual([
+      { sound: 'chime', at: 2, from: 0, length: 1 },
+      { sound: 'chime', at: 3, from: 2, length: 1 },
+      { sound: 'chime', at: 4, from: 3, length: 1 },
+    ]);
+  });
+
+  it('answers nothing for a sound whose whole stretch is cut away', () => {
+    const plan = ExportPlan.of(parts().segments, takes, 10, parts().map,
+      { fadeSeconds: 0.08, annotations: 'drawn' }, AnnotationSet.EMPTY, null, false, [sound('s1', 0.3, 0.4)]);
+    expect(plan.soundings()).toEqual([]);
+  });
+
+  it('gives a clip whose takes are silent sound to write when it holds a sound', () => {
+    const withSound = ExportPlan.of(parts().segments, soundOnlyTakes, 10, parts().map,
+      { fadeSeconds: 0.08, annotations: 'drawn' }, AnnotationSet.EMPTY, null, false, [sound('s1', 0.2, 0.6)]);
+    expect(withSound.audio).toBe(true);
+    const without = ExportPlan.of(parts().segments, soundOnlyTakes, 10, parts().map,
+      { fadeSeconds: 0.08, annotations: 'drawn' });
+    expect(without.audio).toBe(false);
+  });
+});
 
 describe('ExportPlan', () => {
   it('places the kept stretches end to end, closing the cut', () => {

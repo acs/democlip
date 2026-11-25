@@ -17,7 +17,7 @@ export default tseslint.config(
 
   // Dev tooling runs in Node.
   {
-    files: ['scripts/**/*.mjs', 'eslint.config.js', 'vitest.config.ts', 'vite.config.ts', 'e2e/playwright.config.ts', 'mcp/scripts/**/*.mjs'],
+    files: ['scripts/**/*.mjs', 'tools/**/*.mjs', 'tools/**/*.ts', 'eslint.config.js', 'vitest.config.ts', 'vite.config.ts', 'e2e/playwright.config.ts', 'mcp/scripts/**/*.mjs'],
     languageOptions: {
       globals: { ...globals.node },
     },

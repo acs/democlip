@@ -78,7 +78,7 @@ export interface CreationContext {
 }
 
 /** Which shared control edits a property. */
-export type PropertyControl = 'colour' | 'text' | 'duration';
+export type PropertyControl = 'colour' | 'text' | 'duration' | 'sound';
 
 /**
  * Something about an annotation the user can change after it is placed. Its kind
@@ -108,6 +108,12 @@ export interface AnnotationPlugin {
   readonly renderer: AnnotationRenderer<Annotation>;
   /** What can be changed after it is placed. A kind with none gets no settings control. */
   readonly properties?: readonly AnnotationProperty[];
+  /**
+   * Does making one of these need a picture to draw on? True for every drawn kind, so the
+   * annotate options offer it only where there is a picture; a kind with nothing to draw —
+   * the **sound** — says false, and is offered on a clip with no picture too.
+   */
+  readonly needsPicture?: boolean;
   /** Begin making one over the selected stretch. */
   begin(ctx: CreationContext): void;
 }

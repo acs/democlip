@@ -6,6 +6,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { boot } from '../helpers/app.js';
 import { makeTakes } from '../fixtures/takes.js';
+import { exportFile, hasSound, rmsIn } from '../helpers/exports.js';
 import { pageModule } from '../helpers/page-module.js';
 
 const HOOKS = pageModule('e2e/support/app-hooks.ts');
@@ -62,7 +63,7 @@ test('each annotation kind — arrow, image and text — is placed over a sectio
   // The kinds are offered by the annotate options on the picture, one row each, and the
   // timeline section carries only the scissors — no kind buttons to be crowded by the next.
   await expect(page.locator('#annotate-bar')).toHaveClass(/on/);
-  await expect(page.locator('#annotate-bar .annotate-row')).toHaveCount(3);
+await expect(page.locator('#annotate-bar .annotate-row')).toHaveCount(4);
   // The clip's control is a target of its own: it wears a label like the kinds do, and the
   // column leaves a wider gap above the kinds than the kinds leave between them. Every row is
   // the same width — the widest label's — so the column is a list and not ragged buttons.
@@ -310,7 +311,7 @@ test('a kind placed with no stretch selected starts at the playhead with the def
   const takes = await makeTakes(page, { width: 1280, height: 720, seconds: 10 });
   await app.seed(takes);
   await app.review();
-  await expect(page.locator('#annotate-bar .annotate-row')).toHaveCount(3);
+  await expect(page.locator('#annotate-bar .annotate-row')).toHaveCount(4);
 
   // Put the playhead a quarter in with nothing selected — one click sets a mark, not a
   // section — and place an arrow from the column.
@@ -335,4 +336,115 @@ test('a kind placed with no stretch selected starts at the playhead with the def
   expect((span!.e - span!.s) * span!.total).toBeCloseTo(2, 1);   // DEFAULT_ANNOTATION_S
   await expect(page.locator('#tl-marks .tl-sel')).toHaveCount(0); // no stretch was needed
   await expect(page.locator('#tl-annots .tl-annot-band.on')).toHaveCount(1);
+});
+
+// A sound annotation is heard, not drawn: what is only a browser can show is that the app's own
+// sound is **in the exported file**, over the stretch it was placed on, mixed with the
+// recording — and that the recording itself is untouched. The rules behind it live in node (the
+// plan's `soundings()`, the store, the mix); this reads the bytes a real download holds.
+test('a sound annotation is heard in the file over its stretch, and the recording is otherwise unchanged', async ({ page }) => {
+  const app = boot(page);
+  await app.goto();
+  // A quiet recording with a soft tone, and the clip's boost switched off so the recording stays
+  // at its own low level — the added sound then stands out clearly where it lands, and what is
+  // compared is the app's mixing, not the boost's.
+  const takes = await makeTakes(page, { width: 640, height: 360, seconds: 4, hasAudio: true, level: 0.01 });
+  await app.seed(takes);
+  await app.review();
+  await page.locator('#props-btn').click();
+  await page.locator('#clip-prop-menu .prop-row[data-id="soundBoost"] input[type="checkbox"]').uncheck();
+  await page.locator('#props-btn').click();
+
+  // A sound over a section of the clip: the kind is offered on the picture, and the new one
+  // plays at once in the app's default sound, with its preferences open.
+  await section(page);                       // 25%…50% of the clip — about 1s…2s
+  await page.locator('#annotate-bar .annotate-row[data-kind="sound"]').click();
+  await expect(page.locator('#tl-annots > *')).toHaveCount(1);
+
+  const withSound = await exportFile(page, '#exp-webm');
+  // The window the sound lands in is far louder than a window the recording holds alone.
+  const overSound = await rmsIn(page, withSound, 1.1, 1.9);
+  const elsewhere = await rmsIn(page, withSound, 3.0, 3.8);
+  expect(elsewhere).toBeGreaterThan(0);                 // the recording is really in the file
+  expect(overSound).toBeGreaterThan(elsewhere * 3);
+
+  // Delete the sound (it is picked on placement) and export again: where the sound was is now
+  // the recording alone — the takes were never touched — and where it never was is the same.
+  await page.keyboard.press('Delete');
+  await expect(page.locator('#tl-annots > *')).toHaveCount(0);
+  const without = await exportFile(page, '#exp-webm');
+  expect(await rmsIn(page, without, 1.1, 1.9)).toBeLessThan(overSound / 3);
+  expect(await rmsIn(page, without, 3.0, 3.8)).toBeCloseTo(elsewhere, 2);
+});
+
+// A clip whose takes carry no sound at all is silent — until a sound annotation is placed, and
+// the file it writes carries that sound where before it carried none.
+test('a clip with no recorded sound gains sound from a sound annotation', async ({ page }) => {
+  const app = boot(page);
+  await app.goto();
+  const takes = await makeTakes(page, { width: 640, height: 360, seconds: 4 });
+  await app.seed(takes);
+  await app.review();
+
+  const silent = await exportFile(page, '#exp-webm');
+  expect(await hasSound(page, silent)).toBe(false);
+
+  await section(page);
+  await page.locator('#annotate-bar .annotate-row[data-kind="sound"]').click();
+  const sounding = await exportFile(page, '#exp-webm');
+  expect(await hasSound(page, sounding)).toBe(true);
+});
+
+// The sound is chosen in the preferences from a **drop-down** of the app's own sounds, with **one
+// play button** that plays the chosen one.
+test('the preferences choose the sound from a drop-down, and one play button plays the chosen one', async ({ page }) => {
+  await page.addInitScript(() => {
+    const w = window as unknown as { __previews?: number };
+    w.__previews = 0;
+    const proto = (window as unknown as { AudioBufferSourceNode?: { prototype: { start: (...a: unknown[]) => void } } }).AudioBufferSourceNode?.prototype;
+    if (proto) {
+      const start = proto.start;
+      proto.start = function (this: unknown, ...args: unknown[]): void {
+        w.__previews = (w.__previews ?? 0) + 1;
+        return start.apply(this, args);
+      };
+    }
+  });
+
+  const app = boot(page);
+  await app.goto();
+  const takes = await makeTakes(page, { width: 640, height: 360, seconds: 4, hasAudio: true, level: 0.03 });
+  await app.seed(takes);
+  await app.review();
+
+  await section(page);
+  await page.locator('#annotate-bar .annotate-row[data-kind="sound"]').click();
+  // The picked sound's lane controls are remove and settings — there is no copy control: a
+  // sound has no place on the picture to shift a copy to, so a copy is made from the keyboard.
+  await expect(page.locator('#tl-annots .tl-annot-ctl[data-act="copy"]')).toHaveCount(0);
+  await expect(page.locator('#tl-annots .tl-annot-ctl')).toHaveCount(2);
+  // One drop-down of the app's own sounds, and one play button for the chosen one.
+  const select = page.locator('#prop-menu .prop-sound-select');
+  await expect(select).toHaveCount(1);
+  await expect(select.locator('option')).toHaveText([
+    'Chime', 'Gong', 'Pluck', 'Riser', 'Thud', 'Whoosh', 'Wow',
+  ]);
+  await expect(select).toHaveValue('chime');                       // the app's default
+  await expect(page.locator('#prop-menu .prop-sound-play')).toHaveCount(1);
+
+  // Choosing in the list changes the sound at once, and is what the one play button plays.
+  await select.selectOption('gong');
+  await expect(page.locator('#prop-menu .prop-sound-select')).toHaveValue('gong');
+  const chosen = await page.evaluate(async url => {
+    const { session } = await import(/* @vite-ignore */ url);
+    const one = session.clip.annotations.all.find((a: { kind: string }) => a.kind === 'sound') as
+      { geometry: { sound: string } } | undefined;
+    return one?.geometry.sound ?? null;
+  }, HOOKS);
+  expect(chosen).toBe('gong');
+
+  const heard = () => page.evaluate(() => (window as unknown as { __previews?: number }).__previews ?? 0);
+  const before = await heard();
+  await page.locator('#prop-menu .prop-sound-play').click();
+  await expect.poll(heard, { timeout: 5_000 }).toBeGreaterThan(before);
 });

@@ -96,6 +96,8 @@ a stretch of the clip, whatever is then done with it.
 | **arrow** | the first kind: a line with a head, given by where it starts (`from`) and what it points at (`to`), in fractions of the picture. Its ends are its resize | `Arrow`, `ArrowGeometry`, `ui/annotating/arrow-plugin.ts` |
 | **image annotation** | the second kind: a chosen picture over the picture, a rect in fractions with the picture's own proportions kept on resize | `ImageAnnotation`, `ImageGeometry`, `ui/annotating/image-plugin.ts` |
 | **text annotation** | the third kind: a line of text over the picture, a box in fractions that scales with its font, so the text grows and shrinks with the box | `TextAnnotation`, `TextGeometry`, `ui/annotating/text-plugin.ts` |
+| **sound annotation** | the fourth kind: a **stock sound** shown over a stretch of the clip's time and **mixed with the recorded sound**, so the recording is heard beneath it. It draws nothing — it is heard, not drawn — so it has no shape on the picture: it is never picked there, and it is found and edited on the **annotation lane**. The sound it plays is its own fact, its **preferences**, and a new one is made in the app's **default stock sound** and plays at once. A **cut takes its part** of its stretch, exactly as it takes a picture's; the clip's **sound boost** treats the recorded sound alone, and an added sound sits over it | `SoundAnnotation`, `SoundGeometry`, `ui/annotating/sound-plugin.ts` |
+| **stock sound** | one of the app's own sounds — a **chime**, a **gong**, a **pluck** and more — served with the build under `web/public/sounds/`, chosen from the list the app declares. The preferences choose it from a **drop-down**, with one **▶** to hear the chosen one. Not a file the person loads, records or pastes: a clip holds the sound's **name**, never its bytes, and a name the app does not serve is refused (or left out when a clip from a later build is opened) | `StockSounds.ts` (the app's own list), `src/infra/stock-sounds.ts` (the file, decoded once) |
 | **colour** | one flat colour an annotation is drawn in, from the app's own palette; a **new** one is made in the clip's **annotation colour**, and the user may choose another after it is placed | `AnnotationColour`, `colourOf()`, `COLOURS` |
 | **text entry** | the app's own dialog for typing a line — an input, Cancel and Add, Enter to confirm, Escape to cancel — used for entering a text and for editing its words | `ui/annotating/text-entry.ts` |
 | **image store** | where an image annotation's picture is kept, written once apart from the recording, and the decoded copy drawn each frame | `ImageStorePort`, `src/infra/images.ts` |
@@ -115,6 +117,14 @@ onto the picture** over the first moments of its stretch and **off it** over the
 last, as a take does at a join, so it never pops in or out. A **cut takes its part
 of an annotation's stretch with it** — the moment is gone from the timeline, so
 nothing is drawn there — and putting the cut back brings it back.
+
+A **sound annotation** is the kind that is heard rather than drawn: it holds no
+geometry, so it is never picked on the picture, and the **annotation lane** is where
+it is found and edited. It is still an annotation in every other way — added in the
+**annotate options** (it needs no picture, so a **sound-only** clip offers it too),
+shown for its stretch, in the review and in every file, with a **cut** taking its part
+and the one **undo** covering it — and its **preferences** are where its **stock sound**
+and its **annotation duration** are changed.
 
 ## What a clip says about itself
 

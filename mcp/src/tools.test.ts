@@ -77,11 +77,12 @@ describe('the tool list', () => {
     for (const name of ['turn_source_on', 'turn_source_off']) {
       expect(byName.get(name)!.inputSchema.required).toEqual(['source']);
     }
-    // The kinds an agent may make are the ones whose shape is data. An image's shape is
-    // data too, but its picture is not: it comes from the clipboard, through its own
-    // tool, and is never something the agent invents.
+    // The kinds an agent may make are the ones whose shape is data — and a sound's shape is a
+    // *name*, so it is data too, and its sound is one of the app's own with no file to give.
+    // An image's shape is data too, but its picture is not: it comes from the clipboard,
+    // through its own tool, and is never something the agent invents.
     expect(byName.get('annotate')!.inputSchema.properties).toMatchObject({
-      kind: { enum: ['arrow', 'text'] },
+      kind: { enum: ['arrow', 'text', 'sound'] },
     });
     expect(byName.get('add_image')!.inputSchema.properties).toMatchObject({
       span: { type: 'object' },
