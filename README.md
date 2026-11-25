@@ -45,19 +45,6 @@ The headline capabilities; the **[full list is in docs/FEATURES.md](docs/FEATURE
 
 ---
 
-## Usage
-
-1. Open [DemoClip](https://acs.github.io/democlip/) — nothing is captured yet. Press **Screen** to pick a screen, window or tab (full screen is preselected; tick **Share tab audio** / **Share system audio** for sound), or **Webcam** to record the camera on its own — **Mic** adds the microphone to either, and on its own records a **sound-only** clip with no picture. Pressing a source again lets it go, and **New** goes back to the picker if you forget the audio
-2. The red box over the preview shows what will be recorded — the whole screen by default; drag to record only a region, and click to go back to the full screen
-3. Press the red button to record — it starts at once; press it again to stop
-4. Press Record again to add another take to the end of the clip — the timeline then holds every take, and the cuts you already made are kept — or press **Import** to bring a **WebM or MP4** file already on your machine in as a take beside them
-5. The timeline holds a playback control and an audio track
-6. Play it back (**P** or ▶), or click anywhere on the timeline to bring the playhead there — it holds the frame rather than playing, so you can find the exact moment. To cut a section out, click where it starts and where it ends, then press the **scissors** (or click inside the shaded section): it leaves the timeline and the rest closes up. To point at a detail instead, press the **arrow** on the section and drag across the preview — the arrow is shown over that stretch in playback and in the export — or press the **image** beside it to put a picture over the stretch (choose a file, paste one, or drop one on the preview) and drag its corners to resize it (hold **Shift** to stretch it freely), or press the **text** button to type a line, which grows and shrinks as you drag a corner. Click an annotation on the picture to move, aim or resize it, click its mark on the timeline lane to jump to it, copy it and paste a new one at the playhead (**⌘/Ctrl+C**, **⌘/Ctrl+V**), or delete it by pressing **Delete** with it picked, or by tapping the **×** that appears on it (and the **copy** beside it puts another like it on the picture). The **undo** on the section drops the selection, and the **undo** in the header brings back whatever you last did, a cut or an annotation. Marks and the selected section can be dragged to reposition them, with the frame under them following, or nudged a frame at a time with **←** / **→** (hold **Shift** for a second)
-7. Give the clip a **title** and a **description** from the **settings** control in the corner of the preview — the pencil over the picture — what it says about itself, kept with the clip and read back after a reload. Turn on **Add to export** there and **every export — a file or a publish — begins with a 2-second title card**: the clip's first frame held still, with those two lines over it and the date and the app's name under them. Then press **Export ▾** and pick where the clip goes — a **WebM** file (small and sharp), an **MP4** file (plays anywhere), **Bluesky** to publish it as a video post, or **YouTube** to upload it to your own channel. Publishing fills its fields from those properties — a video's title and description, a post's text and its alt — and you can still change them for one publish. The encode runs offline, over the clip with its cuts taken out, roughly ten times faster than the clip, and the timeline counts down how much is left to write. A **sound-only clip** exports the sound alone — WebM or MP4 with no video track, which **Import** takes back like any other file — and its **Bluesky** and **YouTube** entries are out, because a video service takes a video. **WebM for editing** is the one for a clip that is coming back: it writes the picture **alone**, with a `.json` **sidecar** beside it holding the annotations, and **Import** takes the video and the sidecar together, so the clip returns from whatever worked on it with its annotations whole
-8. The clip has one **clip size** — the largest width and height among its takes, both even — and every take is shown in it whole and centred, in the review and in every export, so a file never changes picture size partway. The same **settings** control shows it; change the width and height there and the review and the next export follow, kept with the clip and taken back by the one undo
-
----
-
 ## Documentation
 
 - [File structure](docs/FILES.md) — where the code lives, and how the layers split
@@ -97,20 +84,6 @@ the shared tab's own sound. The microphone is unaffected.
 Safari works on the current version — **26 or later**, since WebM recording arrived
 in 18.4 and `AudioEncoder` in 26. On macOS the first share also asks for **Screen
 Recording** permission in System Settings.
-
----
-
-## Tech
-
-- [Vite](https://vite.dev/) — dev server and build
-- TypeScript — the whole app, unit-tested with [Vitest](https://vitest.dev/) and linted with ESLint
-- [`MediaDevices.getDisplayMedia()`](https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getDisplayMedia) — screen capture
-- [`MediaRecorder`](https://developer.mozilla.org/en-US/docs/Web/API/MediaRecorder) — WebM encoding as a take is recorded
-- [WebCodecs](https://developer.mozilla.org/en-US/docs/Web/API/WebCodecs_API) — `VideoEncoder`/`AudioEncoder` for the offline export
-- [Mediabunny](https://mediabunny.dev/) — reads the takes back frame by frame for that export, and writes the exported file, duration and cue points included
-- Bundled licences — filled at build time from `THIRD-PARTY-NOTICES.template.txt`, carried inside the JS bundle and served beside the app as `THIRD-PARTY-NOTICES.txt`
-- [Syne](https://fonts.google.com/specimen/Syne) + [JetBrains Mono](https://fonts.google.com/specimen/JetBrains+Mono) — typefaces
-- Service Worker + Web App Manifest — PWA support
 
 ---
 
