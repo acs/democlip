@@ -437,6 +437,22 @@ describe('Clip, what it says about itself', () => {
     expect(back.snapshot()).toEqual(snap);
   });
 
+  it('keeps the export resolution with the clip, takes it back with the one undo, and reads it back', () => {
+    const clip = clipOf(4);
+    clip.setProperty('exportResolution', '1080');
+    expect(clip.properties.get('exportResolution')).toBe('1080');
+    // It travels in the clip's own properties, so it comes back after a reload like the rest.
+    const snap = clip.snapshot();
+    expect(snap.properties).toEqual({ exportResolution: '1080' });
+    const back = Clip.empty(new FakeTakes());
+    back.restore(snap);
+    expect(back.properties.get('exportResolution')).toBe('1080');
+    // The person's own choice is what the one undo takes back — the clip size returns.
+    expect(clip.pendingUndo()?.type).toBe('property-changed');
+    clip.undo();
+    expect(clip.properties.get('exportResolution')).toBe('');
+  });
+
   it('opens a clip written before properties existed, with none', () => {
     const clip = Clip.empty(new FakeTakes());
     clip.restore({ takes: [{ blob: new Blob(['x']), duration: 4 }], cuts: [] });

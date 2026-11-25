@@ -78,9 +78,12 @@ describe('avcProbes', () => {
 });
 
 describe('videoBitrate', () => {
-  it('gives a small picture the floor, where 4 Mbps is already clean', () => {
-    expect(videoBitrate(1280, 720)).toBe(4_000_000);
-    expect(videoBitrate(640, 360)).toBe(4_000_000);
+  it('follows the picture at every size, so a smaller export resolution is a smaller file', () => {
+    // A flat 4 Mb/s floor used to sit above the rule here, so 720p and below all came out at one
+    // bitrate and choosing a smaller resolution saved nothing at all.
+    expect(videoBitrate(1280, 720)).toBe(3_317_760);
+    expect(videoBitrate(854, 480)).toBe(1_475_712);
+    expect(videoBitrate(640, 360)).toBe(829_440);
   });
 
   it('grows with the picture, which is what a screen of small text needs', () => {
@@ -93,22 +96,24 @@ describe('videoBitrate', () => {
     expect(videoBitrate(7680, 4320)).toBe(24_000_000);
   });
 
-  it('holds under a byte budget, because a long clip at a picture-sized bitrate does not fit', () => {
+  it('holds under a byte budget, down to a quarter of what the picture asks and no further', () => {
     const budget = { bytes: 300_000_000 };
     expect(videoBitrate(3440, 1440, { ...budget, seconds: 60 })).toBe(17_832_960);    // fits anyway
     expect(videoBitrate(3440, 1440, { ...budget, seconds: 180 })).toBe(12_000_000);   // 300 MB in 3 min
-    expect(videoBitrate(3440, 1440, { ...budget, seconds: 600 })).toBe(4_000_000);    // the floor, at the ceiling
+    // 300 MB in 10 min affords 3.6 Mb/s, under the quarter this picture is written at — so the
+    // caller refuses rather than writing a 1440p file at a bitrate that is not that picture.
+    expect(videoBitrate(3440, 1440, { ...budget, seconds: 600 })).toBe(4_458_240);
   });
 });
 
 describe('fitsBudget', () => {
-  it('says no where the floor cannot reach the budget — the honest refusal', () => {
-    // 900 KB over a minute affords 108 kb/s, far under the 4 Mb/s floor.
+  it('says no where the share cannot reach the budget — the honest refusal', () => {
+    // 900 KB over a minute affords 108 kb/s, far under the 1.48 Mb/s an 854x480 picture asks for.
     expect(fitsBudget(854, 480, { seconds: 60, bytes: 900_000 })).toBe(false);
   });
 
-  it('says yes where the budget affords the floor, even though the floor is what lands', () => {
-    // 40 MB over a minute affords 4.8 Mb/s, above the floor, so the file fits.
+  it('says yes where the budget affords what the picture asks', () => {
+    // 40 MB over a minute affords 4.8 Mb/s, above the 1.48 Mb/s the picture asks, so the file fits.
     expect(fitsBudget(854, 480, { seconds: 60, bytes: 40_000_000 })).toBe(true);
   });
 
@@ -120,8 +125,8 @@ describe('fitsBudget', () => {
     expect(fitsBudget(3440, 1440, fit)).toBe(true);
   });
 
-  it('says no for a big picture too, where the budget is under the floor over a long clip', () => {
-    // The floor is 4 Mb/s; 10 MB over 3 min affords well under it.
+  it('says no for a big picture too, where the budget is under the share over a long clip', () => {
+    // A 1440p picture is written at 4.46 Mb/s at the least; 10 MB over 3 min affords well under it.
     expect(fitsBudget(3440, 1440, { seconds: 180, bytes: 10_000_000 })).toBe(false);
   });
 });

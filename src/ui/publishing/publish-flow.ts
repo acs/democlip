@@ -14,6 +14,7 @@ import { AspectRatio } from '../../domain/bluesky/AspectRatio.js';
 import { postUrl } from '../../domain/bluesky/BlueskyPost.js';
 import { VIDEO_MAX_BYTES } from '../../domain/bluesky/PublishableVideo.js';
 import { FADE_S } from '../clip/fade.js';
+import { exportPicture } from '../../domain/clip/ExportResolution.js';
 
 export type PublishProgress = PublicationProgress;
 
@@ -66,9 +67,11 @@ export async function publishClip(
     }
     const api = await bluesky();
     const service = await api.blueskyService();
-    // The clip's own size: the post's aspect ratio and the encoded video's own size are
-    // the same two numbers, read once, so the two cannot disagree.
-    const picture = session.clip.size() ?? { width: el.cv.width || 1280, height: el.cv.height || 720 };
+    // The picture the file is written at: the clip's **export resolution**, or its clip size when
+    // it holds none. The post's aspect ratio and the encoded video's own size are the same two
+    // numbers, read once, so the two cannot disagree.
+    const picture = exportPicture(session.clip.properties, session.clip.size())
+      ?? { width: el.cv.width || 1280, height: el.cv.height || 720 };
     // The same card the export puts at its head, when the clip asks for one — a published
     // video is an exported video too — with its logo decoded before the first frame.
     const intro = introFor(session.clip);

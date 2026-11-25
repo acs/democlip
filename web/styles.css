@@ -172,8 +172,6 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 .tl-label{font-family:var(--font-mono);font-size:9px;letter-spacing:.2em;color:var(--text-dim);text-transform:uppercase;}
 .tl-times{display:flex;gap:10px;font-family:var(--font-mono);font-size:11px;}
 .tl-dur{color:var(--text-dim);}
-.tl-est{font-family:var(--font-mono);font-size:10px;color:var(--text-mid);white-space:nowrap;}
-.tl-est-lbl{color:var(--text-dim);}
 #t-cut{color:var(--crimson);}
 
 /* The cut actions: approve the selected section, leave it in, or put a cut back.
@@ -457,8 +455,12 @@ select.prop-input option,select.pdef-select option{background:var(--bg);color:va
 #rec-btn.recording .rec-btn-core{border-radius:5px;width:15px;height:15px;}
 .rec-btn-lbl{font-family:var(--font-mono);font-size:9px;letter-spacing:.16em;color:var(--text-dim);text-transform:uppercase;}
 
-/* Reset and Export, at the end of the row */
-.ctrl-actions{display:flex;gap:7px;justify-self:end;}
+/* Reset, Import and Export at the end of the row — a two-row grid, so the three buttons sit on one
+   line whatever the export size line beneath Export does, and that line hangs under Export's own
+   column without moving anything. A hidden New and a hidden Export collapse their cells to nothing. */
+.ctrl-actions{display:grid;grid-template-columns:auto auto auto;grid-template-rows:auto auto;align-items:center;justify-items:center;column-gap:7px;row-gap:3px;justify-self:end;}
+.ctrl-actions > #file-btn{grid-column:1;grid-row:1;}
+.ctrl-actions > #btn-new{grid-column:2;grid-row:1;}
 .act-btn{padding:7px 16px;border-radius:8px;border:1px solid var(--control-line);background:var(--control);color:var(--control-text);font-family:var(--font-mono);font-size:11px;letter-spacing:.08em;cursor:pointer;transition:all .2s;white-space:nowrap;}
 .act-btn:not(:disabled):hover{background:var(--control-hover);color:var(--text);}
 .act-btn:active:not(:disabled){transform:scale(.97);}
@@ -473,6 +475,12 @@ select.prop-input option,select.pdef-select option{background:var(--bg);color:va
    below, because a tablet in landscape is 1024 wide. */
 .act-btn.import, .act-btn.export{display:inline-flex;align-items:center;gap:8px;}
 .import .act-ico, .export .act-ico{display:block;}
+
+/* The clip's export size, under the button that writes it. The button above says what the figure
+   means, so the line carries no label of its own; it is a grid item of `.ctrl-actions` (its wrapper
+   is `display:contents`), placed in the Export column's second row. */
+.exp-stack{display:contents;}
+.exp-size{grid-column:3;grid-row:2;font-family:var(--font-mono);font-size:10px;letter-spacing:.04em;color:var(--text-mid);white-space:nowrap;}
 
 @media (max-width:1024px){
   .act-btn.import, .act-btn.export{gap:0;padding:6px 8px;}
@@ -503,7 +511,7 @@ select.prop-input option,select.pdef-select option{background:var(--bg);color:va
   .ring-1{inset:-5px;}
   .ring-2{inset:-10px;}
   .ring-3{display:none;}
-  .ctrl-actions{gap:5px;}
+  .ctrl-actions{column-gap:5px;}
   .act-btn{padding:6px 8px;font-size:10px;}
 }
 

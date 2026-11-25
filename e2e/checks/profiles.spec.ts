@@ -84,7 +84,9 @@ async function setLogo(page: Page, name: string, wears = true): Promise<void> {
 test('an item a profile fixes is applied and locked — on or off — and refused to an agent', async ({ page }) => {
   const app = boot(page);
   await app.gotoAgent();
-  await writeBook(page, book({ addToExport: 'true' }));
+  // A switch and a **value** — the size the file is written at — so both kinds a sheet draws are
+  // exercised by the one profile.
+  await writeBook(page, book({ addToExport: 'true', exportResolution: '1080' }));
   await page.reload();
   await expect(page.locator('#s-text')).toHaveText('Ready');
 
@@ -96,16 +98,26 @@ test('an item a profile fixes is applied and locked — on or off — and refuse
   // there is no control to change it. The value reads as what it means, not as the string
   // it is kept as.
   await page.locator('#props-btn').click();
-  await expect(page.locator('#clip-prop-menu .prop-lock')).toHaveAttribute('title', 'Set by DemoClipTV');
+  await expect(page.locator('#clip-prop-menu .prop-row[data-id="addToExport"] .prop-lock')).toHaveAttribute('title', 'Set by DemoClipTV');
   // The fixed row has no control of its own — the free ones still do, so the check is scoped
   // to the row the profile fixes rather than to the whole panel.
   await expect(page.locator('#clip-prop-menu .prop-row[data-id="addToExport"] input.prop-check')).toHaveCount(0);
   await expect(page.locator('#clip-prop-menu .prop-value').first()).toHaveText('On');
+  // The value item: the level it fixes, its own lock, and no list to change it — the free rows
+  // still carry their controls, so the check is scoped to the row the profile fixes.
+  const sizeRow = page.locator('#clip-prop-menu .prop-row[data-id="exportResolution"]');
+  await expect(sizeRow.locator('.prop-value')).toHaveText('1080p');
+  await expect(sizeRow.locator('.prop-lock')).toHaveAttribute('title', 'Set by DemoClipTV');
+  await expect(sizeRow.locator('select')).toHaveCount(0);
   await page.locator('#props-btn').click();
 
-  // And the export takes the card the profile fixed on: 1 s of clip, and a 2 s card at its head.
+  // And the export takes the card the profile fixed on — 1 s of clip, and a 2 s card at its head —
+  // and is written at the size it fixed, 1080p, from a take of 640x360: the resolution, not the
+  // clip size, is what the file comes out at.
   const bytes = await exportFile(page, '#exp-webm');
-  expect((await probeFile(page, bytes, 'video/webm')).duration).toBeGreaterThan(2.5);
+  const file = await probeFile(page, bytes, 'video/webm');
+  expect(file.duration).toBeGreaterThan(2.5);
+  expect({ width: file.width, height: file.height }).toEqual({ width: 1920, height: 1080 });
 
   // An agent reads it as fixed, and is refused it with the reason.
   const described = await page.evaluate(() => {
@@ -113,12 +125,23 @@ test('an item a profile fixes is applied and locked — on or off — and refuse
     return surface?.describe().properties.find(property => property.id === 'addToExport');
   });
   expect(described?.readOnly).toBe(true);
+  const sizeFixed = await page.evaluate(() => {
+    const surface = (globalThis as { democlip?: { describe(): { properties: Array<{ id: string; readOnly: boolean }> } } }).democlip;
+    return surface?.describe().properties.find(property => property.id === 'exportResolution');
+  });
+  expect(sizeFixed?.readOnly).toBe(true);
   const refused = await page.evaluate(() => {
     const surface = (globalThis as { democlip?: { edit: { setClipProperty(p: string, v: string): unknown } } }).democlip;
     return surface?.edit.setClipProperty('addToExport', '');
   });
   expect(refused).toMatchObject({ ok: false });
   expect((refused as { reason: string }).reason).toMatch(/DemoClipTV fixes add to export/);
+  const refusedSize = await page.evaluate(() => {
+    const surface = (globalThis as { democlip?: { edit: { setClipProperty(p: string, v: string): unknown } } }).democlip;
+    return surface?.edit.setClipProperty('exportResolution', '720');
+  });
+  expect(refusedSize).toMatchObject({ ok: false });
+  expect((refusedSize as { reason: string }).reason).toMatch(/DemoClipTV fixes export resolution/);
 
   // A fresh session: the same profile fixing a switch **off** is a fixed off, not the
   // person's to move — the value it holds, and the lock that says so. Both switches are

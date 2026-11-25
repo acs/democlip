@@ -87,6 +87,18 @@ describe('applyActiveProfile', () => {
     expect(boostsSound(free.properties)).toBe(true);
   });
 
+  it('fixes the export resolution, so a clip made under a production is written at its size', () => {
+    const clip = Clip.empty(new FakeTakes());
+    applyActiveProfile(clip, bookWith({ exportResolution: '1080' }));
+    expect(clip.properties.get('exportResolution')).toBe('1080');
+  });
+
+  it('fixes nothing for a value the app does not offer, so no clip waits on a size it cannot write', () => {
+    const clip = Clip.empty(new FakeTakes());
+    applyActiveProfile(clip, bookWith({ exportResolution: '999' }));
+    expect(clip.properties.get('exportResolution')).toBe('');
+  });
+
   it('does not apply a declaration for an item this build does not preload', () => {
     const clip = Clip.empty(new FakeTakes());
     applyActiveProfile(clip, bookWith({ title: 'A demo', addToExport: 'true' }));

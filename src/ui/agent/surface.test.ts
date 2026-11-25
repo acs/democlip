@@ -14,8 +14,8 @@ import { registerPlugin, type AnnotationPlugin } from '../annotating/annotation-
 class FakeTakes implements TakeRepository {
   private takes: Take[] = [];
 
-  add(blob: Blob, duration: number): Take {
-    const take = Take.of(this.takes.length + 1, blob, `blob:${this.takes.length + 1}`, duration);
+  add(blob: Blob, duration: number, picture?: { width: number; height: number } | null): Take {
+    const take = Take.of(this.takes.length + 1, blob, `blob:${this.takes.length + 1}`, duration, picture ?? null);
     this.takes.push(take);
     return take;
   }
@@ -116,6 +116,10 @@ describe('describeClip', () => {
       // that never set it, and it is the person's to move.
       { id: 'soundBoost', label: 'Boost the sound', control: 'toggle', value: 'true', readOnly: false },
       { id: 'size', label: 'Clip size', control: 'text', value: '', readOnly: true },
+      // The size the file is finally written at: the clip size is left alone, and this is the
+      // list of levels a person chooses or a profile fixes. Read-only here for the same reason the
+      // switch is — this clip's takes carry no picture, so there is no picture to write at a size.
+      { id: 'exportResolution', label: 'Export resolution', control: 'choice', value: '', choices: ['', '2160', '1440', '1080', '720', '480'], readOnly: true },
     ]);
   });
 
@@ -125,6 +129,19 @@ describe('describeClip', () => {
     const described = describeClip(clip);
     expect(described.properties.find(property => property.id === 'title')).toMatchObject({ value: 'A demo' });
     expect(described.properties.find(property => property.id === 'description')).toMatchObject({ value: '' });
+  });
+
+  it('reports the export resolution read-only when a profile fixes it, and the person\'s otherwise', () => {
+    const clip = Clip.empty(new FakeTakes());
+    clip.addTake(new Blob(['x']), 3, { width: 1280, height: 720 });
+    clip.setProperty('exportResolution', '1080');
+    // A picture is there, so the row is not blocked by the sound-only reason; what makes it
+    // read-only is the profile that fixes it, and without one it is the person's.
+    expect(describeClip(clip).properties.find(property => property.id === 'exportResolution'))
+      .toMatchObject({ control: 'choice', value: '1080', readOnly: false });
+    expect(describeClip(clip, id => (id === 'exportResolution' ? 'DemoClipTV' : null)).properties
+      .find(property => property.id === 'exportResolution'))
+      .toMatchObject({ value: '1080', readOnly: true });
   });
 
   it('reports a cut as a fraction of the clip, and the kept length it leaves', () => {

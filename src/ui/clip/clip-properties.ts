@@ -20,6 +20,7 @@ import {
 } from '../../domain/annotation/AnnotationColour.js';
 import { LOGOS, logoFile } from '../logos.js';
 import { BOOST_ID, OFF, boostsSound } from '../../domain/sound/SoundBoost.js';
+import { EXPORT_RESOLUTION_ID, LEVELS, isExportResolution } from '../../domain/clip/ExportResolution.js';
 
 /** Which shared control edits a clip property. */
 export type ClipPropertyControl = 'text' | 'long-text' | 'toggle' | 'choice' | 'colour';
@@ -232,4 +233,31 @@ registerClipProperty({
   readOnly: true,
   value: (_properties, clip) => clip?.size()?.toString() ?? '',
   with: () => null,
+});
+
+// And the size the clip's **file** is finally written at: the clip size **scaled** to one of the
+// app's own levels, keeping the clip size's aspect ratio, so the same picture comes out at fewer
+// pixels and the file is smaller — the encoder's bitrate follows its picture. It is **optional**:
+// with none, the file is the clip size, exactly as before it existed, so the review and the clip
+// size above it are untouched. A **profile** may fix it, so a production writes every clip at one
+// resolution with nothing to press. The value is a level (`'1080'`) or nothing for the clip size.
+registerClipProperty({
+  id: EXPORT_RESOLUTION_ID,
+  label: 'Export resolution',
+  control: 'choice',
+  seedable: true,
+  choices: [
+    { value: '', label: 'Clip size' },
+    ...LEVELS.map(level => ({ value: String(level), label: `${level}p` })),
+  ],
+  value: properties => properties.get(EXPORT_RESOLUTION_ID),
+  // A value the app does not offer is refused rather than kept, so neither a person, a written
+  // profile nor an agent can leave a clip on a size the app cannot write.
+  with: (properties, value) => (isExportResolution(value) ? properties.with(EXPORT_RESOLUTION_ID, value) : null),
+  // A **sound-only** clip has no picture for a file to be written at a resolution, so the choice
+  // says why it cannot apply rather than being quietly ignored. An empty clip is not blocked: a
+  // person or a profile may set it before the first take, and it applies when a picture arrives.
+  blocked: (_properties, clip) => clip && clip.takes.count() > 0 && !clip.hasPicture()
+    ? 'A sound-only clip has no picture to write — record a take with a picture, or export the sound'
+    : null,
 });

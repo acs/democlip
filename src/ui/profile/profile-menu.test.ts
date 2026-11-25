@@ -50,7 +50,7 @@ describe('profileRows', () => {
 describe('defineRows', () => {
   it('offers one row per item a profile may control', () => {
     const rows = defineRows(book().get('tv')!, { active: true, locked: false });
-    expect(rows.map(row => row.id)).toEqual(['logo', 'addToExport', 'annotationColour', 'soundBoost']);
+    expect(rows.map(row => row.id)).toEqual(['logo', 'addToExport', 'annotationColour', 'soundBoost', 'exportResolution']);
     // A list rather than a switch, and free when the profile says nothing about it. The choices
     // are the property's own, so the sheet draws them without knowing what they are.
     expect(rows[0]).toMatchObject({ label: 'Logo', control: 'choice', free: true, value: '', editable: true });
@@ -62,11 +62,32 @@ describe('defineRows', () => {
     // And the sound boost: the second switch, free here, which the sheet draws exactly as it
     // draws the card's — so the profile can be told to fix it on, off, or not at all.
     expect(rows[3]).toMatchObject({ label: 'Boost the sound', control: 'toggle', free: true, value: '', editable: true });
+    // And the size a file is written at: a list, the clip size first and then the levels, free
+    // until a production fixes it.
+    expect(rows[4]).toMatchObject({ label: 'Export resolution', control: 'choice', free: true, value: '', editable: true });
+    expect(rows[4].choices).toEqual([
+      { value: '', label: 'Clip size' },
+      { value: '2160', label: '2160p' },
+      { value: '1440', label: '1440p' },
+      { value: '1080', label: '1080p' },
+      { value: '720', label: '720p' },
+      { value: '480', label: '480p' },
+    ]);
   });
 
   it('says an item is free when the profile does not control it', () => {
     const rows = defineRows(book().get('gra')!, { active: false, locked: false });
-    expect(rows.map(row => row.free)).toEqual([true, true, true, true]);
+    expect(rows.map(row => row.free)).toEqual([true, true, true, true, true]);
+  });
+
+  it('offers the export resolution a production fixes at its level, and free when it does not', () => {
+    const fixed = Profile.create('tv', 'DemoClipTV', { exportResolution: '1080' })!;
+    expect(defineRows(fixed, { active: false, locked: false }).find(row => row.id === 'exportResolution'))
+      .toMatchObject({ free: false, value: '1080' });
+    // Fixing it at the clip size is a declaration too, and not the same as leaving it free.
+    const atSource = Profile.create('src', 'At source', { exportResolution: '' })!;
+    expect(defineRows(atSource, { active: false, locked: false }).find(row => row.id === 'exportResolution'))
+      .toMatchObject({ free: false, value: '' });
   });
 
   it('tells a controlled sound boost apart from a free one, in the sheet and on the clip', () => {

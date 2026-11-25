@@ -489,11 +489,15 @@ test('the microphone alone records a sound-only take', async ({ page }) => {
   await page.locator('#rec-btn').click();
   await expect.poll(() => app.clipLength(), { timeout: 10_000 }).toBeGreaterThan(0.2);
 
-  // The review is the sound: the waveform has the strip's room, and the estimate is the
-  // audio's rather than a picture's.
+  // The review is the sound: the waveform has the strip's room, and the size line under the Export
+  // button is a bare figure in MB — no label, no container. It is the **sound's**: a picture of the
+  // same length would come to far more a second (about 0.41MB at the app's default 1280×720), so a
+  // figure under that is the sound rule having been read.
   await expect(page.locator('#timeline')).toHaveClass(/sound-only/);
   await expect(page.locator('#waveform')).toBeVisible();
-  await expect(page.locator('#t-size')).toContainText('audio');
+  await expect(page.locator('#t-size')).toHaveText(/^\d+\.\dMB$/);
+  const estimated = Number(((await page.locator('#t-size').textContent()) ?? '').replace('MB', ''));
+  expect(estimated).toBeLessThan(0.41 * (await app.clipLength()));
 
   // The transport plays the sound: the sound-only clip is a clip like any other, and
   // the element it plays from has no picture to draw.

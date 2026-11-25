@@ -7,7 +7,8 @@
 import { clock, el } from '../dom.js';
 import { currentPhase } from '../../state.js';
 import { session } from '../../session.js';
-import { estimateSoundText, estimateWebmText } from './size-estimate.js';
+import { estimatePictureText, estimateSoundText } from './size-estimate.js';
+import { exportPicture } from '../../domain/clip/ExportResolution.js';
 import { keptLengthNow, keptOf, player, resizeReview, sourceOf } from './clip.js';
 import { waveform } from './waveform.js';
 import { drawThumb, thumbBox } from './thumbnail.js';
@@ -41,8 +42,13 @@ export function updateSizeUI(): void {
   if (!session.clip.total() || currentPhase() === 'idle') { el.tSize.textContent = '—'; return; }
   // Cuts are taken out, so they shrink the estimate too. A sound-only clip has no
   // picture to size the file by, and its export is the sound alone.
+  // The estimate is the size of the **file** the clip will write, so it follows the **export
+  // resolution** — the picture the export is written at — rather than the review's own frame,
+  // which a smaller resolution leaves alone.
+  const picture = exportPicture(session.clip.properties, session.clip.size())
+    ?? { width: el.cv.width, height: el.cv.height };
   el.tSize.textContent = session.clip.hasPicture()
-    ? estimateWebmText(keptLengthNow(), el.cv.width, el.cv.height)
+    ? estimatePictureText(keptLengthNow(), picture.width, picture.height)
     : estimateSoundText(keptLengthNow());
 }
 

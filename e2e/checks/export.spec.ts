@@ -53,6 +53,47 @@ test('exporting writes a file with a real duration, in the take’s own size —
   expect({ width: mp4.width, height: mp4.height }).toEqual({ width: 854, height: 480 });
 });
 
+/** Choose an export resolution in the clip's settings, the way a person does. */
+async function chooseResolution(page: Page, value: string): Promise<void> {
+  await page.locator('#props-btn').click();
+  await page.locator('#clip-prop-menu .prop-row[data-id="exportResolution"] select').selectOption(value);
+  await page.locator('#props-btn').click();
+  await expect(page.locator('#clip-prop-menu')).not.toHaveClass(/on/);
+}
+
+// The clip is worked in at its **clip size** and written at its **export resolution**: the size the
+// file is finally written at, which is the clip size when none is chosen. The file's own video
+// track is asked for its size — not the encoder's default — the review canvas is asked not to have
+// moved, and a level below another is asked to be a smaller file, which is the comparison a flat
+// bitrate floor fails: every level under about 1080p used to come out the same size.
+test('an export is written at the clip’s export resolution, and at the clip size with none chosen', async ({ page }) => {
+  const app = boot(page);
+  await app.goto();
+  const takes = await makeTakes(page, { width: 1920, height: 1080, seconds: 1 });
+  await app.seed(takes);
+  await app.review();
+
+  // Nothing chosen: the file is the clip size, exactly as before the resolution existed.
+  const big = await exportFile(page, '#exp-webm');
+  expect(await probeFile(page, big, 'video/webm')).toMatchObject({ width: 1920, height: 1080 });
+
+  // Chosen 720p: the clip size scaled, its aspect kept, while the review canvas stays the clip size.
+  await chooseResolution(page, '720');
+  const seventy = await exportFile(page, '#exp-webm');
+  expect(await probeFile(page, seventy, 'video/webm')).toMatchObject({ width: 1280, height: 720 });
+  expect(await page.evaluate(() => {
+    const canvas = document.querySelector<HTMLCanvasElement>('#preview');
+    return `${canvas?.width}x${canvas?.height}`;
+  })).toBe('1920x1080');
+
+  // And a level below it is a smaller file again.
+  await chooseResolution(page, '480');
+  const eightFifty = await exportFile(page, '#exp-webm');
+  expect(await probeFile(page, eightFifty, 'video/webm')).toMatchObject({ width: 854, height: 480 });
+  expect(eightFifty.length).toBeLessThan(seventy.length);
+  expect(eightFifty.length).toBeLessThan(big.length);
+});
+
 // The card at the head of a file: the clip's title and description over its first frame,
 // for two seconds, when the clip asks for it. It is read the moment it appears, so its
 // words are on its **first frame** — the poster a player and a file listing show.

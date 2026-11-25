@@ -23,6 +23,7 @@ export const el = {
   recLbl:    byId<HTMLElement>('rec-lbl'),
   btnNew:    byId<HTMLButtonElement>('btn-new'),
   btnExp:    byId<HTMLButtonElement>('btn-exp'),
+  expStack:  byId<HTMLElement>('exp-stack'),
   expMenu:   byId<HTMLElement>('exp-menu'),
   expWebm:   byId<HTMLButtonElement>('exp-webm'),
   expMp4:    byId<HTMLButtonElement>('exp-mp4'),

@@ -41,7 +41,7 @@ export async function openReview(loadIndex: number, park: number): Promise<void>
     playback.seek(park);
   }
   el.timeline.classList.add('on');
-  el.btnExp.style.display = '';
+  el.expStack.style.display = '';
   el.propsBtn.style.display = '';
   // The sound the review will play is the sound the file will carry: take the boost's gain
   // for this clip, in the background, so a play finds it ready.

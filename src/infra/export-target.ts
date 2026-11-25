@@ -98,13 +98,20 @@ export function avcProbes(width: number, height: number): readonly string[] {
 // exactly what a 3440x1440 recording got. These are bits per pixel per frame at
 // 30fps.
 //
-// The floor and the ceiling are this app's own bounds on a saved file — the floor
-// keeps a small picture clean, the ceiling keeps an enormous one from writing an
-// enormous file — and not any destination's. A destination with a limit of its own
-// passes it as `fit` below, which bounds this further; nothing here knows what that
-// destination is.
+// The least and the most are this app's own bounds on a saved file, and not any
+// destination's. The least is a **share** of what the picture asks, never a flat
+// rate: a flat floor sits above the rule for every picture under about 1.1
+// megapixels, so 720p, 480p and a 360p picture all came out at one bitrate — and a
+// smaller **export resolution** then wrote a file no smaller, which is the one thing
+// it exists to do. A share leaves the picture's own rule in charge at every size, and
+// still refuses a file whose budget cannot afford even that much. A destination with
+// a limit of its own passes it as `fit` below, which bounds this further; nothing
+// here knows what that destination is.
 const BITS_PER_PIXEL = 0.12;
-const BITRATE_FLOOR = 4_000_000;
+/** The least the app writes: a quarter of what the picture asks. Below it, the file is not that picture. */
+const MIN_SHARE = 0.25;
+/** A sanity bound under the share: nothing is written below this, however tiny the picture. */
+const MIN_BITRATE = 100_000;
 const BITRATE_CEILING = 24_000_000;
 // A tenth off, so a budget-sized file lands under the limit rather than on it.
 const FIT_MARGIN = 0.9;
@@ -127,26 +134,27 @@ export function affordableBitrate(fit: FitBudget): number {
 }
 
 /**
- * The bitrate to encode at: from the picture first — screen content needs far more
- * bits than camera video of the same size — and then, when the file has to fit
- * somewhere, held under that destination's byte budget for the clip's length: a long
- * clip at a picture-sized bitrate can be several times the size of what it is going
- * into. The floor wins where even the budget cannot be met, and the caller is better
- * off refusing a clip that long.
+ * The bitrate to encode at: what the picture asks first — screen content needs far more bits than
+ * camera video of the same size, and it asks in proportion to its own pixels, so a smaller picture
+ * is a smaller file — and then, when the file has to fit somewhere, held under that destination's
+ * byte budget for the clip's length: a long clip at a picture-sized bitrate can be several times
+ * the size of what it is going into. The share wins where even the budget cannot be met, and the
+ * caller is better off refusing a clip that long.
  */
 export function videoBitrate(width: number, height: number, fit?: FitBudget): number {
   const wanted = Math.round(width * height * 30 * BITS_PER_PIXEL);
   const affordable = fit ? affordableBitrate(fit) : Number.POSITIVE_INFINITY;
-  return Math.min(Math.max(Math.min(wanted, affordable), BITRATE_FLOOR), BITRATE_CEILING);
+  const least = Math.max(Math.round(wanted * MIN_SHARE), MIN_BITRATE);
+  return Math.min(Math.max(Math.min(wanted, affordable), least), BITRATE_CEILING);
 }
 
 /**
  * Whether the app can write a file of this length inside this budget at all.
  *
- * `videoBitrate` will not go below its floor, so a budget that affords less than the
- * floor over the clip is one the file will miss however it is encoded. The caller is
- * better off refusing that export than writing the file anyway; this is the question
- * it asks before starting.
+ * `videoBitrate` will not go below its share of what the picture asks, so a budget that affords
+ * less than that over the clip is one the file will miss however it is encoded. The caller is
+ * better off refusing that export than writing a file that is not the picture; this is the
+ * question it asks before starting.
  */
 export function fitsBudget(width: number, height: number, fit: FitBudget): boolean {
   return videoBitrate(width, height, fit) <= affordableBitrate(fit);
