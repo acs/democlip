@@ -99,11 +99,18 @@ a stretch of the clip, whatever is then done with it.
 | **colour** | one flat colour an annotation is drawn in, from the app's own palette; a **new** one is made in the clip's **annotation colour**, and the user may choose another after it is placed | `AnnotationColour`, `colourOf()`, `COLOURS` |
 | **text entry** | the app's own dialog for typing a line — an input, Cancel and Add, Enter to confirm, Escape to cancel — used for entering a text and for editing its words | `ui/annotating/text-entry.ts` |
 | **image store** | where an image annotation's picture is kept, written once apart from the recording, and the decoded copy drawn each frame | `ImageStorePort`, `src/infra/images.ts` |
-| **annotation lane** | the row on the timeline marking each annotation at the start of its stretch, in kept time, so one can be found without playing the clip | `ui/annotating/annotation-lane.ts` |
+| **annotation lane** | the row on the timeline marking each annotation at the start of its stretch, in kept time, so one can be found without playing the clip. The **picked** annotation's whole stretch is drawn on it as a band — the **active stretch** | `ui/annotating/annotation-lane.ts` |
 | **annotation layer** | the one place an annotation is drawn, used by playback and by the export alike, so the file matches the review — and the one place a picked annotation's grips are drawn, for every kind | `ui/annotating/annotation-layer.ts` |
+| **annotation duration** | how long an annotation is shown, held as a value of the annotation: its **span**. A new one takes the selected stretch's length, or a fixed default when nothing is selected, and it can be changed afterward from the annotation's **preferences** as a seconds value. Seconds of the recording, so a new take lengthens the clip without stretching it | `Annotation.withDuration()`, `DEFAULT_ANNOTATION_S`, `MIN_ANNOTATION_S`, `ui/annotating/duration-property.ts` |
+| **annotate options** | the one control that offers every kind of annotation on the **picture** — a vertical row per kind, just below the clip's settings control — rather than on the selected stretch of the timeline: one place a kind is added, with no row able to crowd another | `ui/annotating/annotate-options.ts` |
+| **active stretch** | the stretch of the timeline the person is working on: the **picked** annotation's, drawn as a band beside a selected cut section and told apart from it. The timeline shows more than one stretch at once, all in kept time | `ui/annotating/annotation-lane.ts`, `ui/cutting/marks.ts` |
 
 An annotation's geometry is held in fractions of the picture, so it lands in the
-same place on the preview, on the export canvas and after a reload. It **dissolves
+same place on the preview, on the export canvas and after a reload. Every kind is
+offered in one place — the **annotate options**, a vertical row per kind on the
+picture below the clip's settings control — and how long one is shown is its
+**annotation duration**, a value it holds and the person can change from its
+preferences rather than a stretch fixed at the moment it was made. It **dissolves
 onto the picture** over the first moments of its stretch and **off it** over the
 last, as a take does at a join, so it never pops in or out. A **cut takes its part
 of an annotation's stretch with it** — the moment is gone from the timeline, so

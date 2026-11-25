@@ -76,6 +76,7 @@ export function drawAnnotations(
   annotations: readonly Annotation[],
   selectedId: string | null = null,
   dissolve?: AnnotationDissolve,
+  hasSettings?: (annotation: Annotation) => boolean,
 ): void {
   for (const annotation of annotations) {
     const renderer = renderers.get(annotation.kind);
@@ -96,7 +97,7 @@ export function drawAnnotations(
     }
   }
   const picked = selectedId === null ? null : annotations.find(a => a.id === selectedId);
-  if (picked) drawHandles(ctx, picked, w, h);
+  if (picked) drawHandles(ctx, picked, w, h, hasSettings?.(picked) ?? propertiesOf(picked).length > 0);
 }
 
 // ── the grips ────────────────────────────────────────────────────────────────
@@ -171,7 +172,7 @@ export function settingsControl(
 
 const ACCENT = '#e53e3e';
 
-function drawHandles(ctx: CanvasRenderingContext2D, annotation: Annotation, w: number, h: number): void {
+function drawHandles(ctx: CanvasRenderingContext2D, annotation: Annotation, w: number, h: number, withSettings: boolean): void {
   const scale = screenScale(ctx);
   const r = 5 * scale;
   ctx.save();
@@ -190,7 +191,7 @@ function drawHandles(ctx: CanvasRenderingContext2D, annotation: Annotation, w: n
   ];
   // The settings control exists only for a kind that has something to change; a kind
   // with no properties would only open an empty panel.
-  if (propertiesOf(annotation).length > 0) {
+  if (withSettings) {
     controls.push(['settings', settingsControl(annotation, w, h, scale)]);
   }
   for (const [control, spot] of controls) {

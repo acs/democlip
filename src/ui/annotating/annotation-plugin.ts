@@ -20,7 +20,9 @@
 import type { Annotation, Point } from '../../domain/annotation/Annotation.js';
 import type { AnnotationColour } from '../../domain/annotation/AnnotationColour.js';
 import type { Span } from '../../domain/clip/Span.js';
+import type { Clip } from '../../domain/clip/Clip.js';
 import type { AnnotationRenderer } from './annotation-layer.js';
+import { durationProperty } from './duration-property.js';
 
 /** The button a kind adds to the section's actions. */
 export interface AnnotationAction {
@@ -76,7 +78,7 @@ export interface CreationContext {
 }
 
 /** Which shared control edits a property. */
-export type PropertyControl = 'colour' | 'text';
+export type PropertyControl = 'colour' | 'text' | 'duration';
 
 /**
  * Something about an annotation the user can change after it is placed. Its kind
@@ -130,4 +132,16 @@ export function plugins(): readonly AnnotationPlugin[] {
 /** The properties a kind offers for this annotation — none for no annotation or a kind without. */
 export function propertiesOf(annotation: Annotation | null): readonly AnnotationProperty[] {
   return annotation ? (pluginOf(annotation.kind)?.properties ?? []) : [];
+}
+
+/**
+ * The properties of this annotation: its kind's own, plus the one shared **duration**
+ * — except for the clip's **watermark**, which spans the whole clip by construction and
+ * takes no duration. A caller that wants to edit what a person can edit asks this; a
+ * caller that wants only what a kind declares asks `propertiesOf`.
+ */
+export function propertiesFor(annotation: Annotation, clip: Clip): readonly AnnotationProperty[] {
+  const own = propertiesOf(annotation);
+  const isWatermark = clip.watermarks().some(water => water.id === annotation.id);
+  return isWatermark ? own : [...own, durationProperty(clip)];
 }

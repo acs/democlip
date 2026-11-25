@@ -24,6 +24,7 @@ import { ctx, el } from '../dom.js';
 import { drawFrame, drawSoundOnly, seekTo } from '../recording/preview.js';
 import { drawAnnotations } from '../annotating/annotation-layer.js';
 import type { Frame } from '../../domain/clip/ClipSize.js';
+import type { Span } from '../../domain/clip/Span.js';
 
 // ── the timeline the user sees ───────────────────────────────────────────────
 //
@@ -41,6 +42,23 @@ export function keptLengthNow(): number {
 // A time in the recording, as the timeline shows it.
 export function keptOf(source: number): number {
   return session.clip.timeline().keptOf(source);
+}
+
+/**
+ * Where a stretch of the clip sits on the timeline, in kept time: a `left` and a
+ * `width`, as CSS percentages. The one layout every stretch is drawn by — the cut
+ * section and a picked annotation's band — so the two cannot disagree about where a
+ * fraction lands, the way `fractionAtX` is the one mapping back.
+ */
+export function stretchLayout(span: Span): { left: string; width: string } {
+  const kept = Math.max(0.001, keptLengthNow());
+  const total = session.clip.total();
+  const s = keptOf(span.s * total);
+  const e = keptOf(span.e * total);
+  return {
+    left: `${((s / kept) * 100).toFixed(3)}%`,
+    width: `${(Math.max(0, e - s) / kept * 100).toFixed(3)}%`,
+  };
 }
 
 // A time on the timeline, as the recording holds it.

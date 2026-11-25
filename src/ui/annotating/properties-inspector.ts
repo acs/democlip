@@ -15,7 +15,8 @@ import { session } from '../../session.js';
 import { el, toast } from '../dom.js';
 import { COLOURS } from '../../domain/annotation/AnnotationColour.js';
 import type { Annotation } from '../../domain/annotation/Annotation.js';
-import { propertiesOf, type AnnotationProperty } from './annotation-plugin.js';
+import { propertiesFor, type AnnotationProperty } from './annotation-plugin.js';
+import { DURATION_STEP_S } from './duration-property.js';
 import { textEntry } from './text-entry.js';
 
 const GAP = 8;      // between the annotation's box and the panel
@@ -48,7 +49,7 @@ class PropertiesInspector {
   }
 
   open(annotation: Annotation): void {
-    if (propertiesOf(annotation).length === 0) return;   // nothing to open for this kind
+    if (propertiesFor(annotation, session.clip).length === 0) return;   // nothing to open for this kind
     this.id = annotation.id;
     this.render();
     this.place();
@@ -113,17 +114,18 @@ class PropertiesInspector {
   private render(): void {
     const annotation = this.id ? session.clip.annotations.byId(this.id) : null;
     if (!annotation) { this.close(); return; }
-    el.propMenu.replaceChildren(...propertiesOf(annotation).map(property => this.row(property, annotation)));
+    el.propMenu.replaceChildren(...propertiesFor(annotation, session.clip).map(property => this.row(property, annotation)));
   }
 
   private row(property: AnnotationProperty, annotation: Annotation): HTMLElement {
     const host = document.createElement('div');
     host.className = 'prop-row';
+    host.dataset.id = property.id;
     const name = document.createElement('span');
     name.className = 'prop-name';
     name.textContent = property.label;
-    host.append(name, property.control === 'colour'
-      ? this.swatches(property, annotation)
+    host.append(name, property.control === 'colour' ? this.swatches(property, annotation)
+      : property.control === 'duration' ? this.seconds(property, annotation)
       : this.words(property, annotation));
     return host;
   }
@@ -144,6 +146,33 @@ class PropertiesInspector {
       host.append(button);
     }
     return host;
+  }
+
+  /** A `duration` property: the seconds it lasts, and a step either way. */
+  private seconds(property: AnnotationProperty, annotation: Annotation): HTMLElement {
+    const host = document.createElement('div');
+    host.className = 'prop-duration';
+    const value = property.value(annotation);
+    const readout = document.createElement('span');
+    readout.className = 'prop-duration-text';
+    readout.textContent = `${value}s`;
+    const nudge = (delta: number) => this.apply(property, annotation, (Number(value) + delta).toFixed(2));
+    host.append(
+      this.stepButton('−', 'Shorter', () => nudge(-DURATION_STEP_S)),
+      readout,
+      this.stepButton('+', 'Longer', () => nudge(DURATION_STEP_S)),
+    );
+    return host;
+  }
+
+  private stepButton(label: string, aria: string, onClick: () => void): HTMLButtonElement {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'prop-step';
+    button.textContent = label;
+    button.setAttribute('aria-label', aria);
+    button.addEventListener('click', onClick);
+    return button;
   }
 
   /** A `text` property: the words it holds, and the action that changes them. */
@@ -176,6 +205,9 @@ class PropertiesInspector {
   private apply(property: AnnotationProperty, annotation: Annotation, value: string): void {
     const next = property.with(annotation, value);
     if (!next) { toast(`${property.label} not changed — that value is not allowed`); return; }
+    // A change that changes nothing — the same colour, the same words, a duration already
+    // as long as the clip allows — is not announced, so it is not what the one undo holds.
+    if (property.value(next) === property.value(annotation)) return;
     session.clip.changeAnnotation(annotation.id, next);
   }
 }

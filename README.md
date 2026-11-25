@@ -35,7 +35,7 @@ The headline capabilities; the **[full list is in docs/FEATURES.md](docs/FEATURE
 - **Nothing captured until you ask** — every source starts off, so the app never opens a screen picker on its own
 - **Region crop** — drag a box over the preview to record just part of the screen, and click to reset
 - **Timeline cutting** — click twice to select a section, cut it out with the scissors, and undo it
-- **Annotations** — point at a detail with an arrow, put a picture over a chosen stretch, or write a line of text on it, shown in playback and in the exported file, and kept with the clip
+- **Annotations** — point at a detail with an arrow, put a picture over a chosen stretch, or write a line of text on it, each shown for its own **duration** — set from the annotation's **settings** — in playback and in the exported file, and kept with the clip
 - **Add more takes** — Record again appends to the end of the clip, with a fade and a dissolve across the join
 - **Import a video file** — bring a WebM or MP4 in as a take to cut, annotate and export alongside your recordings; nothing is re-recorded
 - **Export to a file, encoded offline** — WebM for size or MP4 for compatibility, written in the browser by WebCodecs about 10× faster than the clip, with a duration and cue points any player can scrub

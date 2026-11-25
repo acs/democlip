@@ -18,7 +18,7 @@ import { Span } from '../../domain/clip/Span.js';
 import type { Clip } from '../../domain/clip/Clip.js';
 import type { Annotation } from '../../domain/annotation/Annotation.js';
 import type { AnnotationColour } from '../../domain/annotation/AnnotationColour.js';
-import { pluginOf, propertiesOf } from '../annotating/annotation-plugin.js';
+import { pluginOf, propertiesFor } from '../annotating/annotation-plugin.js';
 import { annotationColour, clipProperty } from '../clip/clip-properties.js';
 import { MIN_SECTION } from '../cutting/selection.js';
 import type { Controlling } from '../profile/control.js';
@@ -71,7 +71,7 @@ export function createEditor(clip: Clip, make: MakeAnnotation, controlling: Cont
     setProperty(id, property, value) {
       const annotation = clip.annotations.byId(id);
       if (!annotation) return { ok: false, reason: `there is no annotation with id ${id}` };
-      const descriptor = propertiesOf(annotation).find(candidate => candidate.id === property);
+      const descriptor = propertiesFor(annotation, clip).find(candidate => candidate.id === property);
       if (!descriptor) return { ok: false, reason: `a ${annotation.kind} has no property called ${property}` };
       if (typeof value !== 'string') return { ok: false, reason: 'a property value is a string' };
       const next = descriptor.with(annotation, value);

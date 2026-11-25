@@ -139,6 +139,17 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 [data-theme="light"] .clip-props{background:rgba(255,255,255,.72);}
 [data-theme="light"] .clip-props:hover{background:rgba(229,62,62,.16);}
 
+/* The annotate options: a vertical column of kind rows below the clip's settings control. */
+.annotate-bar{position:absolute;top:46px;right:12px;z-index:4;display:none;flex-direction:column;gap:6px;align-items:flex-end;}
+.annotate-bar.on{display:flex;}
+.annotate-row{display:inline-flex;align-items:center;gap:6px;padding:5px 9px;border-radius:999px;border:1px solid var(--glass-b2);background:rgba(0,0,0,.5);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);color:#fff;font-family:var(--font-sans);font-size:11px;letter-spacing:.04em;cursor:pointer;transition:background .18s,border-color .18s,transform .18s;}
+.annotate-row:hover{background:rgba(229,62,62,.18);border-color:rgba(229,62,62,.7);transform:scale(1.03);}
+.annotate-row:active{transform:scale(.96);}
+.annotate-row svg{pointer-events:none;}
+.annotate-lbl{pointer-events:none;white-space:nowrap;}
+[data-theme="light"] .annotate-row{background:rgba(255,255,255,.72);color:#1a1a1a;}
+[data-theme="light"] .annotate-row:hover{background:rgba(229,62,62,.16);}
+
 /* ── TIMELINE ── */
 .timeline{width:100%;max-width:1160px;flex-shrink:0;background:var(--surface-2);backdrop-filter:blur(20px);border:1px solid var(--glass-b);border-radius:12px;padding:11px 16px;margin-bottom:9px;opacity:0;transform:translateY(8px);transition:opacity .35s,transform .35s;pointer-events:none;}
 .timeline.on{opacity:1;transform:translateY(0);pointer-events:all;}
@@ -193,6 +204,8 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 .tl-annot{position:absolute;top:1px;width:12px;height:12px;border-radius:3px;background:rgba(245,158,11,.32);border:1px solid rgba(245,158,11,.8);pointer-events:auto;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#FFE7C2;overflow:visible;}
 .tl-annot:hover{background:rgba(245,158,11,.5);}
 .tl-annot.on{background:rgba(245,158,11,.6);border-color:var(--amber);box-shadow:0 0 8px rgba(245,158,11,.55);}
+.tl-annot-band{position:absolute;top:0;bottom:0;border-radius:3px;background:rgba(245,158,11,.16);border:1px solid rgba(245,158,11,.55);pointer-events:none;}
+.tl-annot-band.on{background:rgba(245,158,11,.28);border-color:var(--amber);box-shadow:0 0 8px rgba(245,158,11,.45);}
 .timeline.recording .tl-annots,.timeline.encoding .tl-annots{display:none;}
 
 .thumb-strip{display:flex;gap:2px;border-radius:4px;overflow:hidden;height:30px;margin-bottom:7px;cursor:pointer;}
@@ -354,6 +367,10 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 .prop-swatch[aria-pressed="true"]{border-color:var(--text);}
 .prop-words{display:flex;align-items:center;gap:8px;}
 .prop-words-text{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:13px;color:var(--text);}
+.prop-duration{display:flex;align-items:center;gap:8px;}
+.prop-duration-text{font-family:var(--font-mono);font-size:13px;color:var(--text);min-width:46px;text-align:center;}
+.prop-step{width:24px;height:24px;padding:0;border-radius:7px;border:1px solid var(--glass-b2);background:var(--glass);color:var(--text);font-size:15px;line-height:1;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:background .15s,border-color .15s;}
+.prop-step:hover{background:rgba(229,62,62,.16);border-color:rgba(229,62,62,.6);}
 /* The clip's own properties: a little wider than an annotation's panel, and its values
    are typed rather than picked. */
 .prop-menu.clip{min-width:240px;max-width:320px;overflow-y:auto;overscroll-behavior:contain;}

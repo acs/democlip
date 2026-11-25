@@ -91,6 +91,7 @@ export const el = {
   camMenu:   byId<HTMLElement>('cam-menu'),
   propMenu:  byId<HTMLElement>('prop-menu'),
   propsBtn:  byId<HTMLButtonElement>('props-btn'),
+  annotateBar: byId<HTMLElement>('annotate-bar'),
   clipPropMenu: byId<HTMLElement>('clip-prop-menu'),
   textEntry: byId<HTMLElement>('text-entry'),
   textEntryInput: byId<HTMLInputElement>('text-entry-input'),
