@@ -637,17 +637,15 @@ test('the microphone is lifted over the shared tab’s audio, and the tab is tri
   const tab = await toneLevel(page, bytes, 440);
   const voice = await toneLevel(page, bytes, 700);
 
-  // The bounds are loose on purpose: the level comes back through a lossy encode and a
-  // correlation over a window, so a decibel of drift is expected. What they hold is the two
-  // constants — the tab trimmed to well under the full scale it was played at, and the voice
-  // lifted well above the quiet level it came in at — and the pre-fix mix (0.78 and 0.05)
-  // misses both by a wide margin.
-  // The tab's own audio, trimmed from the full scale it was played at.
-  expect(tab).toBeGreaterThan(0.28);
-  expect(tab).toBeLessThan(0.55);
-  // The voice, lifted from the quiet level it came in at.
-  expect(voice).toBeGreaterThan(0.1);
-  expect(voice).toBeLessThan(0.25);
+  // What the two constants come to, measured: the tab at about **0.40** — a full-scale tone
+  // through ×0.4 — and the voice at about **0.20**, which is the quiet 0.05 through ×3 and a
+  // couple of decibels more from the compressor's own makeup gain (what that node does, and
+  // what e73b71f tuned by ear). The bounds allow a decibel or two of drift through a lossy
+  // encode and a level read in windows; the pre-fix mix (0.78 and 0.05) misses both widely.
+  expect(tab).toBeGreaterThan(0.32);
+  expect(tab).toBeLessThan(0.52);
+  expect(voice).toBeGreaterThan(0.13);
+  expect(voice).toBeLessThan(0.27);
   // Which is the whole point of both: the voice stands over the tab it was played under.
   expect(voice).toBeGreaterThan(tab * 0.25);
 });
