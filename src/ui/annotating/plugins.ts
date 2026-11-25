@@ -9,5 +9,6 @@
 
 import './arrow-plugin.js';
 import './image-plugin.js';
+import './magnifier-plugin.js';
 import './sound-plugin.js';
 import './text-plugin.js';

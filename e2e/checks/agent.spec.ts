@@ -287,6 +287,42 @@ test('an arrow and an image made through the surface are drawn, and a property c
   await expectArrowPainted(page, 'red');
 });
 
+test('a magnifier made through the surface is described, its zoom changes, and removing it undoes back', async ({ page }) => {
+  await reviewed(page);
+
+  // A lens over the detail, at the centre, a 30% radius and a 3× zoom.
+  const made = await call<{ ok: boolean; id?: string }>(page, 'edit.annotate', 'magnifier', {
+    span: { s: 0.1, e: 0.9 },
+    x: 0.5, y: 0.5, radius: 0.3, zoom: 3,
+  });
+  expect(made.ok).toBe(true);
+  await expect(page.locator('#tl-annots > *')).toHaveCount(1);
+
+  // The agent reads the lens's own numbers, not a guess: its centre, radius and zoom.
+  const described = await call<{
+    annotations: Array<{ id: string; kind: string; geometry: { x: number; y: number; radius: number; zoom: number } }>;
+  }>(page, 'describe');
+  expect(described.annotations).toHaveLength(1);
+  expect(described.annotations[0]).toMatchObject({
+    kind: 'magnifier',
+    geometry: { x: 0.5, y: 0.5, radius: 0.3, zoom: 3 },
+  });
+
+  // A zoom the kind takes lands on the lens and in the description.
+  const changed = await call<{ ok: boolean; value: string }>(page, 'edit.setProperty', made.id ?? '', 'zoom', '4');
+  expect(changed.ok).toBe(true);
+  const after = await call<{ annotations: Array<{ geometry: { zoom: number } }> }>(page, 'describe');
+  expect(after.annotations[0].geometry.zoom).toBe(4);
+
+  // Removing it takes the lens away; the app's own undo brings it back whole.
+  const removed = await call<{ ok: boolean; kind: string }>(page, 'edit.remove', made.id ?? '');
+  expect(removed).toEqual({ ok: true, kind: 'magnifier' });
+  await expect(page.locator('#tl-annots > *')).toHaveCount(0);
+  const undone = await call<{ ok: boolean; change: string }>(page, 'edit.undo');
+  expect(undone).toEqual({ ok: true, change: 'annotation-removed' });
+  await expect(page.locator('#tl-annots > *')).toHaveCount(1);
+});
+
 test('a source press carries the activation the picker needs, and an export through the surface writes the file', async ({ page }) => {
   // The press for the screen source is delivered as a real input event, because the browser
   // only opens the picker for a transient activation — which is what is asserted.

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { copyControl, drawAnnotations, registerRenderer, removeControl, rendererOf } from './annotation-layer.js';
+import { copyControl, drawAnnotations, drawOrder, needsPicture, copyPicture, registerRenderer, removeControl, rendererOf } from './annotation-layer.js';
 import type { AnnotationRenderer } from './annotation-layer.js';
 // The arrow's renderer and its metrics are part of the arrow's plugin now; importing it
 // is also what registers `arrow` in the renderer registry the layer holds.
@@ -202,5 +202,36 @@ describe('the annotation layer', () => {
     const { ctx, calls } = fakeCtx();
     drawAnnotations(ctx, 320, 180, [new Stub()]);
     expect(calls).toEqual([]);
+  });
+
+  it('says when the shown set needs the picture, and draws the readers first with the copy', () => {
+    const drawn: Array<{ id: string; picture?: unknown }> = [];
+    const readerRenderer: AnnotationRenderer<Annotation> = {
+      id: 'reader', readsPicture: true,
+      draw: (_ctx, annotation, _w, _h, picture) => { drawn.push({ id: annotation.id, picture }); },
+    };
+    const plainRenderer: AnnotationRenderer<Annotation> = {
+      id: 'plain',
+      draw: (_ctx, annotation) => { drawn.push({ id: annotation.id }); },
+    };
+    registerRenderer(readerRenderer);
+    registerRenderer(plainRenderer);
+
+    const plain = { id: 'p1', kind: 'plain', span: Span.of(0, 1) } as unknown as Annotation;
+    const reader = { id: 'r1', kind: 'reader', span: Span.of(0, 1) } as unknown as Annotation;
+
+    expect(needsPicture([plain])).toBe(false);
+    expect(needsPicture([plain, reader])).toBe(true);
+    expect(needsPicture([plain], reader)).toBe(true);
+    expect(drawOrder([plain, reader]).map(one => one.id)).toEqual(['r1', 'p1']);
+
+    // The picture is the caller's copy, handed only to a renderer that said it reads it.
+    const picture = { width: 10, height: 10 } as unknown as CanvasImageSource;
+    drawAnnotations(fakeCtx().ctx, 320, 180, [plain, reader], null, undefined, undefined, picture);
+    expect(drawn).toEqual([{ id: 'r1', picture }, { id: 'p1' }]);
+  });
+
+  it('copies no picture in node, where there is no document', () => {
+    expect(copyPicture(fakeCtx({ width: 320 }).ctx)).toBeNull();
   });
 });

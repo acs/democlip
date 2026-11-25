@@ -60,7 +60,7 @@ const fraction = (description: string): unknown => ({
 const describeClip: Tool = {
   name: 'describe_clip',
   description:
-    'Read the clip: its length in seconds, how much is left after the cuts, the takes, the cuts as fractions of the clip, every annotation with its kind, its stretch and the properties it holds, and what the clip says about itself — its title and its description. Read-only; call it before deciding what to change.',
+    'Read the clip: its length in seconds, how much is left after the cuts, the takes, the cuts as fractions of the clip, every annotation with its kind, its stretch, its geometry and the properties it holds, and what the clip says about itself — its title and its description. Read-only; call it before deciding what to change.',
   inputSchema: objectSchema(),
   run: session => callSurface(session, 'describe'),
 };
@@ -78,9 +78,9 @@ const cut: Tool = {
 const annotate: Tool = {
   name: 'annotate',
   description:
-    'Add an annotation over a stretch of the clip. `kind` is "arrow", "text" or "sound", and `span` is { s, e } as fractions of the clip giving the stretch it is shown over. An arrow needs `from` and `to`, each { x, y } as fractions of the picture. A text needs `text`, and may take `x`, `y` and `height` (fractions) to place it. A sound plays one of the app\u2019s own sounds over the stretch, mixed with the recorded sound, and takes `sound` — the name of the sound — with no file to give. An image is not made here: use add_image, which places the picture already on the person\u2019s clipboard.',
+    'Add an annotation over a stretch of the clip. `kind` is "arrow", "text", "sound" or "magnifier", and `span` is { s, e } as fractions of the clip giving the stretch it is shown over. An arrow needs `from` and `to`, each { x, y } as fractions of the picture. A text needs `text`, and may take `x`, `y` and `height` (fractions) to place it — for a text x and y are its top-left. A sound plays one of the app\u2019s own sounds over the stretch, mixed with the recorded sound, and takes `sound` — the name of the sound — with no file to give. A magnifier is a round lens that enlarges its centre and dims the rest: `x` and `y` are the lens\u2019s centre (fractions, centred when left out), `radius` is 4% to 50% of the picture\u2019s shorter side (20% when left out), and `zoom` is 1.5 to 8 (2 when left out). An image is not made here: use add_image, which places the picture already on the person\u2019s clipboard.',
   inputSchema: objectSchema({
-    kind: { type: 'string', enum: ['arrow', 'text', 'sound'], description: 'Which kind of annotation' },
+    kind: { type: 'string', enum: ['arrow', 'text', 'sound', 'magnifier'], description: 'Which kind of annotation' },
     span: {
       type: 'object',
       properties: { s: fraction('Where the stretch starts'), e: fraction('Where it ends') },
@@ -90,9 +90,11 @@ const annotate: Tool = {
     from: { type: 'object', description: 'The arrow\u2019s tail, as { x, y } fractions of the picture' },
     to: { type: 'object', description: 'The arrow\u2019s head, as { x, y } fractions of the picture' },
     text: { type: 'string', description: 'The words, for a text' },
-    x: { type: 'number', description: 'Where a text is placed, as a fraction of the width' },
-    y: { type: 'number', description: 'Where a text is placed, as a fraction of the height' },
+    x: { type: 'number', description: 'A text\u2019s left edge, or a magnifier\u2019s centre, as a fraction of the width' },
+    y: { type: 'number', description: 'A text\u2019s top edge, or a magnifier\u2019s centre, as a fraction of the height' },
     height: { type: 'number', description: 'How tall a text is, as a fraction of the height' },
+    radius: { type: 'number', description: 'A magnifier\u2019s radius, as a fraction of the picture\u2019s shorter side (0.04 to 0.5; default 0.2)' },
+    zoom: { type: 'number', description: 'A magnifier\u2019s zoom, 1.5 to 8 (default 2)' },
     sound: { type: 'string', description: 'For a sound, the name of one of the app\u2019s own sounds: "chime", "gong", "pluck", "whoosh" and more. Left out, the app\u2019s default is used. There is no file to give.' },
   }, ['kind', 'span']),
   run: (session, args) => callSurface(session, 'edit.annotate', String(args.kind ?? ''), args),
@@ -133,7 +135,7 @@ const addImage: Tool = {
 const setProperty: Tool = {
   name: 'set_property',
   description:
-    'Change one property of a placed annotation: `id` from describe_clip, the property ("colour", "words" for a text, or "sound" for a sound annotation — the name of one of the app\u2019s own sounds), and the value. A colour is one of the app\u2019s palette names.',
+    'Change one property of a placed annotation: `id` from describe_clip, the property ("colour", "words" for a text, "sound" for a sound annotation — the name of one of the app\u2019s own sounds, or "zoom" for a magnifier), and the value. A colour is one of the app\u2019s palette names.',
   inputSchema: objectSchema({
     id: { type: 'string', description: 'The annotation\u2019s id, from describe_clip' },
     property: { type: 'string', description: 'Which property, such as "colour" or "words"' },

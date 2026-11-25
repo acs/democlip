@@ -23,7 +23,7 @@ import { session } from '../../session.js';
 import { ctx, el, toast } from '../dom.js';
 import { Span } from '../../domain/clip/Span.js';
 import type { Annotation, AnnotationHandle, Point } from '../../domain/annotation/Annotation.js';
-import { copyControl, drawAnnotations, removeControl, settingsControl } from './annotation-layer.js';
+import { copyControl, drawAnnotations, drawOrder, pictureFor, removeControl, settingsControl } from './annotation-layer.js';
 import { pluginOf, propertiesFor, type AnnotationPlugin, type CreationContext } from './annotation-plugin.js';
 import { inspector } from './properties-inspector.js';
 import { annotationColour } from '../clip/clip-properties.js';
@@ -338,7 +338,9 @@ export class AnnotationCanvas {
     // modifier is passed as `free`: what it means is the kind's rule.
     const next = this.grab === 'move'
       ? annotation.movedBy(dx, dy)
-      : annotation.withHandle(this.grab, p, { free: e.shiftKey });
+      : annotation.withHandle(this.grab, p, {
+        free: e.shiftKey, picture: { w: el.cv.width, h: el.cv.height },
+      });
     // The clip announces the change, and the redraw is the listener's — not this.
     if (next) session.clip.changeAnnotation(annotation.id, next);
   }
@@ -430,10 +432,13 @@ export class AnnotationCanvas {
     if (currentPhase() !== 'review' || el.rv.readyState < 1) return;
     const w = el.cv.width, h = el.cv.height;
     try { drawFrame(el.rv, reviewFrame(el.rv)); } catch { return; }        // a frame still decoding
-    drawAnnotations(ctx, w, h, session.clip.annotationsAt(player.time()), this.selectedId, undefined,
-      annotation => propertiesFor(annotation, session.clip).length > 0);
+    const shown = session.clip.annotationsAt(player.time());
     const draft = this.preview();
-    if (draft) pluginOf(draft.kind)?.renderer.draw(ctx, draft, w, h);
+    // One copy of the picture for a lens (or a lens being drawn), before any mark is on it.
+    const picture = pictureFor(ctx, shown, draft);
+    drawAnnotations(ctx, w, h, shown, this.selectedId, undefined,
+      annotation => propertiesFor(annotation, session.clip).length > 0, picture);
+    if (draft) pluginOf(draft.kind)?.renderer.draw(ctx, draft, w, h, picture);
   }
 
   // A new annotation of the copied shape, over the same part of the picture, at the
@@ -479,7 +484,7 @@ export class AnnotationCanvas {
   // as on a desktop, and toward the middle of the picture — away from whichever edge
   // the original is nearest, so the copy is never the one pushed off it.
   private copyShift(annotation: Annotation): { dx: number; dy: number } {
-    const ends = annotation.handles();
+    const ends = annotation.handles({ w: el.cv.width, h: el.cv.height });
     const a = ends[0], b = ends[ends.length - 1];
     const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
     return {
@@ -492,12 +497,13 @@ export class AnnotationCanvas {
   // the layer's, drawn from `handles()` for every kind, and they reach a little outside
   // the shape — so this asks about the grip, not about the shape.
   private gripAt(p: Point, slopPx: number): { annotation: Annotation; end: string } | null {
-    const shown = session.clip.annotationsAt(player.time());
+    const shown = drawOrder(session.clip.annotationsAt(player.time()));
     const screenW = el.cv.clientWidth > 0 ? el.cv.clientWidth : el.cv.width;
     const screenH = el.cv.clientHeight > 0 ? el.cv.clientHeight : el.cv.height;
     if (!(screenW > 0)) return null;
+    const picture = { w: el.cv.width, h: el.cv.height };
     for (let i = shown.length - 1; i >= 0; i--) {
-      const ends = shown[i].handles();
+      const ends = shown[i].handles(picture);
       // A shape too small to have a body of its own would have every press inside it taken by a
       // grip, and so could never be picked up and moved. A press inside such a shape is a press
       // to move it; its corners still resize from on them or just outside.
@@ -514,7 +520,7 @@ export class AnnotationCanvas {
   // The topmost annotation under a point, at the moment the playhead holds. The hit
   // test is the annotation's own, because how close is close enough is geometry.
   private hitAnnotation(p: Point, tolerancePx: number): Annotation | null {
-    const shown = session.clip.annotationsAt(player.time());
+    const shown = drawOrder(session.clip.annotationsAt(player.time()));
     const w = el.cv.width, h = el.cv.height;
     for (let i = shown.length - 1; i >= 0; i--) {
       if (shown[i].hitTest(p.x, p.y, w, h, tolerancePx)) return shown[i];

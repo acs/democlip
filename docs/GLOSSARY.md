@@ -97,6 +97,12 @@ a stretch of the clip, whatever is then done with it.
 | **image annotation** | the second kind: a chosen picture over the picture, a rect in fractions with the picture's own proportions kept on resize | `ImageAnnotation`, `ImageGeometry`, `ui/annotating/image-plugin.ts` |
 | **text annotation** | the third kind: a line of text over the picture, a box in fractions that scales with its font, so the text grows and shrinks with the box | `TextAnnotation`, `TextGeometry`, `ui/annotating/text-plugin.ts` |
 | **sound annotation** | the fourth kind: a **stock sound** shown over a stretch of the clip's time and **mixed with the recorded sound**, so the recording is heard beneath it. It draws nothing — it is heard, not drawn — so it has no shape on the picture: it is never picked there, and it is found and edited on the **annotation lane**. The sound it plays is its own fact, its **preferences**, and a new one is made in the app's **default stock sound** and plays at once. A **cut takes its part** of its stretch, exactly as it takes a picture's; the clip's **sound boost** treats the recorded sound alone, and an added sound sits over it | `SoundAnnotation`, `SoundGeometry`, `ui/annotating/sound-plugin.ts` |
+| **magnifier** | the fifth kind: a round **lens** over a detail of the picture, which shows the **magnified region** enlarged and lays the **spotlight dim** over the rest, for the stretch of the annotation. It is the first kind whose renderer **reads the picture beneath it**: the layer takes one copy of the frame before any mark is drawn and hands it in, so the lens enlarges the recording and not the app's own annotations. It is made by dragging from the detail outward | `Magnifier`, `MagnifierGeometry`, `ui/annotating/magnifier-plugin.ts` |
+| **lens** | the magnifier's circle, given by its centre and its radius as a fraction of the picture's shorter side, so it stays round on any picture shape. Its two grips sit on the rim and resize it about the same centre | `Magnifier.geometry`, `Magnifier.handles()` |
+| **magnified region** | the part of the picture a lens shows enlarged: the central part of its own circle — the region of radius `R / zoom` around the centre — drawn to fill the lens. A 2× lens shows the middle half of its radius | `Magnifier.draw()` |
+| **zoom level** | how much a lens enlarges its **magnified region**, from 1.5× to 8× and 2× unless chosen. A property of the lens, changed after it is placed; a 2× lens shows the middle half of its radius | `Magnifier.geometry.zoom`, `MIN_ZOOM`, `MAX_ZOOM`, `DEFAULT_ZOOM` |
+| **rim** | the edge of a lens: a thin dark outline first, so the mark reads on light and dark pictures, then the annotation's own **colour**. The colour property paints the rim | `Magnifier.colour`, `MagnifierPlugin.draw()` |
+| **spotlight dim** | the darkening of the picture outside the lens, one fixed level, so the eye goes to the detail. It covers the picture only — the app's own marks are drawn over it at full strength — and it is drawn for as long as the magnifier's stretch lasts | `DIM_ALPHA`, `MagnifierPlugin.draw()` |
 | **stock sound** | one of the app's own sounds — a **chime**, a **gong**, a **pluck** and more — served with the build under `web/public/sounds/`, chosen from the list the app declares. The preferences choose it from a **drop-down**, with one **▶** to hear the chosen one. Not a file the person loads, records or pastes: a clip holds the sound's **name**, never its bytes, and a name the app does not serve is refused (or left out when a clip from a later build is opened) | `StockSounds.ts` (the app's own list), `src/infra/stock-sounds.ts` (the file, decoded once) |
 | **colour** | one flat colour an annotation is drawn in, from the app's own palette; a **new** one is made in the clip's **annotation colour**, and the user may choose another after it is placed | `AnnotationColour`, `colourOf()`, `COLOURS` |
 | **text entry** | the app's own dialog for typing a line — an input, Cancel and Add, Enter to confirm, Escape to cancel — used for entering a text and for editing its words | `ui/annotating/text-entry.ts` |
@@ -125,6 +131,15 @@ it is found and edited. It is still an annotation in every other way — added i
 shown for its stretch, in the review and in every file, with a **cut** taking its part
 and the one **undo** covering it — and its **preferences** are where its **stock sound**
 and its **annotation duration** are changed.
+
+A **magnifier** is the kind that reads the picture beneath it: a round **lens** over a
+detail, which shows the **magnified region** enlarged and lays the **spotlight dim** over
+the rest for the stretch of the annotation. It is added in the **annotate options** like
+every other kind, but it needs a picture — a **sound-only** clip does not offer it. Its
+**preferences** are its **rim**'s colour and its **zoom level**, plus the shared
+**annotation duration**. The layer takes one copy of the frame before any mark is drawn
+and hands it to the lens, so the magnified region is the recording and never the app's own
+annotations; the same copy is taken in the review and in every file the app writes.
 
 ## What a clip says about itself
 

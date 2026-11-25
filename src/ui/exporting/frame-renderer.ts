@@ -5,7 +5,7 @@
 import type { Frame, FrameRendererPort, IntroFrame } from '../../application/ports/EncoderPort.js';
 import type { Annotation } from '../../domain/annotation/Annotation.js';
 import type { IntroCard } from '../../domain/clip/IntroCard.js';
-import { drawAnnotations } from '../annotating/annotation-layer.js';
+import { drawAnnotations, pictureFor } from '../annotating/annotation-layer.js';
 import { DISSOLVE_S, dissolve } from '../clip/dissolve.js';
 import { introText } from './intro-text.js';
 import { LOGO_SPACE, logoRect } from './logo-rect.js';
@@ -52,10 +52,11 @@ export class FrameRenderer implements FrameRendererPort {
       return;
     }
     // An annotation dissolves in and out at the edges of its stretch, exactly as the
-    // review draws it, so the file holds the same soft arrival and departure.
+    // review draws it, so the file holds the same soft arrival and departure. A lens
+    // reads the frame that was just drawn, so it gets one copy of it before any mark.
     drawAnnotations(context, w, h, frame.annotations, null, {
       at: frame.sourceTime, total: frame.recordingLength, seconds: DISSOLVE_S,
-    });
+    }, undefined, pictureFor(context, frame.annotations));
   }
 
   preview(context: CanvasRenderingContext2D): void {

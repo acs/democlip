@@ -12,6 +12,7 @@
 import type { Annotation, StoredAnnotation } from './Annotation.js';
 import { Arrow } from './Arrow.js';
 import { ImageAnnotation } from './ImageAnnotation.js';
+import { Magnifier } from './Magnifier.js';
 import { SoundAnnotation } from './SoundAnnotation.js';
 import { TextAnnotation } from './TextAnnotation.js';
 
@@ -49,3 +50,6 @@ registerKind(TextAnnotation);
 
 // The sound is the fourth kind, added the same way — a kind with no shape.
 registerKind(SoundAnnotation);
+
+// The magnifier is the fifth kind, added the same way — a round lens with a zoom.
+registerKind(Magnifier);

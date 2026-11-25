@@ -164,6 +164,10 @@ describe('describeClip', () => {
     const [annotation] = describeClip(clip).annotations;
     expect(annotation.kind).toBe(Arrow.id);
     expect(annotation.span).toEqual({ s: 0.1, e: 0.4 });
+    // The shape is readable as data too — the arrow's points and its colour.
+    expect(annotation.geometry).toEqual({
+      from: { x: 0.2, y: 0.3 }, to: { x: 0.6, y: 0.7 }, colour: '#e53e3e',
+    });
     expect(annotation.properties).toEqual([
       { id: 'colour', label: 'Colour', control: 'colour', value: 'red' },
     ]);

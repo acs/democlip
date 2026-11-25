@@ -26,6 +26,12 @@ export interface Point {
   readonly y: number;
 }
 
+/** The picture a handle is measured against, in its own pixels. */
+export interface PictureSize {
+  readonly w: number;
+  readonly h: number;
+}
+
 /** A point a drag can take hold of, in fractions of the picture. */
 export interface AnnotationHandle {
   readonly x: number;
@@ -36,11 +42,14 @@ export interface AnnotationHandle {
 /**
  * What a resize may be told beyond where the handle went. A kind that ignores it —
  * the arrow, whose ends are its resize — reads it not at all; a kind that resizes a
- * shape, as the image does, uses it to tell a free resize from a constrained one.
+ * shape, as the image does, uses it to tell a free resize from a constrained one, and
+ * one whose rim is round asks for the picture it is measured against.
  */
 export interface HandleOptions {
   /** The user is asking for a free resize — a modifier is held. */
   readonly free?: boolean;
+  /** The picture the resize is happening in, for a kind whose shape depends on it. */
+  readonly picture?: PictureSize;
 }
 
 /** One annotation as it is written down: its span and geometry, plain numbers. */
@@ -61,8 +70,12 @@ export abstract class Annotation {
     readonly kind: string,
   ) {}
 
-  /** The points a drag can take hold of, in fractions of the picture. */
-  abstract handles(): readonly AnnotationHandle[];
+  /**
+   * The points a drag can take hold of, in fractions of the picture. The picture is
+   * optional: a kind whose grips depend on the picture's shape — a circle is not a
+   * circle in fractions of a non-square picture — asks for it; the others ignore it.
+   */
+  abstract handles(picture?: PictureSize): readonly AnnotationHandle[];
 
   /** The same annotation with one handle at a new point, or null if that is not one. */
   abstract withHandle(end: string, to: Point, options?: HandleOptions): Annotation | null;

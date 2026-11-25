@@ -99,7 +99,7 @@ class PropertiesInspector {
     const width = el.propMenu.offsetWidth;
     const height = el.propMenu.offsetHeight;
 
-    const handles = annotation.handles();
+    const handles = annotation.handles({ w: el.cv.width, h: el.cv.height });
     if (handles.length === 0) {
       // A kind with nothing on the picture — a **sound** — has no box to sit beside. The panel
       // goes in the corner of the preview, over the picture rather than over the transport, so
@@ -143,6 +143,7 @@ class PropertiesInspector {
     name.textContent = property.label;
     host.append(name, property.control === 'colour' ? this.swatches(property, annotation)
       : property.control === 'duration' ? this.seconds(property, annotation)
+      : property.control === 'number' ? this.numbers(property, annotation)
       : property.control === 'sound' ? this.sounds(property, annotation)
       : this.words(property, annotation));
     return host;
@@ -214,6 +215,24 @@ class PropertiesInspector {
       this.stepButton('−', 'Shorter', () => nudge(-DURATION_STEP_S)),
       readout,
       this.stepButton('+', 'Longer', () => nudge(DURATION_STEP_S)),
+    );
+    return host;
+  }
+
+  /** A `number` property: a value and the step its kind declares, as the duration does. */
+  private numbers(property: AnnotationProperty, annotation: Annotation): HTMLElement {
+    const host = document.createElement('div');
+    host.className = 'prop-duration';
+    const value = property.value(annotation);
+    const readout = document.createElement('span');
+    readout.className = 'prop-duration-text';
+    readout.textContent = `${value}${property.suffix ?? ''}`;
+    const step = property.step ?? 1;
+    const nudge = (delta: number) => this.apply(property, annotation, String(Number(value) + delta));
+    host.append(
+      this.stepButton('−', 'Lower', () => nudge(-step)),
+      readout,
+      this.stepButton('+', 'Higher', () => nudge(step)),
     );
     return host;
   }

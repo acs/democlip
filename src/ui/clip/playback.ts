@@ -18,7 +18,7 @@ import { currentPhase } from '../../state.js';
 import { session } from '../../session.js';
 import { ctx, el } from '../dom.js';
 import { drawClipFrame, drawSoundOnly } from '../recording/preview.js';
-import { drawAnnotations } from '../annotating/annotation-layer.js';
+import { drawAnnotations, pictureFor } from '../annotating/annotation-layer.js';
 import { clampToClip, typingIn } from '../../util.js';
 import { keptLengthNow, keptOf, player, reviewFrame } from './clip.js';
 import { FADE_S, elementAudio, fadeIn, fadeOut, fadeReset } from './fade.js';
@@ -251,9 +251,10 @@ export class Playback {
     // A sound-only clip has no picture for one to be drawn on, and its export holds none.
     if (hasPicture) {
       const at = player.time();
-      drawAnnotations(ctx, el.cv.width, el.cv.height, session.clip.annotationsAt(at), null, {
+      const shown = session.clip.annotationsAt(at);
+      drawAnnotations(ctx, el.cv.width, el.cv.height, shown, null, {
         at, total: session.clip.total(), seconds: DISSOLVE_S,
-      });
+      }, undefined, pictureFor(ctx, shown));
     }
     this.updatePlayhead();          // video frames on the preview canvas
     tickSounds(keptOf(player.time()));   // and the sound annotations, at the moment they fall

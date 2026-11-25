@@ -78,7 +78,7 @@ export interface CreationContext {
 }
 
 /** Which shared control edits a property. */
-export type PropertyControl = 'colour' | 'text' | 'duration' | 'sound';
+export type PropertyControl = 'colour' | 'text' | 'duration' | 'sound' | 'number';
 
 /**
  * Something about an annotation the user can change after it is placed. Its kind
@@ -92,6 +92,12 @@ export interface AnnotationProperty {
   readonly label: string;
   /** Which shared control renders it. */
   readonly control: PropertyControl;
+  /** A number control's range and step; ignored by the other controls. */
+  readonly min?: number;
+  readonly max?: number;
+  readonly step?: number;
+  /** What a number control shows after the value, such as a zoom's `×`. */
+  readonly suffix?: string;
   /** The value the control shows for this annotation. */
   value(annotation: Annotation): string;
   /** The same annotation with a new value; null when that value is not allowed. */

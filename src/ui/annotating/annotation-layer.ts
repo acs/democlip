@@ -32,14 +32,21 @@ import { propertiesOf } from './annotation-plugin.js';
 
 export interface AnnotationRenderer<A extends Annotation> {
   readonly id: string;
+  /**
+   * Does drawing it need the picture beneath it? A lens does; an arrow does not. The
+   * layer takes one copy of the frame for the renderers that say yes, and draws them
+   * before the others so the picture they read is the picture alone.
+   */
+  readonly readsPicture?: boolean;
   /** Paint it, inside `w × h`, in the picture's own proportions. */
-  draw(ctx: CanvasRenderingContext2D, annotation: A, w: number, h: number): void;
+  draw(ctx: CanvasRenderingContext2D, annotation: A, w: number, h: number, picture?: CanvasImageSource): void;
 }
 
 /** A renderer with its annotation erased, which is how the registry holds them. */
 interface AnyRenderer {
   readonly id: string;
-  draw(ctx: CanvasRenderingContext2D, annotation: Annotation, w: number, h: number): void;
+  readonly readsPicture?: boolean;
+  draw(ctx: CanvasRenderingContext2D, annotation: Annotation, w: number, h: number, picture?: CanvasImageSource): void;
 }
 
 const renderers = new Map<string, AnyRenderer>();
@@ -47,12 +54,63 @@ const renderers = new Map<string, AnyRenderer>();
 export function registerRenderer<A extends Annotation>(renderer: AnnotationRenderer<A>): void {
   renderers.set(renderer.id, {
     id: renderer.id,
-    draw: (ctx, annotation, w, h) => renderer.draw(ctx, annotation as A, w, h),
+    readsPicture: renderer.readsPicture,
+    draw: (ctx, annotation, w, h, picture) => renderer.draw(ctx, annotation as A, w, h, picture),
   });
 }
 
 export function rendererOf(id: string): AnyRenderer | null {
   return renderers.get(id) ?? null;
+}
+
+/** Does any of these annotations (or the draft) need the picture beneath it? */
+export function needsPicture(annotations: readonly Annotation[], draft?: Annotation | null): boolean {
+  if (draft && renderers.get(draft.kind)?.readsPicture) return true;
+  return annotations.some(annotation => renderers.get(annotation.kind)?.readsPicture === true);
+}
+
+/** One scratch canvas, reused: the copy lives inside one synchronous draw. */
+let scratch: HTMLCanvasElement | null = null;
+
+/**
+ * A copy of the picture on this context, for the renderers that read it. It must be
+ * taken **before any annotation is drawn**: the lens magnifies the picture, not the
+ * app's own marks. Null off the browser (the node tests), or with no canvas to copy.
+ */
+export function copyPicture(ctx: CanvasRenderingContext2D): CanvasImageSource | null {
+  if (typeof document === 'undefined') return null;
+  const source = ctx.canvas as HTMLCanvasElement | undefined;
+  if (!source || !(source.width > 0) || !(source.height > 0)) return null;
+  scratch ??= document.createElement('canvas');
+  scratch.width = source.width;
+  scratch.height = source.height;
+  const context = scratch.getContext('2d');
+  if (!context) return null;
+  context.clearRect(0, 0, scratch.width, scratch.height);
+  context.drawImage(source, 0, 0);
+  return scratch;
+}
+
+/** The picture for these annotations, or undefined when none of them reads it. */
+export function pictureFor(
+  ctx: CanvasRenderingContext2D, annotations: readonly Annotation[], draft?: Annotation | null,
+): CanvasImageSource | undefined {
+  return needsPicture(annotations, draft) ? copyPicture(ctx) ?? undefined : undefined;
+}
+
+/**
+ * The order annotations are drawn in: the ones that read the picture first, then the
+ * rest, each group in the family's stable order. The canvas picks and grabs in the
+ * reverse of this, so what is picked is what is on top.
+ */
+export function drawOrder(annotations: readonly Annotation[]): readonly Annotation[] {
+  if (!annotations.some(annotation => renderers.get(annotation.kind)?.readsPicture)) return annotations;
+  const readers: Annotation[] = [];
+  const rest: Annotation[] = [];
+  for (const annotation of annotations) {
+    (renderers.get(annotation.kind)?.readsPicture ? readers : rest).push(annotation);
+  }
+  return [...readers, ...rest];
 }
 
 /**
@@ -77,8 +135,9 @@ export function drawAnnotations(
   selectedId: string | null = null,
   dissolve?: AnnotationDissolve,
   hasSettings?: (annotation: Annotation) => boolean,
+  picture?: CanvasImageSource,
 ): void {
-  for (const annotation of annotations) {
+  for (const annotation of drawOrder(annotations)) {
     const renderer = renderers.get(annotation.kind);
     if (!renderer) continue;
     const alpha = dissolve && dissolve.total > 0
@@ -90,10 +149,10 @@ export function drawAnnotations(
       // pop on or off — the same softness as a take's join.
       ctx.save();
       ctx.globalAlpha = alpha;
-      renderer.draw(ctx, annotation, w, h);
+      renderer.draw(ctx, annotation, w, h, picture);
       ctx.restore();
     } else {
-      renderer.draw(ctx, annotation, w, h);
+      renderer.draw(ctx, annotation, w, h, picture);
     }
   }
   const picked = selectedId === null ? null : annotations.find(a => a.id === selectedId);
@@ -131,7 +190,7 @@ type Control = 'remove' | 'copy' | 'settings';
 function controlSpot(
   annotation: Annotation, w: number, h: number, scale: number, offset: number,
 ): { x: number; y: number } | null {
-  const ends = annotation.handles();
+  const ends = annotation.handles({ w, h });
   if (ends.length < 2) return null;
   const a = ends[0], b = ends[ends.length - 1];
   const dx = (b.x - a.x) * w, dy = (b.y - a.y) * h;
@@ -176,7 +235,7 @@ function drawHandles(ctx: CanvasRenderingContext2D, annotation: Annotation, w: n
   const scale = screenScale(ctx);
   const r = 5 * scale;
   ctx.save();
-  for (const handle of annotation.handles()) {
+  for (const handle of annotation.handles({ w, h })) {
     ctx.beginPath();
     ctx.arc(handle.x * w, handle.y * h, r, 0, Math.PI * 2);
     ctx.fillStyle = ACCENT;

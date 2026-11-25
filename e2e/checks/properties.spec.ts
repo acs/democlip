@@ -9,6 +9,7 @@
 
 import { expect, test, type Page } from '@playwright/test';
 import { boot } from '../helpers/app.js';
+import { openSettings } from '../helpers/annotations.js';
 import { makeTakes } from '../fixtures/takes.js';
 import { pageModule } from '../helpers/page-module.js';
 
@@ -189,24 +190,6 @@ async function parkAt(page: Page, seconds: number): Promise<void> {
     } catch { /* the click landed before the take was ready; ask again */ }
   }
   expect(await playerTime(page)).toBeCloseTo(seconds, 0);
-}
-
-/** Press the picked annotation's settings control, wherever the layer draws it. */
-async function openSettings(
-  page: Page,
-  preview: { x: number; y: number; width: number; height: number },
-): Promise<void> {
-  const spot = await page.evaluate(async url => {
-    const { session, canvas, settingsControl } = await import(/* @vite-ignore */ url);
-    const cv = document.getElementById('preview') as HTMLCanvasElement;
-    const annotation = canvas.selectedId ? session.clip.annotations.byId(canvas.selectedId) : null;
-    if (!annotation) return null;
-    const scale = cv.clientWidth > 0 ? cv.width / cv.clientWidth : 1;
-    const s = settingsControl(annotation, cv.width, cv.height, scale);
-    return s ? { x: s.x, y: s.y } : null;
-  }, HOOKS);
-  if (!spot) throw new Error('no settings control on the picked annotation');
-  await page.mouse.click(preview.x + preview.width * spot.x, preview.y + preview.height * spot.y);
 }
 
 test('a picked annotation’s duration is a seconds value in its preferences, kept by the one undo', async ({ page }) => {

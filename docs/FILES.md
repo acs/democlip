@@ -123,6 +123,8 @@ democlip/
 │       │   ├── image-plugin.ts        # The image kind: choose a picture, place and draw it
 │       │   ├── picture.ts             # Preparing and placing a picture, for the picker and the clipboard
 │       │   ├── text-plugin.ts         # The text kind: type a line, place and scale it
+│       │   ├── magnifier-plugin.ts    # The magnifier kind: drag a lens, read the picture beneath it
+│       │   ├── sound-plugin.ts        # The sound kind: choose a stock sound, play it over a stretch
 │       │   ├── properties-inspector.ts # What a picked annotation's kind offers, shown and edited
 │       │   ├── text-entry.ts          # The one dialog for typing a line, entering and editing
 │       │   ├── annotation-lane.ts     # The timeline lane: where the annotations are

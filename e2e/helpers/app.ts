@@ -34,6 +34,8 @@ export interface Booted {
   clipLength(): Promise<number>;
   /** Put the app in the review phase and load the first take, so editing is live. */
   review(): Promise<void>;
+  /** Put the app in review for a clip with no picture: the waveform stands in for the strip. */
+  reviewSoundOnly(): Promise<void>;
 }
 
 export function boot(page: Page): Booted {
@@ -112,6 +114,16 @@ export function boot(page: Page): Booted {
       }, HOOKS);
       // openReview builds the strip in the background; wait for the first cell.
       await expect(page.locator('#thumbs canvas').first()).toBeVisible();
+    },
+
+    async reviewSoundOnly() {
+      await page.evaluate(async (url) => {
+        const { setPhase, openReview } = await import(/* @vite-ignore */ url);
+        setPhase('review');
+        await openReview(0, 0);
+      }, HOOKS);
+      // A sound-only clip has no strip: the review's own annotate options are the signal.
+      await expect(page.locator('#annotate-bar')).toHaveClass(/on/);
     },
   };
 }
