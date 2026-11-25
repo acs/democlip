@@ -1,6 +1,6 @@
 ---
 name: improve-the-sound
-description: Raise a voice recording to a competitive loudness — measured first, mono, one pass — leaving the picture copied bit for bit.
+description: Raise a voice past what the app's own sound boost does — mono, a low-end cut, a presence lift — measured first and in one pass, leaving the picture copied bit for bit.
 tools: [export_clip, describe_clip, cut, import_take]
 outside: ffmpeg
 proved: run
@@ -12,10 +12,13 @@ proved: run
 without a second generation of loss — and know which of the usual treatments this
 recording does not need.
 
-**Why not a feature.** The app decodes a take's audio to draw its waveform and to build
-the export's mix, but it has no level, EQ or noise processing and no target loudness: a
-chain would put a decode of every take, a target to choose and a judgement per clip into
-the browser. It is one ffmpeg pass outside, and a file that comes back in as a take.
+**Why not a feature — and what now is.** The **loudness** half is the app's own now: the
+**sound boost** brings a clip to about −16 LUFS with peak safety, in the review and in every
+file, on by default and fixable in a profile. What is still the app's not to do is everything
+the measurement asks for *beyond* loudness — the mono fold-down, the low-end cut, the presence
+lift — and the judgement of which of those a recording needs, which is an ear and an A/B. So
+this recipe is now the **outside** half: reach for it when a voice needs more than being
+brought to the target, and skip it when it only needs that.
 
 **Steps.**
 
@@ -26,10 +29,12 @@ the browser. It is one ffmpeg pass outside, and a file that comes back in as a t
    integrated loudness, true peak and loudness range; `astats=measure_overall=all` for
    the noise floor. Then check whether the two channels are one channel given twice:
    `-af "pan=mono|c0=c0-c1,astats"` — a difference 90 dB down is the same signal twice.
-3. **Loudness in two passes.** `loudnorm=I=-16:TP=-1.5:LRA=11:print_format=json` measures;
-   the second pass hands those numbers back (`measured_I`, `measured_TP`, `measured_LRA`,
-   `measured_thresh`, `offset`) with `linear=true`. One pass rides the gain, and its first
-   seconds never reach the target.
+3. **Loudness in two passes** — the app's own **Boost the sound** already does this on the clip
+   (about −16 LUFS with peak safety), so do it here only when the file that left had the boost
+   off or a different target is wanted. `loudnorm=I=-16:TP=-1.5:LRA=11:print_format=json`
+   measures; the second pass hands those numbers back (`measured_I`, `measured_TP`,
+   `measured_LRA`, `measured_thresh`, `offset`) with `linear=true`. One pass rides the gain, and
+   its first seconds never reach the target.
 4. **Only the treatments the measurements ask for.** `-ac 1` where the channels are
    identical; `highpass=f=60` where the low end is room and handling rather than voice; a
    2 dB `equalizer=f=3000:t=q:w=1.2:g=2` where intelligibility needs it — and an A/B with

@@ -19,6 +19,7 @@ import type {
 import { fitsBudget as budgetFits, specFor, videoBitrate } from './export-target.js';
 import type { VideoCodecChoice } from './export-target.js';
 import { firstPresentedSample } from './first-sample.js';
+import { gainOf, measureKept } from './sound-boost.js';
 
 const AUDIO_BITRATE = 128_000;
 const KEYFRAME_S = 2;
@@ -364,7 +365,18 @@ async function renderAudio(plan: ExportPlan): Promise<AudioBuffer | null> {
     source.connect(gain).connect(context.destination);
     source.start(piece.at, piece.from - plan.startOf(piece.takeIndex), length);
   }
-  return context.startRendering();
+  const mixed = await context.startRendering();
+  // The clip's own switch: bring the sound to the target with peak safety. It is one gain over
+  // the mix, measured from the takes the mix was decoded from, so the export measures exactly
+  // what the review does and pays no second decode for it.
+  if (!plan.soundBoost) return mixed;
+  const gain = gainOf(measureKept(decoded, plan.localPieces()));
+  if (gain === 1) return mixed;
+  for (let c = 0; c < mixed.numberOfChannels; c++) {
+    const data = mixed.getChannelData(c);
+    for (let i = 0; i < data.length; i++) data[i] *= gain;
+  }
+  return mixed;
 }
 
 /** A take's sound, or null when it has none (an imported video, a silent file). */

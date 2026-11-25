@@ -13,6 +13,7 @@ import { renderMarks } from '../cutting/marks.js';
 import { renderLane } from '../annotating/annotation-lane.js';
 import { updateSizeUI, updateTimeUI } from './timeline-ui.js';
 import { stopMirror } from '../recording/preview.js';
+import { refreshBoost } from './boost.js';
 
 export async function openReview(loadIndex: number, park: number): Promise<void> {
   // The preview belongs to the clip from here, so the live source has to let go of
@@ -42,4 +43,7 @@ export async function openReview(loadIndex: number, park: number): Promise<void>
   el.timeline.classList.add('on');
   el.btnExp.style.display = '';
   el.propsBtn.style.display = '';
+  // The sound the review will play is the sound the file will carry: take the boost's gain
+  // for this clip, in the background, so a play finds it ready.
+  refreshBoost();
 }

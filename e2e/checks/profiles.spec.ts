@@ -14,7 +14,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { boot } from '../helpers/app.js';
 import { makeTakes } from '../fixtures/takes.js';
-import { exportFile, frameCounts, frameDiff, probeFile } from '../helpers/exports.js';
+import { exportFile, frameCounts, frameDiff, loudnessOf, probeFile } from '../helpers/exports.js';
 import { pageModule } from '../helpers/page-module.js';
 
 const HOOKS = pageModule('e2e/support/app-hooks.ts');
@@ -97,7 +97,9 @@ test('an item a profile fixes is applied and locked — on or off — and refuse
   // it is kept as.
   await page.locator('#props-btn').click();
   await expect(page.locator('#clip-prop-menu .prop-lock')).toHaveAttribute('title', 'Set by DemoClipTV');
-  await expect(page.locator('#clip-prop-menu input.prop-check')).toHaveCount(0);
+  // The fixed row has no control of its own — the free ones still do, so the check is scoped
+  // to the row the profile fixes rather than to the whole panel.
+  await expect(page.locator('#clip-prop-menu .prop-row[data-id="addToExport"] input.prop-check')).toHaveCount(0);
   await expect(page.locator('#clip-prop-menu .prop-value').first()).toHaveText('On');
   await page.locator('#props-btn').click();
 
@@ -119,19 +121,25 @@ test('an item a profile fixes is applied and locked — on or off — and refuse
   expect((refused as { reason: string }).reason).toMatch(/DemoClipTV fixes add to export/);
 
   // A fresh session: the same profile fixing a switch **off** is a fixed off, not the
-  // person's to move — the value it holds, and the lock that says so.
+  // person's to move — the value it holds, and the lock that says so. Both switches are
+  // fixed here, and the boost being fixed off reaches the file: the sound is the recording's
+  // own, far below the target the app would otherwise have brought it to.
   await page.locator('#btn-new').click();
   await expect(page.locator('#btn-new')).toBeHidden();
-  await writeBook(page, book({ addToExport: '' }));
+  await writeBook(page, book({ addToExport: '', soundBoost: '' }));
   await page.reload();
   await expect(page.locator('#s-text')).toHaveText('Ready');
-  const second = await makeTakes(page, { width: 640, height: 360, seconds: 1 });
+  const second = await makeTakes(page, { width: 640, height: 360, seconds: 1, hasAudio: true, level: 0.05 });
   await app.add(second);
   await app.review();
   await page.locator('#props-btn').click();
-  await expect(page.locator('#clip-prop-menu .prop-lock')).toHaveAttribute('title', 'Set by DemoClipTV');
-  await expect(page.locator('#clip-prop-menu input.prop-check')).toHaveCount(0);
+  await expect(page.locator('#clip-prop-menu .prop-lock')).toHaveCount(2);   // both switches; the size wears no lock
+  await expect(page.locator('#clip-prop-menu input.prop-check')).toHaveCount(0);   // both switches are fixed, so no control at all
   await expect(page.locator('#clip-prop-menu .prop-value').first()).toHaveText('Off');
+  await expect(page.locator('#clip-prop-menu .prop-row[data-id="soundBoost"] .prop-value')).toHaveText('Off');
+  await page.locator('#props-btn').click();
+  const recorded = await loudnessOf(page, await exportFile(page, '#exp-webm'));
+  expect(recorded.lufs).toBeLessThan(-20);
 });
 
 // ── An annotation colour a profile fixes ─────────────────────────────────────────────
@@ -279,14 +287,15 @@ test('a profile is made in the selector, defined in its own sheet, chosen, kept 
   // The colour the profile fixed is still the clip's, now the person's to move, and it reads as
   // the colour itself beside its name.
   await expect(page.locator('#clip-prop-menu .prop-row[data-id="annotationColour"] .colour-choice[aria-pressed="true"]')).toHaveText('Orange');
-  await expect(page.locator('#clip-prop-menu input.prop-check')).toBeChecked();
-  await page.locator('#clip-prop-menu input.prop-check').uncheck();
-  await expect(page.locator('#clip-prop-menu input.prop-check')).not.toBeChecked();
+  const card = page.locator('#clip-prop-menu .prop-row[data-id="addToExport"] input.prop-check');
+  await expect(card).toBeChecked();
+  await card.uncheck();
+  await expect(card).not.toBeChecked();
   // With nothing on the card the switch is disabled — a title is what it is waiting for.
-  await expect(page.locator('#clip-prop-menu input.prop-check')).toBeDisabled();
+  await expect(card).toBeDisabled();
   await page.locator('#clip-prop-menu .prop-row[data-id="title"] input').fill('A short demo');
   await page.locator('#clip-prop-menu .prop-row[data-id="title"] input').press('Enter');
-  await expect(page.locator('#clip-prop-menu input.prop-check')).toBeEnabled();
+  await expect(card).toBeEnabled();
   await page.locator('#props-btn').click();
 
   // The choice is fixed once the session has begun to capture: another profile's pick is

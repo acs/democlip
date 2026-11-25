@@ -67,6 +67,15 @@ describe('planExport', () => {
     expect(plan?.steps.map(s => s.joinAt)).toEqual([null, 4]);
   });
 
+  it('carries whether the clip’s sound is to be boosted, from the clip itself', () => {
+    // A clip that never set the switch is boosted — the property's default — and a clip that
+    // says off is not; the plan reads the clip, so no caller can disagree with it.
+    expect(planExport(clipWithSound(4), settings)?.soundBoost).toBe(true);
+    const off = clipWithSound(4);
+    off.setProperty('soundBoost', 'false');
+    expect(planExport(off, settings)?.soundBoost).toBe(false);
+  });
+
   it('plans nothing when there is nothing to write', () => {
     expect(planExport(clipOf(), settings)).toBeNull();     // no takes at all
   });
@@ -82,6 +91,14 @@ describe('planExport', () => {
 
     expect(planExport(clip, settings)?.soundOnly).toBe(true);
     expect(planExport(clipOf(4), settings)?.soundOnly).toBe(false);
+  });
+
+  it('carries the boost independently of whether the kept sound exists', () => {
+    // A plan with no sound still carries the flag: the encoder has nothing to multiply, and
+    // the flag is the clip's answer rather than the file's.
+    const silent = planExport(clipOf(4), settings)!;
+    expect(silent.audio).toBe(false);
+    expect(silent.soundBoost).toBe(true);
   });
 
   it('puts a title card at the head of the file when the export has one', () => {

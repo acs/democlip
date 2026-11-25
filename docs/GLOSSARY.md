@@ -21,6 +21,7 @@ beside it.
 | **session** | one sitting of the app: the clip, and whether it has begun to capture. Over at **New**, when the clip is exported, or when the share ends | `Session` (`src/domain/session/Session.ts`, `session.end()`) |
 | **take** | one arrival of a recording: a press of Record (one MediaRecorder WebM), or an **import**ed file. It has its own length, its picture and its sound, and the takes are played in order | `Take` — id, blob, url, duration, picture, hasAudio |
 | **sound** | what a take carries beside its picture: the recorded audio track. A clip **has sound** when any of its takes does, and **keeps sound** when any kept stretch does; a picture take may be silent, and a **sound-only** take always has it | `Take.hasAudio`, `Clip.hasSound()`, `Clip.keepsSound()` |
+| **sound boost** | the clip's sound brought to the app's one loudness target — about −16 LUFS for speech — with peak safety, so a recording plays where a player expects it. It is **on** unless the clip says otherwise, and it is a clip property a **profile** may fix. One measurement of the clip's kept sound decides one gain, and that gain is applied to the sound as it is heard and written; the recorded sound is never changed, so switching it off gives the take back whole | `SoundBoost` (`src/domain/sound/SoundBoost.ts`), `Loudness` (`src/domain/sound/Loudness.ts`), `ExportPlan.soundBoost` |
 | **clip** | all the takes, in order, plus what was cut out. What everything else asks what to show and what to export | `Clip`, the aggregate |
 | **take repository** | where a clip's takes come from, and the only owner of their object URLs | `TakeRepository` (the port), `InMemoryTakeRepository` |
 | **record source** | what a take is made of: the shared **screen**, the **webcam** and the **microphone**. Three independent toggles, **all off at start** — nothing is captured until one is pressed. A take needs a source: a picture — the screen, or the webcam when the screen is off — or the microphone alone, which makes a **sound-only** take. With the screen off nothing reaches for a share | the source buttons (`#screen-btn`, `#webcam-btn`, `#mic-btn`) |
@@ -169,8 +170,9 @@ profile named. An item no profile declares is the person's, exactly as it was be
 there were profiles at all — so a profile that declares nothing is a **free** profile,
 and the built-in **Default** is that profile.
 
-In its first iterations a profile controls three items: the clip properties **add to export**,
-**logo** and **annotation colour** — the colour a new arrow or text is made in. All are offered
+In its first iterations a profile controls four items: the clip properties **add to export**,
+**logo**, **annotation colour** — the colour a new arrow or text is made in — and **sound
+boost**, whether the clip's sound is brought to a competitive loudness. All are offered
 by the same register the clip properties are declared in, so a later iteration carries another
 one (a title, a text size) by declaring it, not by adding a second kind of configuration.
 

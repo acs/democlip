@@ -19,6 +19,16 @@ const FULL   = 1;       // the level the sound sits at
 // is open and goes when the page does.
 let audioCtx: AudioContext | null = null;
 let audioGain: GainNode | null = null;
+// The **boost** sits after the fade, on its own node: the fades drive theirs between 0 and 1,
+// and a boost folded into the same node would be undone at every join.
+let audioBoost: GainNode | null = null;
+let boostValue = 1;
+
+/** The level the boost is at: remembered, and applied now when the graph is already made. */
+export function setBoostGain(value: number): void {
+  boostValue = value;
+  if (audioBoost) audioBoost.gain.value = value;
+}
 
 // The element's sound through the gain node, made once. Null if the browser will
 // not give us an audio context.
@@ -30,10 +40,14 @@ export function elementAudio(): { ctx: AudioContext; gain: GainNode } | null {
     const ctx = audioCtx ?? new Ctx();
     const gain = ctx.createGain();
     gain.gain.value = FULL;
+    const boost = ctx.createGain();
+    boost.gain.value = boostValue;          // whatever the review has been told to sit at
     ctx.createMediaElementSource(el.rv).connect(gain);
-    gain.connect(ctx.destination);          // the preview goes on being audible
+    gain.connect(boost);
+    boost.connect(ctx.destination);          // the preview goes on being audible
     audioCtx = ctx;
     audioGain = gain;
+    audioBoost = boost;
     // Autoplay policy can leave the context suspended; resume it on play.
     el.rv.addEventListener('play', () => {
       if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume().catch(() => {});

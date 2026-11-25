@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { applyActiveProfile } from './apply.js';
+import { boostsSound } from '../../domain/sound/SoundBoost.js';
 import { Clip } from '../../domain/clip/Clip.js';
 import { Profile } from '../../domain/profile/Profile.js';
 import { Profiles } from '../../domain/profile/Profiles.js';
@@ -65,6 +66,25 @@ describe('applyActiveProfile', () => {
     clip.setProperty('addToExport', 'true');
     applyActiveProfile(clip, bookWith({ addToExport: '' }));
     expect(clip.properties.get('addToExport')).toBe('');
+  });
+
+  it('fixes the sound boost on, off or free, and tells the three apart', () => {
+    const off = Clip.empty(new FakeTakes());
+    applyActiveProfile(off, bookWith({ soundBoost: '' }));
+    // The switch's default is on, so a profile fixing it off must store an explicit off —
+    // otherwise "fixed off" and "never set" would be the same value on the clip.
+    expect(off.properties.get('soundBoost')).toBe('false');
+    expect(boostsSound(off.properties)).toBe(false);
+
+    const on = Clip.empty(new FakeTakes());
+    applyActiveProfile(on, bookWith({ soundBoost: 'true' }));
+    expect(on.properties.get('soundBoost')).toBe('');
+    expect(boostsSound(on.properties)).toBe(true);
+
+    // Free: the profile says nothing, so the clip is the person's — and reads as on.
+    const free = Clip.empty(new FakeTakes());
+    applyActiveProfile(free, bookWith({}));
+    expect(boostsSound(free.properties)).toBe(true);
   });
 
   it('does not apply a declaration for an item this build does not preload', () => {

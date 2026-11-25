@@ -27,6 +27,24 @@ const PEAK_RATE = 8000;
 
 export class Waveform {
   private peaks: Float32Array | null = null;
+  /**
+   * The level the sound is being heard at: the bars are drawn at the level the review plays
+   * and the file will carry, which is the recording's own until the boost moves it. One
+   * constant gain, so the shape is untouched and only the height changes.
+   */
+  private gain = 1;
+
+  /** The gain the bars are drawn at. */
+  gainNow(): number {
+    return this.gain;
+  }
+
+  /** The boost the sound is being heard at. Redraws, so a moved switch moves the bars. */
+  setGain(value: number): void {
+    if (value === this.gain) return;
+    this.gain = value;
+    this.draw();
+  }
 
   clear(): void {
     this.peaks = null;
@@ -109,7 +127,7 @@ export class Waveform {
     for (let i = 0; i < peaks.length; i++) {
       const at = (i + 0.5) * step;                       // when that bar was heard
       if (gone.contains(at)) continue;                   // not in the clip any more
-      const barH = Math.max(1, peaks[i] * (h - 4));
+      const barH = Math.max(1, Math.min(peaks[i] * this.gain, 1) * (h - 4));
       ctx.fillRect((keptOf(at) / kept) * w - bw / 2, mid - barH / 2, bw, barH);
     }
   }

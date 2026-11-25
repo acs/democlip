@@ -54,21 +54,24 @@ test('the panel gives the clip a title and a description, kept across a reload, 
   // them all, so a person reads what it will add before asking for it.
   const ids = await page.locator('#clip-prop-menu .prop-row').evaluateAll(rows =>
     rows.map(row => (row as HTMLElement).dataset.id));
-  expect(ids).toEqual(['title', 'description', 'logo', 'addToExport', 'annotationColour', 'size']);
+  expect(ids).toEqual(['title', 'description', 'logo', 'addToExport', 'annotationColour', 'soundBoost', 'size']);
 
   // With nothing on the card, the switch is drawn disabled — and it says why, so a person
   // reads what to do rather than guessing at the grey. The fields beside it are never
   // disabled: they are what the switch is waiting for.
+  const card = page.locator('#clip-prop-menu .prop-row[data-id="addToExport"] input.prop-check');
   const hint = page.locator('#clip-prop-menu .prop-row[data-id="addToExport"] .prop-hint');
-  await expect(page.locator('#clip-prop-menu input.prop-check')).toBeDisabled();
+  await expect(card).toBeDisabled();
   await expect(hint).toHaveText('Add to export needs something to put on the card — a title, a description or a logo');
   await expect(page.locator('#clip-prop-menu .prop-row[data-id="title"] input')).toBeEnabled();
   await expect(page.locator('#clip-prop-menu .prop-row[data-id="logo"] select')).toBeEnabled();
+  // The sound boost is a switch of its own and is never blocked: it needs nothing on the card.
+  await expect(page.locator('#clip-prop-menu .prop-row[data-id="soundBoost"] input.prop-check')).toBeEnabled();
 
   // A title is enough, and the reason goes as the switch comes to life.
   await page.locator('#clip-prop-menu .prop-row[data-id="title"] input').fill('A short demo');
   await page.locator('#clip-prop-menu .prop-row[data-id="title"] input').press('Enter');
-  await expect(page.locator('#clip-prop-menu input.prop-check')).toBeEnabled();
+  await expect(card).toBeEnabled();
   await expect(hint).toBeHidden();
 
   await page.locator('#clip-prop-menu textarea').fill('What the clip shows');

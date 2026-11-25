@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { ExportPlan } from './ExportPlan.js';
+import { ExportPlan, type ExportSettings } from './ExportPlan.js';
 import { Take } from './Take.js';
 import { IntroCard } from './IntroCard.js';
 import { TimelineMap } from './TimelineMap.js';
@@ -30,7 +30,7 @@ const parts = () => ({
   ],
 });
 
-const planOf = (settings = { fadeSeconds: 0.08, annotations: 'drawn' as const }): ExportPlan =>
+const planOf = (settings: ExportSettings = { fadeSeconds: 0.08, annotations: 'drawn' }): ExportPlan =>
   ExportPlan.of(parts().segments, takes, 10, parts().map, settings);
 
 const arrow = (id: string, s: number, e: number): Arrow => {
@@ -49,6 +49,29 @@ describe('ExportPlan', () => {
   it('says which stretch of each take to decode, in the take’s own seconds', () => {
     expect(planOf().steps.map(s => [s.takeIndex, s.localTo]))
       .toEqual([[0, 5], [1, 5]]);
+  });
+
+  it('gives each kept stretch in its own take’s seconds, which is what a single-take decoder indexes by', () => {
+    // A piece's times are the **recording's**: the second take's stretch runs 5s…10s of the
+    // clip, and 0s…5s of that take. Reading the first against the second take's buffer lands
+    // past its end — which is how a clip of two takes came to be measured by its first alone.
+    expect(planOf().localPieces()).toEqual([
+      { takeIndex: 0, from: 0, to: 3, at: 0 },
+      { takeIndex: 0, from: 4, to: 5, at: 3 },
+      { takeIndex: 1, from: 0, to: 5, at: 4 },
+    ]);
+  });
+
+  it('keeps the file’s own time out of the takes’ seconds, card or no card', () => {
+    // `at` is where a stretch lands in the file, so a card at the head pushes it along; `from`
+    // and `to` are the take's own either way, since the card is not part of any take.
+    const intro = IntroCard.of('A demo', 'What it shows', new Date(2026, 0, 2, 12), 3)!;
+    const plan = ExportPlan.of(
+      parts().segments, takes, 10, parts().map,
+      { fadeSeconds: 0.08, annotations: 'drawn' }, AnnotationSet.EMPTY, intro,
+    );
+    expect(plan.localPieces().map(piece => piece.at)).toEqual([3, 6, 7]);
+    expect(plan.localPieces().map(piece => [piece.from, piece.to])).toEqual([[0, 3], [4, 5], [0, 5]]);
   });
 
   it('marks the join where one take follows another, and nowhere else', () => {

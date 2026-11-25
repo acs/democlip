@@ -22,6 +22,8 @@ export interface FixtureSpec {
   container?: 'webm' | 'mp4';
   /** Write the sound alone — a tone with no video track — for a sound-only take. */
   soundOnly?: boolean;
+  /** How loud the tone is, 0…1 of full scale: a check seeds a take that is quiet on purpose. */
+  level?: number;
 }
 
 export interface EncodedTake {
@@ -48,11 +50,14 @@ function drawFrame(ctx: CanvasRenderingContext2D, index: number, total: number, 
 }
 
 /** A short tone, so a take can carry sound for the waveform and the mixed export. */
-async function tone(seconds: number, sampleRate = 48_000): Promise<AudioBuffer> {
+async function tone(seconds: number, level: number, sampleRate = 48_000): Promise<AudioBuffer> {
   const context = new OfflineAudioContext(1, Math.max(1, Math.ceil(seconds * sampleRate)), sampleRate);
   const oscillator = context.createOscillator();
   oscillator.frequency.value = 440;
-  oscillator.connect(context.destination);
+  // The level is what a check chooses: quiet on purpose, to see a boost lift it.
+  const gain = context.createGain();
+  gain.gain.value = level;
+  oscillator.connect(gain).connect(context.destination);
   oscillator.start(0);
   oscillator.stop(seconds);
   return context.startRendering();
@@ -97,7 +102,7 @@ export async function encodeTake(spec: FixtureSpec): Promise<EncodedTake> {
       await video.add(i / fps, 1 / fps);
     }
   }
-  if (sound) await sound.add(await tone(spec.seconds));
+  if (sound) await sound.add(await tone(spec.seconds, spec.level ?? 1));
   await output.finalize();
 
   const buffer = output.target.buffer;

@@ -18,6 +18,8 @@ export interface FixtureSpec {
   soundOnly?: boolean;
   /** Which container to write for a file; the page encoder only. */
   container?: 'webm' | 'mp4';
+  /** How loud the tone is, 0…1 of full scale: a check seeds a take that is quiet on purpose. */
+  level?: number;
 }
 
 /** A take built in the page: its metadata, and where its blob is kept. */

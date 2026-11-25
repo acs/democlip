@@ -26,6 +26,19 @@ export interface ExportPiece {
   at: number;     // seconds into the output file
 }
 
+/**
+ * One kept stretch in the seconds of **the take it belongs to**: what a decoder that opens one
+ * take at a time indexes by. It is the same stretch as the `ExportPiece` it came from — `at` is
+ * unchanged — with the two units the plan holds told apart, so no adapter has to remember which
+ * one a number is in.
+ */
+export interface LocalPiece {
+  takeIndex: number;
+  from: number;   // seconds of that take, inclusive
+  to: number;     // seconds of that take, exclusive
+  at: number;     // seconds into the output file
+}
+
 /** One take that survives the cuts: how far into it to decode, and where it lands. */
 export interface ExportStep {
   takeIndex: number;
@@ -68,6 +81,13 @@ export class ExportPlan {
      * encoder to write an audio track without a video one, and a video service to refuse it.
      */
     readonly soundOnly: boolean,
+    /**
+     * The clip's sound is to be **boosted**: brought to the app's target loudness with peak
+     * safety, as the sound is heard and written. The clip's own setting — a clip property a
+     * **profile** may fix — so every encoder reads it here and no caller can disagree. It is
+     * independent of `audio`: a plan with no sound has the flag and nothing to do with it.
+     */
+    readonly soundBoost: boolean,
   ) {}
 
   /**
@@ -77,7 +97,8 @@ export class ExportPlan {
    * ways, which is where a frame's position comes from; `annotations` is what the
    * clip says is drawn over the picture. `intro` is a card at the head of the file,
    * if the export has one: it takes the first seconds, and every kept stretch lands
-   * that much later.
+   * that much later. `soundBoost` is whether the clip's sound is to be brought to the
+   * app's target loudness — the clip's own setting, handed in by `planExport`.
    */
   static of(
     segments: readonly Segment[],
@@ -87,6 +108,7 @@ export class ExportPlan {
     settings: ExportSettings,
     annotations: AnnotationSet = AnnotationSet.EMPTY,
     intro: IntroCard | null = null,
+    soundBoost = false,
   ): ExportPlan {
     // The kept takes' own facts decide what the file holds: a picture from any take that
     // has one, and sound from any take that carries an audio track. A sound-only file has
@@ -125,7 +147,7 @@ export class ExportPlan {
 
     return new ExportPlan(
       pieces, steps, takes, to, offset + total, audio, settings.fadeSeconds,
-      annotations, map, starts, card, offset, soundOnly,
+      annotations, map, starts, card, offset, soundOnly, soundBoost,
     );
   }
 
@@ -149,6 +171,25 @@ export class ExportPlan {
   /** Where a take begins on the recording's own timeline. */
   startOf(takeIndex: number): number {
     return this.starts[takeIndex] ?? 0;
+  }
+
+  /**
+   * The kept stretches in each take's own seconds. A piece's `from` and `to` are the
+   * **recording's** — the clip's timeline, where the cuts and the annotations live — while
+   * anything that opens one take at a time indexes by that take's own; the two are one
+   * subtraction apart, and this is the one place it is made, so a decoder cannot read a piece's
+   * times as its own by mistake.
+   */
+  localPieces(): readonly LocalPiece[] {
+    return this.pieces.map(piece => {
+      const start = this.startOf(piece.takeIndex);
+      return {
+        takeIndex: piece.takeIndex,
+        from: Math.max(0, piece.from - start),
+        to: Math.max(0, piece.to - start),
+        at: piece.at,
+      };
+    });
   }
 
   /**

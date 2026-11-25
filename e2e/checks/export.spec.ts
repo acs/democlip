@@ -11,7 +11,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { boot } from '../helpers/app.js';
 import { makeFile, makeTakes, type FixtureFile } from '../fixtures/takes.js';
-import { exportFile, frameCounts, hasSound, probeFile } from '../helpers/exports.js';
+import { exportFile, frameCounts, hasSound, loudnessOf, probeFile } from '../helpers/exports.js';
 
 /** Choose a file through the Import button, the way a person does. */
 async function importFile(page: Page, file: FixtureFile): Promise<void> {
@@ -71,7 +71,7 @@ test('a clip that asks for the card gets two seconds of it, with its words on th
   await expect(page.locator('#clip-prop-menu')).toHaveClass(/on/);
   await page.locator('#clip-prop-menu .prop-row[data-id="title"] input').fill('A short demo');
   await page.locator('#clip-prop-menu textarea').fill('What the clip shows in this recording');
-  await page.locator('#clip-prop-menu input[type="checkbox"]').check();
+  await page.locator('#clip-prop-menu .prop-row[data-id="addToExport"] input[type="checkbox"]').check();
   await page.locator('#props-btn').click();
 
   const carded = await exportFile(page, '#exp-webm');
@@ -179,6 +179,89 @@ test('a file becomes a take, and a clip exported for editing comes back with its
   } finally {
     await rm(work, { recursive: true, force: true });
   }
+});
+
+/** How many pixels of the timeline's waveform are painted: its bars, at the level drawn. */
+async function waveformPixels(page: Page): Promise<number> {
+  return page.evaluate(() => {
+    const canvas = document.querySelector<HTMLCanvasElement>('#waveform');
+    const context = canvas?.getContext('2d');
+    if (!canvas || !context) return -1;
+    const { data } = context.getImageData(0, 0, canvas.width, canvas.height);
+    let lit = 0;
+    for (let at = 3; at < data.length; at += 4) if (data[at] > 0) lit++;
+    return lit;
+  });
+}
+
+// The clip's sound is **boosted by default**: brought to a competitive loudness with peak
+// safety, in every file, without anything being pressed — and given back as the recording it
+// was when the switch is off, the picture the same either way. The review hears the same
+// boosted sound, because it asks the same rule; a check cannot capture the page's audio, so
+// that half is the shared-rule tests and a real session (`quickstart.md`). The **waveform** is
+// read here instead: it is drawn at the level the sound is heard at, so it moves with the switch.
+//
+// **Two takes of different levels, deliberately**: the loudness is measured over the whole kept
+// sound, and reading a piece's times against the wrong take's buffer once made a clip of two
+// takes measured by its first alone — one gain, far too large, over both. One take hides it.
+test('the sound is boosted by default, and the switch gives the recording back', async ({ page }) => {
+  const app = boot(page);
+  await app.goto();
+  // Quiet on purpose, and 6 dB apart: about −30 and −24 LUFS, the level a microphone a little
+  // far leaves, and the two levels that catch a measurement that stops at the first take.
+  const takes = await makeTakes(
+    page,
+    { width: 640, height: 360, seconds: 1, hasAudio: true, level: 0.03 },
+    { width: 640, height: 360, seconds: 1, hasAudio: true, level: 0.06 },
+  );
+  await app.seed(takes);
+  await app.review();
+
+  // The switch is on for a clip that never touched it: nothing had to be pressed.
+  await page.locator('#props-btn').click();
+  const boost = page.locator('#clip-prop-menu .prop-row[data-id="soundBoost"] input[type="checkbox"]');
+  await expect(boost).toBeChecked();
+
+  // Off first, so the waveform's own baseline is read deterministically — with the switch off
+  // the gain is 1 at once, where with it on the measurement lands a moment later.
+  await boost.uncheck();
+  await page.locator('#props-btn').click();
+  await expect(page.locator('#waveform')).toBeVisible();
+  const recordedBars = await waveformPixels(page);
+  expect(recordedBars).toBeGreaterThan(0);
+
+  // On: the bars are the level the review plays and the file will carry, so they are taller
+  // than the recording's own — a quiet take, which is the case the boost exists for.
+  await page.locator('#props-btn').click();
+  await boost.check();
+  await page.locator('#props-btn').click();
+  await expect.poll(() => waveformPixels(page), { timeout: 10_000 }).toBeGreaterThan(recordedBars * 1.5);
+
+  const boosted = await exportFile(page, '#exp-webm');
+  const loud = await loudnessOf(page, boosted);
+  // The app's one speech target, within the LU the criterion allows.
+  expect(loud.lufs).toBeGreaterThan(-17);
+  expect(loud.lufs).toBeLessThan(-15);
+  // And held below the top. The domain holds the exact −1.5 dBFS ceiling; a lossy re-encode
+  // can overshoot a hair, so the file is asked only to be under it.
+  expect(loud.peakDb).toBeLessThan(0);
+
+  // Off: the file carries the recorded sound — far below the boosted one — and the bars go
+  // back to its own level, because the waveform shows what is heard and nothing else changed.
+  await page.locator('#props-btn').click();
+  await boost.uncheck();
+  await page.locator('#props-btn').click();
+  await expect.poll(() => waveformPixels(page)).toBeLessThan(recordedBars * 1.25);
+
+  const plain = await exportFile(page, '#exp-webm');
+  const recorded = await loudnessOf(page, plain);
+  expect(recorded.lufs).toBeLessThan(loud.lufs - 6);
+
+  const withBoost = await frameCounts(page, boosted, 'video/webm', 0.2);
+  const without = await frameCounts(page, plain, 'video/webm', 0.2);
+  expect(without.painted).toBeGreaterThan(0);
+  expect(without.light).toBeGreaterThan(withBoost.light * 0.9);
+  expect(without.light).toBeLessThan(withBoost.light * 1.1);
 });
 
 // A clip with both kinds of take is a video; its sound-only stretch is black, so the file

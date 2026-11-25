@@ -19,6 +19,7 @@ import {
   type AnnotationColour,
 } from '../../domain/annotation/AnnotationColour.js';
 import { LOGOS, logoFile } from '../logos.js';
+import { BOOST_ID, OFF, boostsSound } from '../../domain/sound/SoundBoost.js';
 
 /** Which shared control edits a clip property. */
 export type ClipPropertyControl = 'text' | 'long-text' | 'toggle' | 'choice' | 'colour';
@@ -203,6 +204,20 @@ registerClipProperty({
   choices: COLOURS.map(colour => ({ value: colour, label: COLOUR_LABELS[colour] })),
   value: annotationColour,
   with: (properties, value) => (isColour(value) ? properties.with('annotationColour', value) : null),
+});
+
+// And the switch that brings the clip's sound to a competitive loudness. It is the first
+// property whose default is **on**: a clip that never touched it is boosted, and a profile may
+// fix it either way. That is why its **off** is a stored `'false'` rather than an empty value —
+// `ClipProperties` deletes an empty one, so "fixed off" and "never set" would be the same
+// thing, and only one of them means off.
+registerClipProperty({
+  id: BOOST_ID,
+  label: 'Boost the sound',
+  control: 'toggle',
+  seedable: true,
+  value: properties => (boostsSound(properties) ? 'true' : ''),
+  with: (properties, value) => properties.with(BOOST_ID, value === 'true' ? '' : OFF),
 });
 
 // And the clip's own size: the picture the review shows and every export writes — the
