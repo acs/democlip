@@ -10,7 +10,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { boot } from '../helpers/app.js';
 import { makeTakes } from '../fixtures/takes.js';
 import { exportFile, hasSound, probeFile, takeBytes, toneLevel } from '../helpers/exports.js';
-import { askedFor, installStandInMic, installStandInShare, installSuspendedAudio } from '../helpers/stand-ins.js';
+import { askedFor, installStandInCamera, installStandInMic, installStandInShare, installSuspendedAudio, webcamAskedFor } from '../helpers/stand-ins.js';
 import { pageModule } from '../helpers/page-module.js';
 import { watchBubble, previewBubble, lastWebcamDraw, compositedBubble, type BubbleArc } from '../helpers/bubble.js';
 
@@ -255,6 +255,52 @@ test('a stand-in device records a take, and the meter follows the voice though i
   await page.locator('#mic-btn').click();
   await expect(page.locator('#mic-btn')).toHaveAttribute('aria-pressed', 'true');
   expect(await loudestBar(page)).toBeGreaterThan(10);
+});
+
+test('the camera is asked for a size it may decline, and a modest camera records its own', async ({ page }) => {
+  // The app used to ask for `video: true` and nothing more, so the browser answered with
+  // its default — 640×480 on every camera for years — however much the hardware could do.
+  // The ask is now a size, and a *preferred* one: `ideal` is what lets a phone whose camera
+  // tops out lower keep working, where `min` or `exact` would fail it outright.
+  await installStandInCamera(page);          // the real device, with its ask kept
+  const app = boot(page);
+  await app.goto();
+  await expect(page.locator('#webcam-btn')).toBeEnabled();
+  await page.locator('#webcam-btn').click();
+  await expect(page.locator('#webcam-btn')).toHaveAttribute('aria-pressed', 'true');
+
+  // Chromium's fake camera honours an ideal size the way a real one picks its nearest mode.
+  await expect(page.locator('#s-text')).toContainText('Live — 1280×720');
+  const ask = await webcamAskedFor(page);
+  expect(ask?.width).toEqual({ ideal: 1280 });
+  expect(ask?.height).toEqual({ ideal: 720 });
+  // No `min` and no `exact` around them: the objects above say the whole of both.
+
+  await page.locator('#rec-btn').click();
+  await expect(page.locator('#s-text')).toHaveText('Recording');
+  await expect(page.locator('#t-live-time')).not.toHaveText('00:00');
+  await page.locator('#rec-btn').click();
+  await expect.poll(() => app.clipLength(), { timeout: 10_000 }).toBeGreaterThan(0.2);
+  expect(await takeSize(page)).toEqual({ width: 1280, height: 720 });
+
+  // A camera that tops out at 640×480 still opens — the ask is a preference — and the
+  // take is that camera's own size, not stretched into the one that was asked for.
+  // Part 1's take comes back on the reload in review, so New ends that clip first.
+  await installStandInCamera(page, { topOut: { width: 640, height: 480 } });
+  await app.goto();
+  await page.locator('#btn-new').click();
+  await expect(page.locator('#webcam-btn')).toBeEnabled();
+  await page.locator('#webcam-btn').click();
+  await expect(page.locator('#webcam-btn')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('#s-text')).toContainText('Live — 640×480');
+  expect(await webcamAskedFor(page)).toMatchObject({ width: { ideal: 1280 }, height: { ideal: 720 } });
+
+  await page.locator('#rec-btn').click();
+  await expect(page.locator('#s-text')).toHaveText('Recording');
+  await expect(page.locator('#t-live-time')).not.toHaveText('00:00');
+  await page.locator('#rec-btn').click();
+  await expect.poll(() => app.clipLength(), { timeout: 10_000 }).toBeGreaterThan(0.2);
+  expect(await takeSize(page)).toEqual({ width: 640, height: 480 });
 });
 
 test('the webcam bubble is a whole, undistorted circle, inset from the corner — not a quarter of one cut off by it', async ({ page }) => {
