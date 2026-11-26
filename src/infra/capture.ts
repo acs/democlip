@@ -28,6 +28,30 @@ function focusController(): FocusController | null {
   return Controller ? new Controller() : null;
 }
 
+/**
+ * What the app asks a camera for: the chosen device, and a **size it would like**.
+ *
+ * The size is a preference and never a demand. Without one the browser answers with
+ * its own default — 640×480 on every camera for years — however much the hardware can
+ * do, so a 1080p webcam recorded at 480p. `ideal` lets the browser deliver the nearest
+ * mode it actually has: a phone's small camera still opens at its own size rather than
+ * failing, and a camera that tops out below the ask records what it tops out at. Never
+ * `min` or `exact` here — either one would turn a modest camera into "Could not start
+ * the webcam".
+ *
+ * 1280×720 is the ask, not the ceiling: a webcam is either the whole picture (where
+ * that is a reasonable clip) or a bubble drawn small over a screen, and a larger camera
+ * costs real encode work for a bubble it cannot show. The frame rate is left alone, so
+ * the camera keeps whatever a browser would have given it.
+ */
+function webcamVideo(deviceId?: string): MediaTrackConstraints {
+  return {
+    ...(deviceId ? { deviceId: { exact: deviceId } } : {}),
+    width: { ideal: 1280 },
+    height: { ideal: 720 },
+  };
+}
+
 export class CaptureAdapter implements CapturePort {
   private screenCapture: CaptureSession | null = null;
   private webcamStream: MediaStream | null = null;
@@ -111,7 +135,7 @@ export class CaptureAdapter implements CapturePort {
 
   async startWebcam(deviceId?: string): Promise<MediaStream> {
     const stream = await navigator.mediaDevices.getUserMedia({
-      video: deviceId ? { deviceId: { exact: deviceId } } : true,
+      video: webcamVideo(deviceId),
       audio: false,
     });
     this.webcamStream = stream;
@@ -131,7 +155,7 @@ export class CaptureAdapter implements CapturePort {
     this.webcamStream = null;
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { deviceId: { exact: deviceId } },
+        video: webcamVideo(deviceId),
         audio: false,
       });
       this.webcamStream = stream;
@@ -144,7 +168,7 @@ export class CaptureAdapter implements CapturePort {
       if (previousId) {
         try {
           const restored = await navigator.mediaDevices.getUserMedia({
-            video: { deviceId: { exact: previousId } },
+            video: webcamVideo(previousId),
             audio: false,
           });
           this.webcamStream = restored;

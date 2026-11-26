@@ -124,6 +124,64 @@ export async function installStandInMic(page: Page, options: StandInMicOptions =
   }, options);
 }
 
+export interface StandInCameraOptions {
+  /**
+   * What this camera tops out at: the size it hands back whatever it is asked, as a
+   * modest camera does when the app names a size it does not have. Left out, the ask
+   * goes to the browser's real device — Chromium's fake one under the suite — so a
+   * check can see what a plain camera does with it.
+   */
+  topOut?: { width: number; height: number };
+}
+
+interface AskedCameraWindow extends AskedWindow {
+  __e2eWebcamFor?: MediaStreamConstraints | null;
+}
+
+/**
+ * A **stand-in camera**, and the ask it heard. A `getUserMedia` request carrying a
+ * picture is recorded here first, then either handed to the real device or answered
+ * with a canvas stream of the camera's own size — which is how a camera that cannot
+ * meet the app's request answers: with what it has, not with a failure.
+ *
+ * Install before `boot.goto()`, so the stand-in is in place before the app loads.
+ */
+export async function installStandInCamera(page: Page, options: StandInCameraOptions = {}): Promise<void> {
+  await page.addInitScript((opts: StandInCameraOptions) => {
+    const media = navigator.mediaDevices;
+    if (!media) return;
+    const real = media.getUserMedia.bind(media);
+
+    media.getUserMedia = async (constraints: MediaStreamConstraints = {}) => {
+      if (!constraints.video) return real(constraints);       // the microphone is the browser's
+      (window as unknown as AskedCameraWindow).__e2eWebcamFor = constraints;
+      const topOut = opts.topOut;
+      if (!topOut) return real(constraints);
+
+      const canvas = document.createElement('canvas');
+      canvas.width = topOut.width;
+      canvas.height = topOut.height;
+      const context = canvas.getContext('2d');
+      if (context) {
+        context.fillStyle = '#3366ff';
+        context.fillRect(0, 0, canvas.width, canvas.height);
+      }
+      return canvas.captureStream(30);
+    };
+  }, options);
+}
+
+/**
+ * The constraints the app passed to `getUserMedia` for a picture, or null if it asked
+ * for none — the camera half of `askedFor`.
+ */
+export async function webcamAskedFor(page: Page): Promise<MediaTrackConstraints | null> {
+  return page.evaluate(() => {
+    const asked = (window as unknown as AskedCameraWindow).__e2eWebcamFor;
+    return asked?.video && typeof asked.video === 'object' ? asked.video : null;
+  });
+}
+
 /** The constraints the app passed to `getDisplayMedia`, or null if it was not asked. */export async function askedFor(page: Page): Promise<DisplayMediaStreamOptions | null> {
   return page.evaluate(() => (window as unknown as AskedWindow).__e2eAskedFor ?? null);
 }
