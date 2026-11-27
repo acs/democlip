@@ -13,13 +13,17 @@ import { t } from '../i18n/index.js';
 import type { RecordingProgress, RecordingSummary } from '../../application/recordings.js';
 import type { Project } from '../../domain/project/Project.js';
 import { Projects } from '../../domain/project/Projects.js';
+import type { StorageReading } from '../../infra/storage.js';
 import { formatLength, recordingRows } from './recording-rows.js';
+import { storageLine } from './storage-line.js';
 
 export interface ProjectOverviewHandlers {
   projects(): Projects;
   project(id: string): Project | null;
   list(projectId: string): Promise<RecordingSummary[]>;
   progress(recordings: readonly RecordingSummary[]): RecordingProgress;
+  /** What the browser says about the app's storage, or null when it will not say. */
+  storage(): Promise<StorageReading | null>;
   open(recordingId: string): Promise<void>;
   move(recordingId: string, projectId: string): Promise<void>;
   remove(recordingId: string): Promise<void>;
@@ -31,6 +35,7 @@ const NO_HANDLERS: ProjectOverviewHandlers = {
   project: () => null,
   list: async () => [],
   progress: recordings => ({ total: recordings.length, finished: 0, inProgress: 0 }),
+  storage: async () => null,
   open: async () => {},
   move: async () => {},
   remove: async () => {},
@@ -78,7 +83,7 @@ class ProjectOverview {
     const token = ++this.renderToken;
     const project = this.handlers.project(this.id);
     if (!project) { this.close(); return; }
-    const recordings = await this.handlers.list(this.id);
+    const [recordings, storage] = await Promise.all([this.handlers.list(this.id), this.handlers.storage()]);
     if (token !== this.renderToken || !this.isOpen) return; // a newer render won
     const progress = this.handlers.progress(recordings);
     const book = this.handlers.projects();
@@ -99,6 +104,10 @@ class ProjectOverview {
         ? t('project.overview.allFinished')
         : '';
     }
+
+    const line = storageLine(storage);
+    el.projectOvStorage.hidden = !line;
+    el.projectOvStorage.textContent = line ? t('project.overview.storage', line) : '';
 
     const rows = recordingRows(recordings, project.name, Projects.DEFAULT_ID);
     el.projectOvList.replaceChildren(...rows.map(row => this.row(row, book, project)));

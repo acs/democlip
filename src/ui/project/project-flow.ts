@@ -16,6 +16,7 @@ import type { Project } from '../../domain/project/Project.js';
 import { session } from '../../session.js';
 import { projectStore } from '../../infra/project-store.js';
 import { recordingStore } from '../../infra/recording-store.js';
+import { storageReading } from '../../infra/storage.js';
 import { images } from '../../infra/images.js';
 import { setPhase } from '../../state.js';
 import { el, toast } from '../dom.js';
@@ -114,6 +115,7 @@ export function initProjects(): void {
     project: id => projects.current.get(id),
     list: id => recordings.listProject(id),
     progress: list => recordings.progressFor(list),
+    storage: () => storageReading(),
     open: openRecording,
     move: moveRecording,
     remove: removeRecording,

@@ -118,6 +118,7 @@ export const el = {
   projectOvDesc:   byId<HTMLElement>('project-ov-desc'),
   projectOvProgress: byId<HTMLElement>('project-ov-progress'),
   projectOvStamp:  byId<HTMLElement>('project-ov-stamp'),
+  projectOvStorage: byId<HTMLElement>('project-ov-storage'),
   projectOvList:   byId<HTMLElement>('project-ov-list'),
   projectOvEmpty:  byId<HTMLElement>('project-ov-empty'),
   profileBtn:  byId<HTMLButtonElement>('profile-btn'),

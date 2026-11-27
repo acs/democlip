@@ -261,6 +261,7 @@ export const es_ES: Record<TranslationKey, string> = {
   'project.overview.none': 'Aún no hay grabaciones.',
   'project.overview.progress': '{finished} de {total} terminadas',
   'project.overview.allFinished': 'Todas las grabaciones de este proyecto están terminadas.',
+  'project.overview.storage': 'Almacenamiento: usando ~{used} de ~{total}',
   'project.overview.rowMeta': '{length} · {state} · {profile}',
   'project.overview.open': 'Abrir',
   'project.overview.move': 'Mover…',
