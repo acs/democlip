@@ -87,11 +87,16 @@ test('an update keeps the recording, a project gathers new ones, and a removal m
   await app.goto();
 
   // Both toolbar pills carry an icon and the colour of the entry they open, so the two
-  // are told apart before either is pressed.
+  // are told apart before either is pressed — and each is a button from the palette: the
+  // same surface and border family as the theme control, with the colour as ink.
   await expect(page.locator('#project-btn .pill-ico')).toBeVisible();
   await expect(page.locator('#profile-btn .pill-ico')).toBeVisible();
-  await expect(page.locator('#project-btn')).toHaveClass(/wears-colour/);
-  await expect(page.locator('#profile-btn')).toHaveClass(/wears-colour/);
+  const buttonSurface = await page.locator('#theme-btn').evaluate(button => getComputedStyle(button).backgroundColor);
+  for (const pill of ['#project-btn', '#profile-btn']) {
+    await expect(page.locator(pill)).toHaveClass(/wears-colour/);
+    await expect(page.locator(pill)).toHaveCSS('background-color', buttonSurface);
+    await expect(page.locator(pill)).not.toHaveCSS('border-top-color', 'rgba(0, 0, 0, 0)');
+  }
 
   // The previous version's clip: a real take, a title, and the old stores.
   await makeTakes(page, { width: 320, height: 180, seconds: 2 });

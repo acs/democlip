@@ -288,17 +288,23 @@ test('a profile is made in the selector, defined in its own sheet, chosen, kept 
   await expect(badge).toHaveCSS('background-color', 'rgb(255, 108, 35)');
   await expect(badge).toHaveCSS('color', 'rgb(8, 9, 26)');
 
-  // Choose it: the clip is made under it, and the toolbar pill wears the same badge.
+  // Choose it: the clip is made under it, and the toolbar pill wears the colour as ink,
+  // on the same control surface as every other button — never as a filled badge.
   await row.locator('.profile-pick').click();
   await expect(page.locator('#profile-initials')).toHaveText('Dem');
-  await expect(page.locator('#profile-btn')).toHaveCSS('background-color', 'rgb(255, 108, 35)');
+  const pill = page.locator('#profile-btn');
+  const buttonSurface = await page.locator('#theme-btn').evaluate(button => getComputedStyle(button).backgroundColor);
+  await expect(pill).toHaveCSS('background-color', buttonSurface);
+  await expect(pill).toHaveCSS('color', 'rgb(255, 108, 35)');
+  await expect(pill).not.toHaveCSS('border-top-color', 'rgba(0, 0, 0, 0)');
 
   // A reload finds it whole — the profile, what it controls, and that it is the one in use.
   await page.reload();
   await expect(page.locator('#s-text')).toHaveText('Ready');
   await expect(page.locator('#profile-initials')).toHaveText('Dem');
-  // The pill's colour comes from the kept profile, not from having watched it being set.
-  await expect(page.locator('#profile-btn')).toHaveCSS('background-color', 'rgb(255, 108, 35)');
+  // The pill's ink comes from the kept profile, not from having watched it being set.
+  await expect(pill).toHaveCSS('color', 'rgb(255, 108, 35)');
+  await expect(pill).toHaveCSS('background-color', buttonSurface);
   const saved = await readBook(page);
   expect(saved?.activeId).not.toBe('default');
   expect(saved?.profiles.find(profile => profile.name === 'DemoClipTV')?.controls).toEqual({
@@ -331,7 +337,7 @@ test('a profile is made in the selector, defined in its own sheet, chosen, kept 
   // The default fixes no colour, so the pill wears the built-in profile's own tone —
   // not the orange the removed profile fixed.
   await expect(page.locator('#profile-btn')).toHaveClass(/wears-colour/);
-  await expect(page.locator('#profile-btn')).not.toHaveCSS('background-color', 'rgb(255, 108, 35)');
+  await expect(page.locator('#profile-btn')).not.toHaveCSS('color', 'rgb(255, 108, 35)');
   expect((await readBook(page))?.activeId).toBe('default');
 
   // The item is the person's again: the value the profile left is still there and it moves.
