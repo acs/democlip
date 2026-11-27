@@ -21,6 +21,15 @@
   --blue:#3B7FFF;
   --green:#22C55E;
   --amber:#F59E0B;
+  /* The five avatar tones, as **ink on a control**: a row's badge is a filled patch of
+     the avatar colour, while the toolbar pill carries the same tone as ink and border on
+     the control surface. On the dark surface the ink is lighter than the fill so it reads;
+     the light theme restates the set deeper. */
+  --tone-0:#FF6B6B;
+  --tone-1:#A78BFA;
+  --tone-2:#60A5FA;
+  --tone-3:#4ADE80;
+  --tone-4:#FBBF24;
   /* The palette. A **control** — a button — is an opaque surface the colour of the scene
      around the picture (`--bg`), so it reads as part of the app rather than a lit panel;
      a hover step, a line and a shadow set it apart, and `--control-text` is its label.
@@ -51,6 +60,13 @@
   /* The same red, deepened so the 11px guide link and the wordmark read on the
      light background: 4.9:1 against #ECF0FA. */
   --brand-red:#C62828;
+  /* The avatar tones as ink on the light control surface: each is deepened until it
+     reads there, while the row's badge keeps the brighter fill it has always worn. */
+  --tone-0:#C62828;
+  --tone-1:#6D28D9;
+  --tone-2:#1D4ED8;
+  --tone-3:#166534;
+  --tone-4:#92400E;
   --idle-bg:rgba(236,240,250,0.94);
   --idle-bd:rgba(0,0,0,0.08);
   /* The palette on light: the same rule — a control is the scene colour (`--bg`), never
@@ -293,11 +309,18 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
    in use, a pencil and a bin; the settings it carries, as the same shared controls the clip
    properties use; and a New Profile button at the foot. */
 .icon-btn-lbl{pointer-events:none;}
-.profile-pill{width:auto;min-width:30px;padding:0 9px;border-radius:100px;font-family:var(--font-mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;}
-/* The pill wears the active profile's annotation colour when it fixes one; the glass hover
-   would wash it out, so it brightens instead. */
-.profile-pill.wears-colour{border-color:transparent;}
-.profile-pill.wears-colour:hover{filter:brightness(1.08);}
+/* A pill is a button, so it is the same control as every other: the opaque `--control`
+   surface, a `--control-line` border and a `--control-text` label. It is wider only to
+   hold the entry's mark and initials, and it wears the entry's colour as **ink and
+   border** — never as a fill. */
+.profile-pill{width:auto;min-width:30px;padding:0 9px;border-radius:100px;font-family:var(--font-mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;gap:5px;}
+.profile-pill.wears-colour{color:var(--pill-tone);border-color:color-mix(in srgb,var(--pill-tone) 55%,var(--control-line));}
+.profile-pill.wears-colour:hover{background:var(--control-hover);border-color:color-mix(in srgb,var(--pill-tone) 75%,var(--control-line));}
+.profile-pill.av-0{--pill-tone:var(--tone-0);}
+.profile-pill.av-1{--pill-tone:var(--tone-1);}
+.profile-pill.av-2{--pill-tone:var(--tone-2);}
+.profile-pill.av-3{--pill-tone:var(--tone-3);}
+.profile-pill.av-4{--pill-tone:var(--tone-4);}
 .profile-menu{min-width:286px;padding:8px;overflow-y:auto;overscroll-behavior:contain;}
 .profile-title{font-family:var(--font-ui);font-size:13px;font-weight:700;letter-spacing:.02em;color:var(--text);text-align:center;padding:4px 0 8px;}
 .profile-row{display:flex;flex-direction:column;gap:5px;padding:5px;border-radius:10px;border:1px solid transparent;}
@@ -614,8 +637,8 @@ html.guide-html body{height:auto;min-height:100%;overflow:visible;}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 
 /* ── Projects ─────────────────────────────────────────────────────────────── */
-/* The pill sits beside the profile pill and wears the current project's initials. */
-.project-pill{color:var(--text);}
+/* The project pill sits beside the profile pill, wears the current project's initials,
+   and follows the same button palette and tone rules as that pill. */
 .project-avatar{font-family:var(--font-mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;}
 .project-row .profile-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .project-menu{min-width:300px;}
@@ -641,12 +664,6 @@ html.guide-html body{height:auto;min-height:100%;overflow:visible;}
 .project-purpose{padding:0 6px 2px;font-family:var(--font-ui);font-size:10px;color:var(--text-mid);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .project-count{font-family:var(--font-mono);font-size:9px;color:var(--text-mid);padding:1px 5px;border:1px solid var(--glass-b);border-radius:100px;}
 
-/* The pill's icon and the tone it wears: the project's or the profile's own, so the
-   button reads as the entry it opens. */
-.profile-pill{gap:5px;}
+/* The pill's mark: a folder for the project, sliders for the profile, beside the
+   initials. The tone itself is the ink and border set above. */
 .pill-ico{width:13px;height:13px;flex-shrink:0;}
-.profile-pill.av-0{background:var(--crimson);color:#fff;border-color:transparent;}
-.profile-pill.av-1{background:#7C3AED;color:#fff;border-color:transparent;}
-.profile-pill.av-2{background:var(--blue);color:#fff;border-color:transparent;}
-.profile-pill.av-3{background:var(--green);color:#fff;border-color:transparent;}
-.profile-pill.av-4{background:var(--amber);color:#2A1C00;border-color:transparent;}

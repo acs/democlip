@@ -20,6 +20,7 @@ import { applyClipProfile } from './apply.js';
 import { controllingIn } from './control.js';
 import { avatarLetters, avatarTone, profileColour } from './profile-rows.js';
 import { paintPill } from '../shell/pill.js';
+import { THEME_CHANGED } from '../shell/theme.js';
 import { profileMenu } from './profile-menu.js';
 import { profileDef } from './profile-def.js';
 import { recordings } from '../project/project-flow.js';
@@ -75,6 +76,9 @@ export function initProfiles(): void {
     rename: (id, name) => report(profiles.rename(id, name)),
   });
   el.profileBtn.addEventListener('click', () => profileMenu.toggle());
+  // A fixed annotation colour is ink computed against the control surface, so a theme
+  // switch recomputes it; a tone is a token and follows the theme on its own.
+  document.addEventListener(THEME_CHANGED, () => paintProfileButton());
   // The rows say what the lock changes — a take starting, a session ending — so redraw while
   // the selector is open. A change behind a closed panel costs nothing.
   session.clip.onChange(event => {
@@ -90,7 +94,8 @@ export function initProfiles(): void {
 /**
  * The toolbar pill shows the profile the clip is made under — its first letters, Dem for
  * DemoClipTV, Emp for Empty — so what the clip is produced as is readable without opening
- * anything. A profile that fixes an annotation colour wears that colour as its badge.
+ * anything. A profile that fixes an annotation colour wears that colour as the pill's ink
+ * and border; one that fixes none wears its own tone the same way.
  */
 export function paintProfileButton(): void {
   const active = session.clip.profile;
