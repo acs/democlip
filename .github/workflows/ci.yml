@@ -39,7 +39,20 @@ jobs:
           cache: npm
 
       - run: npm ci
-      - run: npx playwright install --with-deps chromium
+      # The browser is a 100 MB download and the same build until the lockfile moves.
+      # Keep it between runs; the first run after a dependency change still installs it.
+      - name: Cache Playwright's browser
+        id: playwright-cache
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('package-lock.json', 'mcp/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-
+      - if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium
+      - if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
       - run: npm run test:e2e
 
       # The report and the evidence are kept on every run, as GitLab's artifacts
@@ -75,7 +88,18 @@ jobs:
 
       - run: npm ci
       - run: npm run build
-      - run: npx playwright install --with-deps chromium
+      - name: Cache Playwright's browser
+        id: playwright-cache
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('package-lock.json', 'mcp/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-
+      - if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium
+      - if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
       - run: npm --prefix mcp ci
       - run: npm --prefix mcp run build
       - run: npm --prefix mcp test
