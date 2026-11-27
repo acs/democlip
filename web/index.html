@@ -78,6 +78,9 @@
         <div class="s-dot ready"></div>
         <span>Agent</span>
       </div>
+      <button class="icon-btn profile-pill project-pill" id="project-btn" aria-haspopup="menu" aria-expanded="false" aria-label="Projects" title="Projects">
+        <span class="icon-btn-lbl" id="project-initials">—</span>
+      </button>
       <button class="icon-btn profile-pill" id="profile-btn" aria-haspopup="menu" aria-expanded="false" aria-label="Profiles" title="Profiles">
         <span class="icon-btn-lbl" id="profile-initials">—</span>
       </button>
@@ -240,6 +243,9 @@
 <!-- CAMERA MENU — at the body, for the same reason as the Export menu -->
 <div class="cam-menu" id="cam-menu" role="menu" aria-label="Camera"></div>
 
+<!-- PROJECT MENU — at the body, for the same reason as the profile menu -->
+<div class="cam-menu profile-menu project-menu" id="project-menu" role="menu" aria-label="Projects"></div>
+
 <!-- PROFILE MENU — at the body, because the header clips what overflows it -->
 <div class="cam-menu profile-menu" id="profile-menu" role="menu" aria-label="Profiles"></div>
 
@@ -250,6 +256,31 @@
     <p class="pdef-sub">What this profile fixes. An item left free is yours to change, exactly as it always was.</p>
     <div class="pdef-rows" id="profile-def-rows"></div>
     <div class="pdef-foot"><button class="pdef-done" id="profile-def-done" type="button">Done</button></div>
+  </div>
+</div>
+
+<!-- PROJECT DIALOG — what a project is called, what it is for, and its default profile -->
+<div class="pdef-bd" id="project-def-bd" role="dialog" aria-modal="true" aria-labelledby="project-def-title">
+  <div class="pdef-panel">
+    <h2 class="pdef-title" id="project-def-title">Project</h2>
+    <p class="pdef-sub">A project holds the recordings made for one purpose, and the profile they start under.</p>
+    <div class="pdef-rows" id="project-def-rows"></div>
+    <div class="pdef-foot"><button class="pdef-done" id="project-def-done" type="button">Done</button></div>
+  </div>
+</div>
+
+<!-- PROJECT OVERVIEW — the description, the progress, and every recording of a project -->
+<div class="pdef-bd" id="project-ov-bd" role="dialog" aria-modal="true" aria-labelledby="project-ov-title">
+  <div class="pdef-panel proj-ov-panel">
+    <div class="proj-ov-head">
+      <h2 class="pdef-title" id="project-ov-title">Project</h2>
+      <button class="icon-btn" id="project-ov-close" type="button" aria-label="Close the project overview" title="Close">×</button>
+    </div>
+    <p class="pdef-sub proj-ov-desc" id="project-ov-desc"></p>
+    <p class="proj-ov-progress" id="project-ov-progress"></p>
+    <p class="proj-ov-stamp" id="project-ov-stamp" hidden></p>
+    <ul class="proj-ov-list" id="project-ov-list"></ul>
+    <p class="proj-ov-empty" id="project-ov-empty" hidden>This project has no recordings yet. Record one, and it appears here.</p>
   </div>
 </div>
 

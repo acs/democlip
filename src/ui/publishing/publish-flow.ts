@@ -9,6 +9,7 @@ import { encoder } from '../../infra/offline-encoder.js';
 import { frameRenderer } from '../exporting/frame-renderer.js';
 import { introFor } from '../exporting/intro.js';
 import { keep } from '../keeping/keep.js';
+import { finishRecording } from '../lifecycle/finish-session.js';
 import { el } from '../dom.js';
 import { AspectRatio } from '../../domain/bluesky/AspectRatio.js';
 import { postUrl } from '../../domain/bluesky/BlueskyPost.js';
@@ -98,7 +99,7 @@ export async function publishClip(
       },
       onProgress: handlers.onProgress,
     });
-    keep.forget();
+    await finishRecording({ keepClip: true });
     handlers.onDone({ uri, url: postUrl(uri, await api.blueskyHandle()) });
   } catch (error) {
     handlers.onError(error instanceof Error ? error.message : 'the publish failed');

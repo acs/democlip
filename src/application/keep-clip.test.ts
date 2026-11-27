@@ -2,10 +2,11 @@ import { describe, expect, it } from 'vitest';
 
 import { KeepClip } from './keep-clip.js';
 import { Clip } from '../domain/clip/Clip.js';
+import { ClipProfile } from '../domain/clip/ClipProfile.js';
 import { Take } from '../domain/clip/Take.js';
 import { Span } from '../domain/clip/Span.js';
 import type { TakeRepository } from '../domain/clip/TakeRepository.js';
-import type { KeptClipPort } from './ports/KeptClipPort.js';
+import type { RecordingPlace, RecordingStorePort } from './ports/RecordingStorePort.js';
 import type { ClockPort } from './ports/ClockPort.js';
 
 class FakeTakes implements TakeRepository {
@@ -28,18 +29,28 @@ class FakeTakes implements TakeRepository {
   clear() { this.takes = []; }
 }
 
-interface Call { kind: 'take' | 'meta' | 'clip' | 'clear'; index?: number }
+interface Call { kind: 'take' | 'meta' | 'all'; id?: string; index?: number }
+const place: RecordingPlace = { projectId: 'p1', profile: ClipProfile.DEFAULT.stored(), createdAt: 42 };
 
-const store = (): KeptClipPort & { calls: Call[] } => {
+const store = () => {
   const calls: Call[] = [];
-  return {
+  const port = {
     calls,
-    saveTake: async (_clip, index) => { calls.push({ kind: 'take', index }); },
-    saveMeta: async () => { calls.push({ kind: 'meta' }); },
-    saveClip: async () => { calls.push({ kind: 'clip' }); },
+    saveTake: async (id: string, _clip: Clip, index: number) => { calls.push({ kind: 'take', id, index }); },
+    saveMeta: async (id: string) => { calls.push({ kind: 'meta', id }); },
+    saveAll: async (id: string) => { calls.push({ kind: 'all', id }); },
     load: async () => null,
-    clear: async () => { calls.push({ kind: 'clear' }); },
-  };
+    list: async () => [],
+    delete: async () => {},
+    setProject: async () => {},
+    open: async () => null,
+    setOpen: async () => {},
+    clearOpen: async () => {},
+    readLegacy: async () => null,
+    adopt: async () => {},
+    clearLegacy: async () => {},
+  } as RecordingStorePort & { calls: Call[] };
+  return port;
 };
 
 const clock = (): ClockPort & { flush: () => void } => {
@@ -60,85 +71,107 @@ const clipWith = (...durations: number[]): Clip => {
   return clip;
 };
 
-const build = (clip: Clip) => {
+const build = (clip: Clip, open = true) => {
   const kept = store();
   const time = clock();
+  let target: { recordingId: string; place: RecordingPlace } | null = open
+    ? { recordingId: 'r1', place }
+    : null;
   const keep = new KeepClip({
     clip,
     store: kept,
     clock: time,
+    place: () => target,
   });
   keep.watch();
-  return { keep, kept, time };
+  return { keep, kept, time, close: () => { target = null; } };
 };
 
 describe('KeepClip', () => {
-  it('saves a take as it arrives, at once', async () => {
+  it('saves a take as it arrives, at once, under the open recording', async () => {
     const clip = clipWith();
     const { kept } = build(clip);
 
     clip.addTake(new Blob(['x']), 2);
     await Promise.resolve();
 
-    expect(kept.calls).toEqual([{ kind: 'take', index: 0 }]);
+    expect(kept.calls).toEqual([{ kind: 'take', id: 'r1', index: 0 }]);
   });
 
-  it('puts the metadata write off a moment, so a drag is one write', async () => {
-    const clip = clipWith(2);
+  it('writes the small half after a pause, not on every cut', async () => {
+    const clip = clipWith(10);
     const { kept, time } = build(clip);
 
-    clip.approve(Span.of(0.2, 0.4));
+    clip.approve(Span.of(0.1, 0.2));
+    clip.approve(Span.of(0.3, 0.4));
     expect(kept.calls).toEqual([]);
 
     time.flush();
     await Promise.resolve();
 
-    expect(kept.calls).toEqual([{ kind: 'meta' }]);
+    expect(kept.calls).toEqual([{ kind: 'meta', id: 'r1' }]);
   });
 
-  it('saves the whole clip before a sign-in, and waits for it', async () => {
-    const clip = clipWith(2);
-    const { keep, kept } = build(clip);
+  it('has nowhere to write when no recording is open', async () => {
+    const clip = clipWith();
+    const { kept, time } = build(clip, false);
 
-    const outcome = await keep.persist();
+    clip.addTake(new Blob(['x']), 2);
+    clip.approve(Span.of(0.1, 0.2));
+    time.flush();
+    await Promise.resolve();
 
-    expect(outcome).toEqual({ kind: 'saved' });
-    expect(kept.calls).toEqual([{ kind: 'clip' }]);
-  });
-
-  it('skips the sign-in write when there is nothing to keep', async () => {
-    const { keep, kept } = build(clipWith());
-
-    const outcome = await keep.persist();
-
-    expect(outcome).toEqual({ kind: 'skipped' });
     expect(kept.calls).toEqual([]);
   });
 
-  it('lets the kept copy go when the clip is cleared', async () => {
-    const clip = clipWith(2);
-    const { kept } = build(clip);
+  it('does not write the small half for a profile chosen on an empty draft', async () => {
+    const clip = clipWith();
+    const { kept, time } = build(clip);
 
-    clip.clear();
+    clip.chooseProfile(ClipProfile.create('tv', 'TV', { logo: 'democlip' })!);
+    time.flush();
     await Promise.resolve();
 
-    expect(kept.calls).toEqual([{ kind: 'clear' }]);
+    expect(kept.calls).toEqual([]);
   });
 
-  it('reports a failed write as a value, not a throw', async () => {
+  it('cancels a pending write when the session ends', async () => {
+    const clip = clipWith(10);
+    const { kept, time } = build(clip);
+
+    clip.approve(Span.of(0.1, 0.2));
+    clip.clear();
+    time.flush();
+    await Promise.resolve();
+
+    expect(kept.calls).toEqual([]);
+  });
+
+  it('writes the whole recording when a sign-in waits on it', async () => {
     const clip = clipWith(2);
-    const kept: KeptClipPort = {
-      saveTake: async () => {},
-      saveMeta: async () => {},
-      saveClip: async () => { throw new Error('the store is full'); },
-      load: async () => null,
-      clear: async () => {},
-    };
-    const keep = new KeepClip({ clip, store: kept, clock: clock() });
+    const { keep, kept } = build(clip);
 
-    const outcome = await keep.persist();
+    expect(await keep.persist()).toEqual({ kind: 'saved' });
+    expect(kept.calls).toEqual([{ kind: 'all', id: 'r1' }]);
+  });
 
-    expect(outcome.kind).toBe('failed');
-    if (outcome.kind === 'failed') expect(outcome.reason).toMatch(/full/);
+  it('skips a persist with no recording open, and with nothing to keep', async () => {
+    const empty = build(clipWith());
+    expect(await empty.keep.persist()).toEqual({ kind: 'skipped' });
+
+    const closed = build(clipWith(2), false);
+    expect(await closed.keep.persist()).toEqual({ kind: 'skipped' });
+  });
+
+  it('answers with the reason when the store refuses, the quota by name', async () => {
+    const clip = clipWith(2);
+    const kept = store();
+    kept.saveAll = async () => { throw Object.assign(new Error('no room'), { name: 'QuotaExceededError' }); };
+    const keep = new KeepClip({ clip, store: kept, clock: clock(), place: () => ({ recordingId: 'r1', place }) });
+
+    expect(await keep.persist()).toEqual({
+      kind: 'failed',
+      reason: 'the browser has no room left for the recording',
+    });
   });
 });

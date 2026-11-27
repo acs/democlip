@@ -17,7 +17,7 @@ import { introFor } from './intro.js';
 import { el, setStatus, toast } from '../dom.js';
 import { beginEncoding, endEncoding, encodingAt } from '../clip/timeline-ui.js';
 import { playback } from '../clip/playback.js';
-import { keep } from '../keeping/keep.js';
+import { finishRecording } from '../lifecycle/finish-session.js';
 import { FADE_S } from '../clip/fade.js';
 import { exportPicture } from '../../domain/clip/ExportResolution.js';
 import type { ExportTarget } from '../../domain/export/ExportTarget.js';
@@ -76,7 +76,9 @@ export async function doExport(target: ExportTarget = 'webm', annotations: Annot
     // under the file's own name, so a clip that goes out to be worked on comes back with
     // them. Written before the clip is forgotten, since the pictures travel too.
     if (annotations === 'carried') await saveSidecar(outcome.filename, intro?.seconds ?? 0);
-    keep.forget();
+    // The file is written: the recording is finished. The clip stays on screen, no longer
+    // kept, so the person may write another file from it.
+    await finishRecording({ keepClip: true });
     setStatus('Export complete');
     toast(annotations === 'carried'
       ? `Saved ${Math.round(outcome.stats.bytes / 1024)} KB, and the annotations beside it`

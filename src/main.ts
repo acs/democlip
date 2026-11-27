@@ -47,6 +47,7 @@ import { blueskyAccount, publishClip } from './ui/publishing/publish-flow.js';
 import { keep } from './ui/keeping/keep.js';
 import { resumeClip } from './ui/keeping/resume-flow.js';
 import { loadProfiles, applyProfile, initProfiles, controlling } from './ui/profile/profile-flow.js';
+import { loadProjects, initProjects, adoptLegacyRecording, createAgentProjects } from './ui/project/project-flow.js';
 import { capture } from './infra/capture.js';
 
 function init(): void {
@@ -57,7 +58,9 @@ function init(): void {
   // said plainly in the status.
   const hasMedia = !!navigator.mediaDevices;
   const canShare = typeof navigator.mediaDevices?.getDisplayMedia === 'function';
-  setStatus(hasMedia ? 'Ready' : 'Not supported');
+  // The app reads Ready only once the book and the recording are read in, below: a page
+  // that says Ready is a page whose draft, profile and pictures are in place.
+  if (!hasMedia) setStatus('Not supported');
 
   // Apply persisted preferences.
   const prefs = loadPrefs();
@@ -76,7 +79,7 @@ function init(): void {
   el.helpBd.addEventListener('click', helpBdClick);
 
   el.recBtn.addEventListener('click', toggleRecord);
-  el.btnNew.addEventListener('click', startNewSession);
+  el.btnNew.addEventListener('click', () => void startNewSession());
   el.btnExp.addEventListener('click', () => exportMenu.toggle());
   exportMenu.init(choice => {
     if (choice === 'bluesky') void publishDialog.open();
@@ -141,8 +144,12 @@ function init(): void {
   void (async () => {
     await loadProfiles();
     initProfiles();
+    await loadProjects();
+    initProjects();
+    await adoptLegacyRecording();
     const restored = await resumeClip();
     if (!restored) applyProfile();
+    if (hasMedia) setStatus('Ready');
   })();
 
   // PWA install prompt
@@ -218,6 +225,7 @@ function init(): void {
     el.agentChip.classList.add('on');
     window.democlip = createAgentSurface({
       version: appVersion(),
+      projects: createAgentProjects(),
       describe: () => describeClip(session.clip, controlling),
       sources: () => recording.sources(),
       takes: createTakes(session.clip, recording),

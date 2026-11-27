@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { Clip, type ClipEvent } from './Clip.js';
+import { ClipProfile } from './ClipProfile.js';
 import { Span } from './Span.js';
 import { Take } from './Take.js';
 import { Arrow } from '../annotation/Arrow.js';
@@ -664,5 +665,71 @@ describe('Clip.applyProperty', () => {
     clip.undo();
     expect(clip.properties.get('title')).toBe('');
     expect(clip.properties.get('addToExport')).toBe('true');
+  });
+});
+
+describe('Clip profile', () => {
+  const tv = ClipProfile.create('tv', 'DemoClipTV', { logo: 'democlip', addToExport: 'true' })!;
+
+  it('starts under the profile it is given, and defaults to the free one', () => {
+    expect(Clip.empty(new FakeTakes()).profile.id).toBe(ClipProfile.DEFAULT.id);
+    expect(Clip.empty(new FakeTakes(), tv).profile.equals(tv)).toBe(true);
+  });
+
+  it('takes another profile before a take, and says so', () => {
+    const clip = Clip.empty(new FakeTakes());
+    const seen: ClipEvent[] = [];
+    clip.onChange(event => seen.push(event));
+
+    expect(clip.chooseProfile(tv)).toBe(true);
+    expect(clip.profile.equals(tv)).toBe(true);
+    expect(seen).toEqual([{ type: 'profile-changed', profile: tv, previous: ClipProfile.DEFAULT }]);
+  });
+
+  it('is fixed once a take has begun', () => {
+    const clip = clipOf(2);
+    const seen: ClipEvent[] = [];
+    clip.onChange(event => seen.push(event));
+
+    expect(clip.chooseProfile(tv)).toBe(false);
+    expect(clip.profile.id).toBe(ClipProfile.DEFAULT.id);
+    expect(seen).toEqual([]);
+  });
+
+  it('is no change at all when it already has that profile', () => {
+    const clip = Clip.empty(new FakeTakes(), tv);
+
+    expect(clip.chooseProfile(tv)).toBe(false);
+  });
+
+  it('is written down with the clip and read back whole', () => {
+    const clip = clipOf(2);
+    expect(clip.profile.id).toBe(ClipProfile.DEFAULT.id);
+
+    const snap = clip.snapshot();
+    expect(snap.profile).toEqual(ClipProfile.DEFAULT.stored());
+
+    const back = Clip.empty(new FakeTakes());
+    back.restore(snap);
+    expect(back.profile.equals(ClipProfile.DEFAULT)).toBe(true);
+  });
+
+  it('reads a snapshot written before projects as the free profile', () => {
+    const clip = clipOf(2);
+    const snap = { ...clip.snapshot(), profile: undefined };
+    const back = Clip.empty(new FakeTakes());
+
+    back.restore(snap);
+
+    expect(back.profile.id).toBe(ClipProfile.DEFAULT.id);
+    expect(back.profile.declares('logo')).toBe(false);
+  });
+
+  it('returns to the free profile when the session ends', () => {
+    const clip = Clip.empty(new FakeTakes(), tv);
+
+    clip.clear();
+
+    expect(clip.profile.id).toBe(ClipProfile.DEFAULT.id);
   });
 });

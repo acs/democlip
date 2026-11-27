@@ -612,3 +612,31 @@ html.guide-html body{height:auto;min-height:100%;overflow:visible;}
 /* ── TOAST ── */
 .toast{position:fixed;bottom:130px;left:50%;transform:translateX(-50%) translateY(10px);background:var(--surface);border:1px solid var(--glass-b2);border-radius:8px;padding:9px 18px;z-index:100;font-family:var(--font-mono);font-size:11px;letter-spacing:.07em;color:var(--text-mid);opacity:0;transition:opacity .3s,transform .3s;pointer-events:none;white-space:nowrap;}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+/* ── Projects ─────────────────────────────────────────────────────────────── */
+/* The pill sits beside the profile pill and wears the current project's initials. */
+.project-pill{color:var(--text);}
+.project-avatar{background:var(--glass-b2);color:var(--text);font-family:var(--font-mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;}
+.project-row .profile-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.project-menu{min-width:300px;}
+
+/* The overview: the description, the progress, and the recordings. */
+.proj-ov-panel{width:min(94vw,560px);max-height:min(84vh,680px);overflow-y:auto;}
+.proj-ov-head{display:flex;align-items:center;justify-content:space-between;gap:10px;}
+.proj-ov-desc{white-space:pre-line;margin:0;}
+.proj-ov-progress{margin:0;font-family:var(--font-ui);font-size:12px;font-weight:600;color:var(--text);}
+.proj-ov-stamp{margin:0;font-family:var(--font-ui);font-size:11px;color:var(--text-mid);}
+.proj-ov-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:7px;}
+.proj-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px;border:1px solid var(--glass-b);border-radius:9px;background:var(--glass);}
+.proj-row-main{display:flex;flex-direction:column;gap:3px;min-width:0;}
+.proj-row-title{font-family:var(--font-ui);font-size:12px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.proj-row-meta{font-family:var(--font-ui);font-size:10px;color:var(--text-mid);}
+.proj-row-acts{display:flex;align-items:center;gap:5px;flex-shrink:0;}
+.proj-row-move{padding:5px 6px;font-size:10px;max-width:100px;}
+.proj-btn{padding:5px 8px;border-radius:7px;border:1px solid var(--glass-b2);background:var(--control);color:var(--control-text);font-family:var(--font-ui);font-size:10px;cursor:pointer;}
+.proj-btn:hover{background:var(--control-hover);color:var(--text);}
+.proj-btn-danger{border-color:var(--crimson);color:var(--crimson);}
+.proj-btn-danger:hover{background:var(--crimson);color:#fff;}
+.proj-ov-empty{margin:2px 0 0;font-family:var(--font-ui);font-size:12px;color:var(--text-mid);}
+.project-purpose{padding:0 6px 2px;font-family:var(--font-ui);font-size:10px;color:var(--text-mid);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.project-count{font-family:var(--font-mono);font-size:9px;color:var(--text-mid);padding:1px 5px;border:1px solid var(--glass-b);border-radius:100px;}

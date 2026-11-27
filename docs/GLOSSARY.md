@@ -221,7 +221,9 @@ chosen, the messages say so, a profile created meanwhile joins the list without 
 active, and the active profile's own declarations are frozen too, so nothing moves under a
 clip already being made. A profile is held **beside**, not inside, the clip — the one **undo**
 is the clip's, takes back the person's own last change, and never puts back a value a profile
-is holding.
+is holding. A **project** names a default profile for its recordings, and the profile in force
+for one is the clip's own **snapshot**, taken when it began to capture; a later edit to the
+profile reaches only recordings made afterwards.
 
 | word | what it is | in the code |
 |---|---|---|
@@ -231,6 +233,43 @@ is holding.
 | **controlled item** | an item the active profile declares: applied to the clip, shown as a value with a **lock** naming the profile, and not the person's to change. An item no profile declares is the person's, as always | `Profiles.controlling()`, the `Controlling` seam (`src/ui/profile/control.ts`) |
 | **declaration** | what a profile says about one item — that it controls it, and the value it is fixed at. An item may legitimately be declared fixed at an empty value (a switch fixed **off**), which is why *declared* and *empty* are told apart here and not in the clip's own properties | `Profile.declare()`, `Profile.free()` (`src/domain/profile/Profile.ts`) |
 | **built-in default profile** | the profile the app always has and falls back to, so an app with nothing set up behaves as it always did. It declares nothing — it is the app's free profile — and is never renamed, removed or defined | `Profiles.DEFAULT_ID` (`src/domain/profile/Profiles.ts`) |
+
+## Projects
+
+A **project** is the container for a body of work and the reason for it: a name, a
+**description** — its motivation and its objectives, in the person's own words — and the
+**profile** its recordings start under. It holds no recordings itself: a recording says
+which project it belongs to, so the two can never disagree. The app is always in exactly
+one **current project**, the built-in **Default** until the person selects another, and
+the Default project cannot be renamed or removed.
+
+Every clip made while a project is current is kept as a **recording** of it: the clip's
+takes, cuts, annotations and properties, plus the project it belongs to and the profile it
+was made under. A recording is **in progress** while its clip session is open and
+**finished** once that session ends — at New, on an export or a publish — so every
+recording but the open one is finished, and the state is derived rather than stored.
+Removing a recording from a project moves it to Default; deleting one for good is a
+separate, confirmed act.
+
+The **recording store** is where recordings outlive the page: IndexedDB, keyed by
+recording, with the **open pointer** naming the one the sitting is on. The **project book**
+is the small set of projects, kept in localStorage beside the profile book. The previous
+version's one clip is adopted by the Default project, once, in one transaction.
+
+| word | what it is | in the code |
+|---|---|---|
+| **project** | a body of work and its reason: a name, a description and a default profile. Kept in the project book, never inside a clip | `Project` (`src/domain/project/Project.ts`) |
+| **description** | a project's motivation and objectives, in the person's own words. It stands in for the **recording plan** until a structured one exists | `Project.description()`, `Project.described()` |
+| **current project** | the one project the app is in. Exactly one at a time; the Default until the person selects another, and fixed once the session has begun to capture | `Projects.currentId`, `Recordings.selectProject()` |
+| **default project** | the project the app always has and falls back to, so an app with nothing set up — and an update from a version without projects — has somewhere to record. Never renamed or removed | `Projects.DEFAULT_ID` (`src/domain/project/Projects.ts`) |
+| **project book** | where the projects outlive the page: localStorage, one key holding the set and the current one | `src/infra/project-store.ts` |
+| **recording** | a clip that belongs to a project, with the profile it was made under. The same clip in every other way — the takes, the cuts, the annotations, what it says about itself | `src/application/recordings.ts`; the stored shape in `RecordingStorePort` |
+| **in progress** | a recording whose clip session is still open. At most one at a time, and never stored as a flag: it is the recording the open pointer names | `Recordings.list()`, the open pointer |
+| **finished** | a recording whose clip session has ended — at New, on export or publish. Derived, so an overview cannot disagree with the session | `Recordings.list()` |
+| **recording store** | where recordings outlive the page: IndexedDB, keyed by recording, with the takes and pictures kept apart from the small half | `src/infra/recording-store.ts` |
+| **open pointer** | the app's record of which recording the sitting is on, written with a recording's first meta so a take can never exist without it | `app.current`; `RecordingStorePort.open()` |
+| **project default profile** | the profile a project names as the one its recordings start under. A **default**, not a lock: a recording may use another profile, chosen before it captures | `Project.defaultProfileId`, `defaultProfileFor()` |
+| **clip profile** | the profile a recording is made under — the project's default or one chosen for that clip — snapshotted with its declarations when the recording begins to capture. The lock reads the snapshot, so editing or removing the profile later never reaches a recording already made | `ClipProfile` (`src/domain/clip/ClipProfile.ts`), `Clip.profile` |
 
 ## Exporting
 

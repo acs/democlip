@@ -1,31 +1,29 @@
-// Applying the active profile: the items it controls, fixed on the clip.
+// Applying a profile: the items it declares, fixed on the clip.
 //
-// A profile does not offer defaults for a new clip; it **fixes** the items it declares, and
-// the app applies them. The value lands on the clip so that everything downstream — the
-// properties panel, the export, the snapshot — reads one value and needs to know nothing
-// about profiles.
+// A project's profile does not offer defaults for a new clip; it **fixes** the items it
+// declares, and the app applies them. The clip carries the **snapshot** of the profile it
+// was made under, so this walks the snapshot and not a book that may have moved since —
+// a recording already made keeps the configuration it was made with.
 //
-// It walks the seedable clip properties and nothing else, so a declaration for an item this
-// build does not know is ignored rather than applied. It touches an **empty** clip only: a
-// clip already holding a take is one the person is making, and a profile may not be chosen
-// once a session has begun to capture anyway.
+// It walks the seedable clip properties and nothing else, so a declaration for an item
+// this build does not know is ignored rather than applied. It touches an **empty** clip
+// only: a clip already holding a take is one the person is making, and its profile is
+// fixed for its life.
 //
 // It is free of the DOM, so the rule can be proved in node.
 
 import type { Clip } from '../../domain/clip/Clip.js';
-import type { Profiles } from '../../domain/profile/Profiles.js';
 import { seedableClipProperties } from '../clip/clip-properties.js';
 
 /**
- * Fix onto an empty clip every item the active profile controls, at the value it declares.
- * An item the profile does not control is left exactly as it is — the person's. Applying a
+ * Fix onto an empty clip every item its profile declares, at the value the snapshot holds.
+ * An item the profile does not declare is left exactly as it is — the person's. Applying a
  * value the clip already holds is no change at all.
  */
-export function applyActiveProfile(clip: Clip, profiles: Profiles): void {
+export function applyClipProfile(clip: Clip): void {
   if (!clip.takes.isEmpty()) return;
-  const active = profiles.active();
   for (const property of seedableClipProperties()) {
-    const value = active.valueFor(property.id);
+    const value = clip.profile.valueFor(property.id);
     if (value === null) continue;                 // not the profile's: the person's
     const next = property.with(clip.properties, value);
     if (!next) continue;

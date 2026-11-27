@@ -24,6 +24,8 @@ import { profileRows, type ProfileRow } from './profile-rows.js';
 /** The flow's own operations, handed to the menu. Each answers nothing; the menu redraws. */
 export interface ProfileMenuHandlers {
   list(): Profiles;
+  /** The profile the clip is made under — what the tick marks, not the book's last choice. */
+  activeId(): string;
   locked(): boolean;
   choose(id: string): void;
   create(name: string): void;
@@ -39,6 +41,7 @@ const EDGE = 8;     // the least the menu may sit from the window's edge
 
 const NO_HANDLERS: ProfileMenuHandlers = {
   list: () => Profiles.starting(),
+  activeId: () => Profiles.DEFAULT_ID,
   locked: () => false,
   choose: () => {},
   create: () => {},
@@ -156,7 +159,7 @@ class ProfileMenu {
     const locked = this.handlers.locked();
     el.profileMenu.replaceChildren(
       title(),
-      ...profileRows(book, locked).map(row => this.row(row)),
+      ...profileRows(book, locked, this.handlers.activeId()).map(row => this.row(row)),
       ...(locked ? [lockLine()] : []),
       this.foot(),
     );

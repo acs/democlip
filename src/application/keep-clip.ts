@@ -1,10 +1,15 @@
-// The keep use case: writing the clip down as it changes.
+// The keep use case: writing the recording down as it changes.
 //
-// It owns the event subscription and the debounce. A take is written at once; a cut
-// is written after a pause; a cleared clip is let go. The store is a port.
+// It owns the event subscription and the debounce. A take is written at once, with the
+// pointer that says which recording it belongs to; a cut is written after a pause. The
+// store is a port, and the place — the open recording's id and the facts that go beside
+// it — is the recordings use case's answer.
+//
+// Nothing is cleared when the clip is: a session ending finishes the recording, and that
+// is the recordings use case's act, not a side effect of the clip going away.
 
 import type { Clip } from '../domain/clip/Clip.js';
-import type { KeptClipPort } from './ports/KeptClipPort.js';
+import type { RecordingPlace, RecordingStorePort } from './ports/RecordingStorePort.js';
 import type { ClockPort, Timer } from './ports/ClockPort.js';
 
 const SAVE_DELAY_MS = 250;
@@ -14,10 +19,18 @@ export type KeepOutcome =
   | { kind: 'failed'; reason: string }
   | { kind: 'skipped' };
 
+/** Where a change to the clip is written. */
+export interface KeepTarget {
+  readonly recordingId: string;
+  readonly place: RecordingPlace;
+}
+
 export interface KeepDeps {
   readonly clip: Clip;
-  readonly store: KeptClipPort;
+  readonly store: RecordingStorePort;
   readonly clock: ClockPort;
+  /** The recording the sitting is on, or null when there is none. */
+  readonly place: () => KeepTarget | null;
   readonly warn?: (error: unknown) => void;
 }
 
@@ -29,48 +42,49 @@ export class KeepClip {
   /** Subscribe to the clip. Returns the unsubscribe function. */
   watch(): () => void {
     return this.deps.clip.onChange(event => {
-      if (event.type === 'cleared') {
+      const target = this.deps.place();
+      // A session ending is not a deletion, and a clip nobody is on has nowhere to go.
+      if (event.type === 'cleared' || !target) {
         this.timer?.cancel();
         this.timer = undefined;
-        void this.deps.store.clear();
         return;
       }
       if (event.type === 'take-added') {
         void this.deps.store
-          .saveTake(this.deps.clip, event.index)
+          .saveTake(target.recordingId, this.deps.clip, event.index, target.place)
           .catch(error => this.deps.warn?.(error));
         return;
       }
+      // A profile chosen on an empty draft moves the pointer, and the recordings use case
+      // writes that; it is not a change to the small half. Everything else is.
+      if (event.type === 'profile-changed') return;
       this.scheduleMeta();
     });
   }
 
-  /** Write the whole clip now. A sign-in waits on this; a failure refuses the sign-in. */
+  /** Write the whole recording now. A sign-in waits on this; a failure refuses the sign-in. */
   async persist(): Promise<KeepOutcome> {
     this.timer?.cancel();
     this.timer = undefined;
+    const target = this.deps.place();
+    if (!target) return { kind: 'skipped' };
     if (this.deps.clip.takes.isEmpty()) return { kind: 'skipped' };
     try {
-      await this.deps.store.saveClip(this.deps.clip);
+      await this.deps.store.saveAll(target.recordingId, this.deps.clip, target.place);
       return { kind: 'saved' };
     } catch (error) {
       return { kind: 'failed', reason: why(error) };
     }
   }
 
-  /** The clip has gone somewhere. Let the kept copy go. */
-  forget(): void {
-    this.timer?.cancel();
-    this.timer = undefined;
-    void this.deps.store.clear();
-  }
-
   private scheduleMeta(): void {
     this.timer?.cancel();
     this.timer = this.deps.clock.setTimeout(() => {
       this.timer = undefined;
+      const at = this.deps.place();
+      if (!at) return;
       void this.deps.store
-        .saveMeta(this.deps.clip)
+        .saveMeta(at.recordingId, this.deps.clip, at.place)
         .catch(error => this.deps.warn?.(error));
     }, SAVE_DELAY_MS);
   }
@@ -79,5 +93,5 @@ export class KeepClip {
 function why(error: unknown): string {
   const name = (error as { name?: string } | null)?.name;
   if (name === 'QuotaExceededError') return 'the browser has no room left for the recording';
-  return error instanceof Error ? error.message : 'the clip store refused the write';
+  return error instanceof Error ? error.message : 'the recording store refused the write';
 }

@@ -17,6 +17,8 @@ import { defineRows, type DefineRow } from './profile-rows.js';
 
 export interface ProfileDefHandlers {
   list(): Profiles;
+  /** The profile the clip is made under — what its sheet calls active. */
+  activeId(): string;
   locked(): boolean;
   /** Fix an item at a value, or hand it back with null. */
   declare(id: string, property: string, value: string | null): void;
@@ -29,6 +31,7 @@ const NOT_FIXED = 'not-fixed';
 
 const NO_HANDLERS: ProfileDefHandlers = {
   list: () => Profiles.starting(),
+  activeId: () => Profiles.DEFAULT_ID,
   locked: () => false,
   declare: () => {},
   rename: () => {},
@@ -74,7 +77,7 @@ class ProfileDef {
       el.profileDefRows.replaceChildren();
       return;
     }
-    const active = profile.id === book.activeId;
+    const active = profile.id === this.handlers.activeId();
     const locked = this.handlers.locked();
     el.profileDefRows.replaceChildren(
       this.nameRow(profile, !(active && locked)),

@@ -71,6 +71,46 @@ export interface ClipDescription {
   readonly properties: readonly ClipPropertySummary[];
 }
 
+/** One project, as an agent reads it. */
+export interface ProjectSummary {
+  readonly id: string;
+  readonly name: string;
+  readonly motivation: string;
+  readonly objectives: string;
+  readonly defaultProfile: { readonly id: string; readonly name: string };
+  readonly recordingCount: number;
+  readonly current: boolean;
+}
+
+/** One recording of a project, as an agent reads it. */
+export interface RecordingSummary {
+  readonly id: string;
+  /** The clip's title, or the label the project's list shows. */
+  readonly title: string;
+  readonly length: number;
+  readonly state: 'in-progress' | 'finished';
+  readonly projectId: string;
+  readonly profileName: string;
+  readonly createdAt: number;
+}
+
+/** A project's counts: how many recordings, how many finished, how many still open. */
+export interface ProjectProgress {
+  readonly total: number;
+  readonly finished: number;
+  readonly inProgress: number;
+}
+
+/** What an agent may do with projects: organise, never destroy. */
+export interface ProjectsSurface {
+  list(): Promise<Result<{ projects: ProjectSummary[]; currentId: string }>>;
+  read(id: string): Promise<Result<{ project: ProjectSummary; recordings: RecordingSummary[]; progress: ProjectProgress }>>;
+  create(input: { name: string; motivation?: string; objectives?: string }): Promise<Result<{ id: string; current: boolean }>>;
+  select(id: string): Promise<Result<{ currentId: string }>>;
+  edit(id: string, input: { name?: string; motivation?: string; objectives?: string; defaultProfile?: string }): Promise<Result<{ project: ProjectSummary }>>;
+  move(recordingId: string, projectId: string): Promise<Result<{ recordingId: string; projectId: string }>>;
+}
+
 /** The numbers and strings a kind needs to make a new annotation. */
 export type AnnotationParams = Readonly<Record<string, unknown>>;
 
@@ -114,6 +154,8 @@ export interface AgentSurface {
     play(): Result;
     pause(): Result;
   };
+  /** Projects: list, read, create, select, edit, and move a recording. Never delete. */
+  readonly projects: ProjectsSurface;
   /** What leaves the browser: the file, the post, and the video. */
   readonly out: {
     /** `annotations` is `drawn` (in the picture) or `carried` (beside it, for a sidecar). */
@@ -148,6 +190,7 @@ export interface AgentParts {
   readonly edit: AgentSurface['edit'];
   readonly view: AgentSurface['view'];
   readonly out: AgentSurface['out'];
+  readonly projects: AgentSurface['projects'];
 }
 
 /** The surface: the parts it was given, and nothing else of its own. */
@@ -160,6 +203,7 @@ export function createAgentSurface(parts: AgentParts): AgentSurface {
     edit: parts.edit,
     view: parts.view,
     out: parts.out,
+    projects: parts.projects,
   };
 }
 

@@ -16,7 +16,27 @@ import type { Clip } from '../clip/Clip.js';
 export class Session {
   private captured = false;
 
-  constructor(readonly clip: Clip) {}
+  constructor(
+    readonly clip: Clip,
+    private currentRecording = '',
+    private currentProject = '',
+  ) {}
+
+  /** The recording this sitting is on, or '' before one is opened. */
+  get recordingId(): string {
+    return this.currentRecording;
+  }
+
+  /** The project the open recording belongs to, or '' before one is opened. */
+  get projectId(): string {
+    return this.currentProject;
+  }
+
+  /** Open a recording (or a new draft) in this sitting: the clip it already holds. */
+  open(recordingId: string, projectId: string): void {
+    this.currentRecording = recordingId;
+    this.currentProject = projectId;
+  }
 
   /** Has this session begun to capture? From here the active profile is fixed. */
   get hasCaptured(): boolean {
@@ -31,6 +51,16 @@ export class Session {
   /** End the session: the clip announces `cleared`, and the views reset themselves. */
   end(): void {
     this.clip.clear();
+    this.close();
+  }
+
+  /**
+   * The sitting is over, but the clip stays on screen: the recording is finished and no
+   * longer kept, exactly as an export left it. Nothing is open until the next draft.
+   */
+  close(): void {
     this.captured = false;
+    this.currentRecording = '';
+    this.currentProject = '';
   }
 }

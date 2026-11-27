@@ -33,6 +33,7 @@ import type { Picture } from './ClipSize.js';
 import { AnnotationSet } from '../annotation/AnnotationSet.js';
 import { annotationFrom } from '../annotation/kinds.js';
 import type { Annotation, StoredAnnotation } from '../annotation/Annotation.js';
+import { ClipProfile, type StoredClipProfile } from './ClipProfile.js';
 import type { Take } from './Take.js';
 import type { TakeRepository } from './TakeRepository.js';
 
@@ -54,6 +55,8 @@ export interface ClipSnapshot {
   properties?: Readonly<Record<string, string>>;
   /** The ids of the clip's **watermark** — the annotations it wears over the whole clip. */
   watermark?: ReadonlyArray<string>;
+  /** The profile the recording is made under, snapshotted. Absent for one written before projects. */
+  profile?: StoredClipProfile;
 }
 
 /**
@@ -73,6 +76,7 @@ export type ClipEvent =
   | { type: 'annotation-changed'; annotation: Annotation; previous: Annotation }
   | { type: 'annotation-removed'; annotation: Annotation }
   | { type: 'property-changed'; id: string; value: string; previous: string }
+  | { type: 'profile-changed'; profile: ClipProfile; previous: ClipProfile }
   | { type: 'cleared' };
 
 /**
@@ -99,11 +103,13 @@ export class Clip {
     private props: ClipProperties,
     /** The ids of the clip's **watermark**, in draw order — what it wears over the whole clip. */
     private watermarkIds: readonly string[],
+    /** The profile this recording is made under, snapshotted when it began. */
+    private profileSnapshot: ClipProfile,
   ) {}
 
   /** A clip with nothing in it yet. */
-  static empty(takes: TakeRepository): Clip {
-    return new Clip(takes, SpanSet.EMPTY, AnnotationSet.EMPTY, ClipProperties.EMPTY, []);
+  static empty(takes: TakeRepository, profile: ClipProfile = ClipProfile.DEFAULT): Clip {
+    return new Clip(takes, SpanSet.EMPTY, AnnotationSet.EMPTY, ClipProperties.EMPTY, [], profile);
   }
 
   /** Listen for what happens to the clip. Call the returned function to stop. */
@@ -129,6 +135,24 @@ export class Clip {
   /** What the clip says about itself — its title, its description. */
   get properties(): ClipProperties {
     return this.props;
+  }
+
+  /** The profile the recording is made under, as it stood when it began. */
+  get profile(): ClipProfile {
+    return this.profileSnapshot;
+  }
+
+  /**
+   * Choose the profile this recording is made under, from the one the project gives it to
+   * another the person wants for this clip. Only before the clip has a take: from the
+   * first take the profile is fixed for the life of the recording. Says whether it moved.
+   */
+  chooseProfile(profile: ClipProfile): boolean {
+    if (!this.repo.isEmpty() || this.profileSnapshot.equals(profile)) return false;
+    const previous = this.profileSnapshot;
+    this.profileSnapshot = profile;
+    this.announce({ type: 'profile-changed', profile, previous });
+    return true;
   }
 
   /** How long the clip is: the sum of its takes, never a field beside them. */
@@ -483,6 +507,7 @@ export class Clip {
       annotations: this.notes.all.map(annotation => annotation.stored()),
       properties: this.props.toRecord(),
       ...(this.watermarkIds.length ? { watermark: [...this.watermarkIds] } : {}),
+      profile: this.profileSnapshot.stored(),
     };
   }
 
@@ -508,6 +533,7 @@ export class Clip {
     );
     this.props = ClipProperties.of(snapshot.properties);
     this.watermarkIds = (snapshot.watermark ?? []).filter(id => this.notes.byId(id) !== null);
+    this.profileSnapshot = ClipProfile.restore(snapshot.profile) ?? ClipProfile.DEFAULT;
     this.lastChange = null;
   }
 
@@ -518,6 +544,7 @@ export class Clip {
     this.notes = AnnotationSet.EMPTY;
     this.props = ClipProperties.EMPTY;
     this.watermarkIds = [];
+    this.profileSnapshot = ClipProfile.DEFAULT;
     this.lastChange = null;
     this.announce({ type: 'cleared' });
   }

@@ -1,12 +1,15 @@
 // Where an image annotation's picture is kept, and the decoded copy it is drawn from.
 //
 // Two things, one class, because they are the two halves of the same fact. The
-// **store** is an IndexedDB object store, `images`, in the clip's own database: a
-// picture is megabytes and never changes, so it is written once, apart from the clip's
-// small half — the same split a take gets, and for the same reason. The **cache** is
-// the decoded `HTMLImageElement` for a picture, made once and drawn many times, so a
-// frame is a `drawImage` and not a decode; it is let go with the session, exactly as the
-// takes' object URLs are (`src/infra/takes.ts`).
+// **store** is an IndexedDB object store, `recordingImages`, in the recording's own
+// database: a picture is megabytes and never changes, so it is written once, apart from
+// the recording's small half — the same split a take gets, and for the same reason. Every
+// picture is kept under the recording that holds it, so deleting a recording takes its
+// pictures with it and never touches another recording's.
+//
+// The **cache** is the decoded `HTMLImageElement` for a picture, made once and drawn many
+// times, so a frame is a `drawImage` and not a decode; it is let go with the session,
+// exactly as the takes' object URLs are (`src/infra/takes.ts`).
 //
 // A picture that cannot be read is refused, and nothing is written: `put` decodes first.
 // A picture that is not decoded yet draws nothing rather than throwing, so a frame
@@ -15,25 +18,32 @@
 // The store is the browser boundary and nothing more: no rules live here beyond keeping
 // the cache consistent with what is written.
 
-import { openClipDb } from './clip-store.js';
+import { openClipDb } from './recording-store.js';
 import type { ImageStorePort, StoredImage } from '../application/ports/ImageStorePort.js';
 
-const STORE = 'images';
+const STORE = 'recordingImages';
 
 export class ImageStore implements ImageStorePort {
+  private recordingId = '';
   private readonly decoded = new Map<string, HTMLImageElement>();
   private readonly objectUrls = new Map<string, string>();
   private readonly inFlight = new Set<Promise<unknown>>();
 
-  /** Write a picture once, under its id, and decode it for drawing. */
+  /** The recording whose pictures this store is working with. */
+  setRecording(id: string): void {
+    this.recordingId = id;
+  }
+
+  /** Write a picture once, under its id and recording, and decode it for drawing. */
   put(id: string, blob: Blob): Promise<void> {
     return this.track((async () => {
       await this.remember(id, blob);            // a bad picture is refused before anything is written
+      if (!this.recordingId) throw new Error('no recording is open for that picture');
       await this.writeDb(await openClipDb(), id, blob);
     })());
   }
 
-  /** Every kept picture, in the store. */
+  /** Every kept picture of the open recording, in the store. */
   async all(): Promise<StoredImage[]> {
     return this.readAllDb(await openClipDb());
   }
@@ -48,7 +58,7 @@ export class ImageStore implements ImageStorePort {
     await Promise.allSettled([...this.inFlight]);
   }
 
-  /** Read every kept picture back into the cache — a restore. An unreadable one is left out. */
+  /** Read the open recording's pictures back into the cache — a restore. An unreadable one is left out. */
   load(): Promise<void> {
     return this.track((async () => {
       for (const { id, blob } of await this.readAllDb(await openClipDb())) {
@@ -57,23 +67,15 @@ export class ImageStore implements ImageStorePort {
     })());
   }
 
-  /** Let the pictures and the cache go with the clip. */
+  /**
+   * Let the decoded copies go. The recording's pictures stay in the store: it is the
+   * recording's, and the session ending is not a deletion. Deleting a recording is the
+   * store's own act and takes its pictures with it.
+   */
   async clear(): Promise<void> {
     for (const url of this.objectUrls.values()) URL.revokeObjectURL(url);
     this.objectUrls.clear();
     this.decoded.clear();
-    try {
-      const db = await openClipDb();
-      await new Promise<void>((resolve, reject) => {
-        const tx = db.transaction(STORE, 'readwrite');
-        tx.objectStore(STORE).clear();
-        tx.oncomplete = () => resolve();
-        tx.onerror = () => reject(tx.error ?? new Error('the picture store refused'));
-        tx.onabort = () => reject(tx.error ?? new Error('the picture store gave up'));
-      });
-    } catch {
-      // Nothing to let go of, or no IndexedDB: the cache is already empty.
-    }
   }
 
   // Keep a promise visible to `ready()` while it runs, and stop an unhandled rejection
@@ -110,7 +112,7 @@ export class ImageStore implements ImageStorePort {
   private writeDb(db: IDBDatabase, id: string, blob: Blob): Promise<void> {
     return new Promise((resolve, reject) => {
       const tx = db.transaction(STORE, 'readwrite');
-      tx.objectStore(STORE).put(blob, id);
+      tx.objectStore(STORE).put(blob, [this.recordingId, id]);
       tx.oncomplete = () => resolve();
       tx.onerror = () => reject(tx.error ?? new Error('the picture store refused'));
       tx.onabort = () => reject(tx.error ?? new Error('the picture store gave up'));
@@ -126,7 +128,12 @@ export class ImageStore implements ImageStorePort {
       tx.oncomplete = () => {
         const ks = keys.result as IDBValidKey[];
         const vs = values.result as Blob[];
-        resolve(ks.map((k, i) => ({ id: String(k), blob: vs[i] })));
+        const out: StoredImage[] = [];
+        ks.forEach((key, at) => {
+          if (!Array.isArray(key) || key[0] !== this.recordingId) return;
+          out.push({ id: String(key[1]), blob: vs[at] });
+        });
+        resolve(out);
       };
       tx.onerror = () => reject(tx.error ?? new Error('the picture store refused'));
     });
