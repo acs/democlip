@@ -26,10 +26,17 @@ jobs:
       - run: npm run build
 
   e2e:
-    name: End-to-end (Chromium)
+    name: End-to-end (Chromium) (${{ matrix.shard }}/2)
     runs-on: ubuntu-latest
     env:
       HUSKY: 0
+    # Two standard runners, each with the suite's own two workers. The shards run in
+    # parallel, so the wall time is the longer shard's rather than the whole suite's.
+    # A shard that fails does not cancel the other: its report and evidence are kept too.
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2]
     steps:
       - uses: actions/checkout@v7
 
@@ -40,17 +47,18 @@ jobs:
 
       - run: npm ci
       - run: npx playwright install --with-deps chromium
-      - run: npm run test:e2e
+      - run: npm run test:e2e -- --shard=${{ matrix.shard }}/2
 
       # The report and the evidence are kept on every run, as GitLab's artifacts
       # are: the HTML report is there even when the suite passed, and the videos,
       # screenshots and traces appear in it exactly when a check fails (the config
       # keeps them only on failure). The retention cap keeps a long-lived branch
-      # from piling runs up.
+      # from piling runs up. Each shard has its own name, so the two reports do not
+      # overwrite each other.
       - uses: actions/upload-artifact@v7
         if: always()
         with:
-          name: playwright-artifacts
+          name: playwright-artifacts-${{ matrix.shard }}
           path: |
             playwright-report/
             test-results/
