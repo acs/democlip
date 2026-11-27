@@ -18,6 +18,7 @@
 // capture, draws the rows from the answer, and hands every press to the flow.
 
 import { el } from '../dom.js';
+import { t } from '../i18n/index.js';
 import { Profiles } from '../../domain/profile/Profiles.js';
 import { profileRows, type ProfileRow } from './profile-rows.js';
 
@@ -216,10 +217,10 @@ class ProfileMenu {
     const acts = document.createElement('div');
     acts.className = 'profile-acts';
     acts.append(
-      this.icon('define', `Open ${row.name}`, PENCIL, row.manageable, () => {
+      this.icon('define', t('profile.menu.openAria', { name: row.name }), PENCIL, row.manageable, () => {
         this.handlers.define(row.id);
       }),
-      this.icon('remove', `Remove ${row.name}`, BIN, row.manageable, () => {
+      this.icon('remove', t('profile.menu.removeAria', { name: row.name }), BIN, row.manageable, () => {
         this.handlers.remove(row.id);
         this.render();
       }),
@@ -249,7 +250,7 @@ class ProfileMenu {
       const add = document.createElement('button');
       add.type = 'button';
       add.className = 'profile-new-btn';
-      add.textContent = '+ New Profile';
+      add.textContent = t('profile.menu.new');
       add.addEventListener('click', () => {
         this.creating = true;
         this.render();
@@ -262,16 +263,16 @@ class ProfileMenu {
     const input = document.createElement('input');
     input.type = 'text';
     input.className = 'profile-new-input';
-    input.placeholder = 'Profile name';
-    input.setAttribute('aria-label', 'New profile name');
+    input.placeholder = t('profile.menu.namePlaceholder');
+    input.setAttribute('aria-label', t('profile.menu.nameAria'));
     const add = document.createElement('button');
     add.type = 'button';
     add.className = 'profile-new-add';
-    add.textContent = 'Add';
+    add.textContent = t('textEntry.add');
     const cancel = document.createElement('button');
     cancel.type = 'button';
     cancel.className = 'profile-new-cancel';
-    cancel.textContent = 'Cancel';
+    cancel.textContent = t('common.cancel');
 
     const submit = (): void => {
       const name = input.value;
@@ -301,7 +302,7 @@ class ProfileMenu {
 function title(): HTMLElement {
   const heading = document.createElement('div');
   heading.className = 'profile-title';
-  heading.textContent = 'Profiles';
+  heading.textContent = t('profile.menu.title');
   return heading;
 }
 
@@ -309,7 +310,7 @@ function title(): HTMLElement {
 function lockLine(): HTMLElement {
   const line = document.createElement('p');
   line.className = 'profile-lock';
-  line.textContent = 'A profile is fixed once recording has started — press New to start another session.';
+  line.textContent = t('profile.menu.fixed');
   return line;
 }
 

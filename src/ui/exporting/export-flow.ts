@@ -5,6 +5,7 @@
 
 import { currentPhase, setPhase } from '../../state.js';
 import { session } from '../../session.js';
+import { t } from '../i18n/index.js';
 import { ExportVideo } from '../../application/export-video.js';
 import { AnnotationSidecar } from '../../domain/clip/AnnotationSidecar.js';
 import { encoder } from '../../infra/offline-encoder.js';
@@ -55,7 +56,7 @@ export async function doExport(target: ExportTarget = 'webm', annotations: Annot
   el.btnExp.disabled = true;
   el.btnNew.disabled = true;
   el.playBtn.disabled = true;
-  setStatus('Encoding…');
+  setStatus(t('status.encoding'));
   const wasCut = beginEncoding();
   // The export draws frames in a tight loop, so it waits once, here, for every picture
   // an image annotation needs to be decoded. A picture not decoded draws nothing.
@@ -79,15 +80,14 @@ export async function doExport(target: ExportTarget = 'webm', annotations: Annot
     // The file is written: the recording is finished. The clip stays on screen, no longer
     // kept, so the person may write another file from it.
     await finishRecording({ keepClip: true });
-    setStatus('Export complete');
-    toast(annotations === 'carried'
-      ? `Saved ${Math.round(outcome.stats.bytes / 1024)} KB, and the annotations beside it`
-      : `Saved ${Math.round(outcome.stats.bytes / 1024)} KB`);
+    setStatus(t('status.exportComplete'));
+    const kb = Math.round(outcome.stats.bytes / 1024);
+    toast(annotations === 'carried' ? t('toast.savedCarried', { kb }) : t('toast.saved', { kb }));
   } else if (outcome.kind === 'refused') {
-    setStatus('Cannot encode here');
+    setStatus(t('status.cannotEncode'));
     toast(outcome.reason);
   } else {
-    setStatus('Export failed');
+    setStatus(t('status.exportFailed'));
     toast(outcome.reason);
   }
   setPhase('review');

@@ -6,17 +6,18 @@
 // It owns the DOM and the fact of being open; it decides nothing about Bluesky.
 
 import { el } from '../dom.js';
+import { t, type TranslationKey } from '../i18n/index.js';
 import { session } from '../../session.js';
 import {
   blueskyAccount, signInToBluesky, signOutOfBluesky, publishClip,
   type BlueskyAccount, type PublishedPost, type PublishProgress,
 } from './publish-flow.js';
 
-const STAGE: Record<PublishProgress['stage'], string> = {
-  encoding: 'Encoding the MP4…',
-  uploading: 'Uploading to Bluesky…',
-  processing: 'Bluesky is processing the video…',
-  posting: 'Writing the post…',
+const STAGE: Record<PublishProgress['stage'], TranslationKey> = {
+  encoding: 'publish.stage.encoding',
+  uploading: 'publish.stage.uploading',
+  processing: 'publish.stage.processing',
+  posting: 'publish.stage.posting',
 };
 
 // A percentage is only worth saying while a stage counts through one.
@@ -64,7 +65,7 @@ class PublishDialog {
     // The handle is what a person recognises; the DID is the fallback when the
     // account will not say.
     if (account) {
-      el.pubAs.textContent = 'Signed in as ' + (account.handle ?? account.did);
+      el.pubAs.textContent = t('publish.signedInAs', { account: account.handle ?? account.did });
       this.prefill();
     }
   }
@@ -81,9 +82,9 @@ class PublishDialog {
     // The `@` is how mentions are shown, not part of the handle; the empty check
     // wants the real thing (the client strips it again, harmlessly).
     const handle = el.pubHandle.value.trim().replace(/^@/, '');
-    if (!handle) { this.fail('Enter your Bluesky handle, like you.bsky.social'); return; }
+    if (!handle) { this.fail(t('publish.bluesky.handleNeeded')); return; }
     this.fail('');
-    this.status('Taking you to your server…');
+    this.status(t('publish.bluesky.taking'));
     try {
       await signInToBluesky(handle);   // redirects away; never returns
     } catch (err) {
@@ -119,7 +120,7 @@ class PublishDialog {
   private posted(post: PublishedPost): void {
     this.done = true;
     this.controls(false);
-    el.pubStatus.textContent = 'Published ✓ ';
+    el.pubStatus.textContent = t('publish.bluesky.published');
     const link = document.createElement('a');
     link.href = post.url;
     link.title = post.uri;
@@ -149,7 +150,8 @@ class PublishDialog {
   }
 
   private line(progress: PublishProgress): string {
-    const base = STAGE[progress.stage] ?? progress.stage;
+    const key = STAGE[progress.stage];
+    const base = key ? t(key) : progress.stage;
     return counts(progress.stage) && progress.progress != null ? `${base} ${progress.progress}%` : base;
   }
 

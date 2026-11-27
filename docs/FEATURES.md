@@ -81,6 +81,7 @@ round trip, and for the app itself, named as [`GLOSSARY.md`](GLOSSARY.md) names 
 
 ## The app
 
+- **Speaks your language** — the app reads the language your browser or operating system declares when it loads and shows every word in it — **English** and **Spanish** in this first version — with no setting to find: change the browser's language and reload, and the app follows. English is the source and the fallback, so a language the app does not yet speak still reads whole; adding one is a new catalogue and nothing else
 - **Zero dependencies on your machine** — runs entirely in the browser via `getDisplayMedia`
 - **Light / dark mode** — full CSS variable theming, persisted to `localStorage`
 - **PWA** — installable as a desktop app, offline-capable for core recording and export

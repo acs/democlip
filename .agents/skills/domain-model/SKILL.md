@@ -126,3 +126,26 @@ Every rule above gets a unit test beside it, in node, with a fake behind any por
 Use the words in `docs/GLOSSARY.md` — in the code, the tests, the commits and the pull
 request — and add a new concept there first. `part` was a second name for `take` for
 a while, and undoing it touched nine modules.
+
+## A message a person reads comes from the catalogue
+
+The app speaks the person's language (see **overview**, and the language words in
+`docs/GLOSSARY.md`), so **no message a person can see is written into the code**. A new
+label, status line, toast, error, tooltip or accessible name is a **translation key** —
+added to `src/ui/i18n/catalogs/en_UK.ts` (the source) **and** `es_ES.ts`, or the type
+check and `catalogs.test.ts` fail — and resolved where it is drawn with `t('area.key')`.
+
+- A message with a value in it carries `{name}` and is filled by `t(key, { name })`, so a
+  language may move the value within the sentence. A count-bearing sentence is written to
+  read correctly at any count — there are no plural forms.
+- A static element in `web/` or `src/ui/shell/help-steps.html` names its key with
+  `data-i18n` (or `data-i18n-html` where it carries first-party markup) instead of a
+  literal, and the startup pass fills it.
+- The app's own **declared** names — a clip property's, an annotation kind's, a colour's,
+  a stock sound's — are resolved through `src/ui/i18n/labels.ts`, so the declaration keeps
+  the stable English name an agent reads while a person reads their own language.
+- The app's name, its **logo** names, and anything the person wrote themselves (a clip's
+  title, a project's name) are marks or the person's words, and are never translated.
+
+A new message with no key is the mistake this rule exists to prevent: it is invisible in
+English and leaves a Spanish user reading a foreign word.

@@ -23,6 +23,7 @@ import { annotationColour, clipProperty } from '../clip/clip-properties.js';
 import { MIN_SECTION } from '../cutting/selection.js';
 import type { Controlling } from '../profile/control.js';
 import type { AnnotationParams, Result } from './surface.js';
+import { tIn, type TranslationKey } from '../i18n/index.js';
 
 /** What a kind's maker answered: the annotation, or why it would not make one. */
 export type Made = { readonly annotation: Annotation } | { readonly reason: string };
@@ -92,7 +93,7 @@ export function createEditor(clip: Clip, make: MakeAnnotation, controlling: Cont
       // on it — is refused with the property's own words, the same reason the panel draws it
       // disabled for.
       const blocked = descriptor.blocked?.(clip.properties, clip) ?? null;
-      if (blocked) return { ok: false, reason: blocked };
+      if (blocked) return { ok: false, reason: tIn('en_UK', blocked as TranslationKey) };
       if (typeof value !== 'string') return { ok: false, reason: 'a property value is a string' };
       const next = descriptor.with(clip.properties, value);
       if (!next) return { ok: false, reason: `${property} will not take ${JSON.stringify(value)}` };

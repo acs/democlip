@@ -17,14 +17,13 @@ import { Arrow } from '../../domain/annotation/Arrow.js';
 import { isColour } from '../../domain/annotation/AnnotationColour.js';
 import type { Annotation } from '../../domain/annotation/Annotation.js';
 import { registerRenderer, type AnnotationRenderer } from './annotation-layer.js';
+import { t } from '../i18n/index.js';
 import {
   registerPlugin,
   type AnnotationAction, type AnnotationPlugin, type AnnotationProperty, type CreationContext,
 } from './annotation-plugin.js';
 
 const DRAFT_ID = 'draft';
-const ARMED = 'ARROW — drag on the picture';
-const STRAY = 'ARROW — drag across the picture';
 
 const ACTION_ICON = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 19L19 5"/><path d="M12 5h7v7"/></svg>';
 
@@ -81,7 +80,7 @@ export class ArrowPlugin implements AnnotationPlugin, AnnotationRenderer<Annotat
   }
 
   begin(ctx: CreationContext): void {
-    ctx.say(ARMED);
+    ctx.say(t('annotation.arrow.armed'));
     void (async () => {
       try {
         for (;;) {
@@ -90,7 +89,7 @@ export class ArrowPlugin implements AnnotationPlugin, AnnotationRenderer<Annotat
           if (arrow) { ctx.commit(arrow); return; }
           // A stray click is not an arrow. Stay armed, so the next try is a drag
           // away rather than a selection to be made again.
-          ctx.abandon(STRAY);
+          ctx.abandon(t('annotation.arrow.stray'));
         }
       } catch {
         // The canvas was disarmed — Escape, a new selection, or the session over.

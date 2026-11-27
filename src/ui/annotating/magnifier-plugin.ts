@@ -19,15 +19,13 @@ import { Magnifier, DEFAULT_ZOOM, MAX_ZOOM, MIN_ZOOM, ZOOM_STEP } from '../../do
 import { isColour } from '../../domain/annotation/AnnotationColour.js';
 import type { Annotation } from '../../domain/annotation/Annotation.js';
 import { registerRenderer, type AnnotationRenderer } from './annotation-layer.js';
+import { t } from '../i18n/index.js';
 import {
   registerPlugin,
   type AnnotationAction, type AnnotationPlugin, type AnnotationProperty, type CreationContext,
 } from './annotation-plugin.js';
 
 const DRAFT_ID = 'draft';
-const ARMED = 'MAGNIFIER — press the detail and drag outward';
-const STRAY = 'MAGNIFIER — drag from the detail outward';
-const SMALL = 'MAGNIFIER — drag a wider circle (at least 4% of the short side)';
 
 const ACTION_ICON = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/></svg>';
 
@@ -92,16 +90,16 @@ export class MagnifierPlugin implements AnnotationPlugin, AnnotationRenderer<Ann
   }
 
   begin(ctx: CreationContext): void {
-    ctx.say(ARMED);
+    ctx.say(t('annotation.magnifier.armed'));
     void (async () => {
       try {
         for (;;) {
           const drag = await ctx.drag((from, to) => this.make(ctx, from, to, DRAFT_ID));
-          if (!drag) { ctx.abandon(STRAY); continue; }
+          if (!drag) { ctx.abandon(t('annotation.magnifier.stray')); continue; }
           const made = this.make(ctx, drag.from, drag.to);
           if (made) { ctx.commit(made); return; }
           // A drag, but a circle too small to be a lens: stay armed for a wider one.
-          ctx.abandon(SMALL);
+          ctx.abandon(t('annotation.magnifier.small'));
         }
       } catch {
         // The canvas was disarmed — Escape, a new selection, or the session over.

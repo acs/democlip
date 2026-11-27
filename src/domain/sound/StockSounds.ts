@@ -19,20 +19,18 @@
 export interface StockSound {
   /** What a sound annotation holds: the name a person and an agent use. */
   readonly name: string;
-  /** What the sound is called where a person chooses it. */
-  readonly label: string;
   /** Where the app serves it from — **beside** the app, so it follows the base it is served on. */
   readonly file: string;
 }
 
 export const STOCK_SOUNDS: readonly StockSound[] = [
-  { name: 'chime', label: 'Chime', file: './sounds/chime.wav' },
-  { name: 'gong', label: 'Gong', file: './sounds/gong.wav' },
-  { name: 'pluck', label: 'Pluck', file: './sounds/pluck.wav' },
-  { name: 'riser', label: 'Riser', file: './sounds/riser.wav' },
-  { name: 'thud', label: 'Thud', file: './sounds/thud.wav' },
-  { name: 'whoosh', label: 'Whoosh', file: './sounds/whoosh.wav' },
-  { name: 'wow', label: 'Wow', file: './sounds/wow.wav' },
+  { name: 'chime', file: './sounds/chime.wav' },
+  { name: 'gong', file: './sounds/gong.wav' },
+  { name: 'pluck', file: './sounds/pluck.wav' },
+  { name: 'riser', file: './sounds/riser.wav' },
+  { name: 'thud', file: './sounds/thud.wav' },
+  { name: 'whoosh', file: './sounds/whoosh.wav' },
+  { name: 'wow', file: './sounds/wow.wav' },
 ];
 
 /** The sound a new annotation is made in — the app's own default. */

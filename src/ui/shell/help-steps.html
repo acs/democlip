@@ -3,35 +3,37 @@
   It lives in its own file so the long-form guide (web/help.html) and this stay
   apart: the dialog links to that page at its bottom, and the detail belongs there.
 
-  `help.ts` reads this in and puts it in the dialog at startup. A step is a
-  `.help-step` with a numbered `.help-num` and a `.help-step-body` holding a
+  `help.ts` reads this in and puts it in the dialog at startup, then fills it from the
+  catalogue: each sentence names its key with `data-i18n` (or `data-i18n-html` where it
+  carries first-party markup), keeping the English text as the pre-paint content. A step
+  is a `.help-step` with a numbered `.help-num` and a `.help-step-body` holding a
   `.help-step-title` and a `.help-step-desc`. Keep each one high level.
 -->
 <div class="help-step">
   <div class="help-num">1</div>
   <div class="help-step-body">
-    <div class="help-step-title">Choose what to record</div>
-    <div class="help-step-desc">Nothing is captured until you turn a source on. Press <strong>Screen</strong> to pick a screen, window or tab (full screen is preselected) with or without audio if available. <strong>Webcam</strong> gives a camera bubble over the screen — or the whole picture on its own when the screen is off. <strong>Mic</strong> adds your voice: its level shows in the little meter and is mixed with the tab audio, and on its own it records a <strong>sound-only</strong> clip, with no picture. Press <strong>Import</strong> to bring a WebM or MP4 file — a video, or a sound file — already on your machine.</div>
+    <div class="help-step-title" data-i18n="help.step.choose.title">Choose what to record</div>
+    <div class="help-step-desc" data-i18n-html="help.step.choose.desc">Nothing is captured until you turn a source on. Press <strong>Screen</strong> to pick a screen, window or tab (full screen is preselected) with or without audio if available. <strong>Webcam</strong> gives a camera bubble over the screen — or the whole picture on its own when the screen is off. <strong>Mic</strong> adds your voice: its level shows in the little meter and is mixed with the tab audio, and on its own it records a <strong>sound-only</strong> clip, with no picture. Press <strong>Import</strong> to bring a WebM or MP4 file — a video, or a sound file — already on your machine.</div>
   </div>
 </div>
 <div class="help-step">
   <div class="help-num">2</div>
   <div class="help-step-body">
-    <div class="help-step-title">Hit record</div>
-    <div class="help-step-desc">Press the red button to start recording. Press again to stop. Press it once more after a recording and the new take is added to the end of the clip, so you can join several recordings. In the Timeline you will see the pictures and sound as they are captured.</div>
+    <div class="help-step-title" data-i18n="help.step.record.title">Hit record</div>
+    <div class="help-step-desc" data-i18n-html="help.step.record.desc">Press the red button to start recording. Press again to stop. Press it once more after a recording and the new take is added to the end of the clip, so you can join several recordings. In the Timeline you will see the pictures and sound as they are captured.</div>
   </div>
 </div>
 <div class="help-step">
   <div class="help-num">3</div>
   <div class="help-step-body">
-    <div class="help-step-title">Stop and cut</div>
-    <div class="help-step-desc">Once stopped, press <strong>▶</strong> (or <strong>P</strong>) to play the clip back. Click the timeline to land on an exact moment; mark where a part starts and ends and press the <strong>scissors</strong> to cut it out — the timeline closes up over the gap. Press the <strong>arrow</strong>, <strong>image</strong>, <strong>text</strong>, <strong>sound</strong> or <strong>magnifier</strong> beside the clip's pencil to point at something over a stretch instead, and its <strong>settings</strong> set how long it is shown — a <strong>sound</strong> plays one of the app's own sounds over it, mixed with the recording, and you pick which one from a drop-down in its settings, with one play button to hear the chosen sound; a <strong>magnifier</strong> is dragged from the detail outward, shows that detail enlarged inside a round lens and dims the rest, and its settings change the rim's colour and the zoom.</div>
+    <div class="help-step-title" data-i18n="help.step.cut.title">Stop and cut</div>
+    <div class="help-step-desc" data-i18n-html="help.step.cut.desc">Once stopped, press <strong>▶</strong> (or <strong>P</strong>) to play the clip back. Click the timeline to land on an exact moment; mark where a part starts and ends and press the <strong>scissors</strong> to cut it out — the timeline closes up over the gap. Press the <strong>arrow</strong>, <strong>image</strong>, <strong>text</strong>, <strong>sound</strong> or <strong>magnifier</strong> beside the clip's pencil to point at something over a stretch instead, and its <strong>settings</strong> set how long it is shown — a <strong>sound</strong> plays one of the app's own sounds over it, mixed with the recording, and you pick which one from a drop-down in its settings, with one play button to hear the chosen sound; a <strong>magnifier</strong> is dragged from the detail outward, shows that detail enlarged inside a round lens and dims the rest, and its settings change the rim's colour and the zoom.</div>
   </div>
 </div>
 <div class="help-step">
   <div class="help-num">4</div>
   <div class="help-step-body">
-    <div class="help-step-title">Export and publish</div>
-    <div class="help-step-desc">Give the clip a <strong>title</strong> and a <strong>description</strong> in the settings control, and set its <strong>Export resolution</strong> beside them — the size the file is finally written at, a smaller one for a smaller file — then press <strong>Export</strong> to download a <strong>WebM</strong> or <strong>MP4</strong> file — or publish it to <strong>Bluesky</strong> or <strong>YouTube</strong> after signing in. A <strong>sound-only</strong> clip exports the sound alone, and a video service is not offered for it. Either file is encoded faster than real time, with the timeline counting down what is left.</div>
+    <div class="help-step-title" data-i18n="help.step.export.title">Export and publish</div>
+    <div class="help-step-desc" data-i18n-html="help.step.export.desc">Give the clip a <strong>title</strong> and a <strong>description</strong> in the settings control, and set its <strong>Export resolution</strong> beside them — the size the file is finally written at, a smaller one for a smaller file — then press <strong>Export</strong> to download a <strong>WebM</strong> or <strong>MP4</strong> file — or publish it to <strong>Bluesky</strong> or <strong>YouTube</strong> after signing in. A <strong>sound-only</strong> clip exports the sound alone, and a video service is not offered for it. Either file is encoded faster than real time, with the timeline counting down what is left.</div>
   </div>
 </div>

@@ -23,6 +23,8 @@ import { playback } from '../clip/playback.js';
 import { canvas, onSelectionChange } from './annotation-canvas.js';
 import { inspector } from './properties-inspector.js';
 import { pluginOf } from './annotation-plugin.js';
+import { t } from '../i18n/index.js';
+import { kindLabel } from '../i18n/labels.js';
 
 const DEFAULT_ICON = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="7"/></svg>';
 
@@ -100,7 +102,7 @@ export function renderLane(): void {
     // The kind's own symbol and name, from its plugin, so a new kind is found on the
     // lane without editing this module.
     const plugin = pluginOf(annotation.kind);
-    const label = plugin?.action.label ?? 'Annotation';
+    const label = plugin ? kindLabel(plugin.id, plugin.action.label) : t('annotation.kind.generic');
     if (on) {
       const place = stretchLayout(annotation.span);
       // A picked annotation with nothing on the picture — a sound — carries its own

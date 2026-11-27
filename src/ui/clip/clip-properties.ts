@@ -15,7 +15,7 @@
 import type { ClipProperties } from '../../domain/clip/ClipProperties.js';
 import type { Clip } from '../../domain/clip/Clip.js';
 import {
-  COLOURS, COLOUR_LABELS, DEFAULT_ANNOTATION_COLOUR, colourOf, isColour,
+  COLOURS, DEFAULT_ANNOTATION_COLOUR, colourOf, isColour,
   type AnnotationColour,
 } from '../../domain/annotation/AnnotationColour.js';
 import { LOGOS, logoFile } from '../logos.js';
@@ -170,11 +170,11 @@ registerClipProperty({
   // switch says why it cannot apply rather than accepting a request the file cannot honour.
   blocked: (properties, clip) => {
     if (clip && clip.takes.count() > 0 && !clip.hasPicture()) {
-      return 'A sound-only clip has no picture for the card — record a take with a picture, or export the sound';
+      return 'clip.addToExport.blockedSoundOnly';
     }
     return hasCardContent(properties) || properties.get('addToExport') === 'true'
       ? null
-      : 'Add to export needs something to put on the card — a title, a description or a logo';
+      : 'clip.addToExport.blockedNoContent';
   },
 });
 
@@ -202,7 +202,7 @@ registerClipProperty({
   label: 'Annotation colour',
   control: 'colour',
   seedable: true,
-  choices: COLOURS.map(colour => ({ value: colour, label: COLOUR_LABELS[colour] })),
+  choices: COLOURS.map(colour => ({ value: colour, label: colour })),
   value: annotationColour,
   with: (properties, value) => (isColour(value) ? properties.with('annotationColour', value) : null),
 });
@@ -258,6 +258,6 @@ registerClipProperty({
   // says why it cannot apply rather than being quietly ignored. An empty clip is not blocked: a
   // person or a profile may set it before the first take, and it applies when a picture arrives.
   blocked: (_properties, clip) => clip && clip.takes.count() > 0 && !clip.hasPicture()
-    ? 'A sound-only clip has no picture to write — record a take with a picture, or export the sound'
+    ? 'clip.exportResolution.blockedSoundOnly'
     : null,
 });

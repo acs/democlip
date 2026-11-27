@@ -21,16 +21,12 @@ import { newAnnotationId, type Annotation } from '../../domain/annotation/Annota
 import { images } from '../../infra/images.js';
 import { el } from '../dom.js';
 import { registerRenderer, type AnnotationRenderer } from './annotation-layer.js';
+import { t } from '../i18n/index.js';
 import {
   registerPlugin,
   type AnnotationAction, type AnnotationPlugin, type CreationContext,
 } from './annotation-plugin.js';
 import { placePicture, preparePicture } from './picture.js';
-
-const ARMED = 'IMAGE — choose a picture, paste one, or drop one here';
-const NO_PICTURE = 'IMAGE — no picture chosen';
-const UNREADABLE = 'That picture could not be read';
-const NO_FIT = 'IMAGE — that picture did not fit';
 
 const ACTION_ICON = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="M4 18l5-4 4 3 3-3 4 4"/></svg>';
 
@@ -50,8 +46,8 @@ export class ImagePlugin implements AnnotationPlugin, AnnotationRenderer<Annotat
   }
 
   begin(ctx: CreationContext): void {
-    ctx.say(ARMED);
-    void this.make(ctx).catch(error => ctx.cancel(`IMAGE — ${error instanceof Error ? error.message : 'that picture could not be added'}`));
+    ctx.say(t('annotation.image.armed'));
+    void this.make(ctx).catch(error => ctx.cancel(t('annotation.image.failed', { reason: error instanceof Error ? error.message : '' })));
   }
 
   draw(ctx: CanvasRenderingContext2D, annotation: Annotation, w: number, h: number): void {
@@ -64,21 +60,21 @@ export class ImagePlugin implements AnnotationPlugin, AnnotationRenderer<Annotat
 
   private async make(ctx: CreationContext): Promise<void> {
     const file = await this.choosePicture();
-    if (!file) { ctx.cancel(NO_PICTURE); return; }
+    if (!file) { ctx.cancel(t('annotation.image.noPicture')); return; }
 
     const prepared = await preparePicture(file, ctx.picture);
-    if (!prepared) { ctx.cancel(UNREADABLE); return; }
+    if (!prepared) { ctx.cancel(t('annotation.image.unreadable')); return; }
 
     const imageId = newAnnotationId();
     try {
       await images.put(imageId, prepared.blob);
     } catch {
-      ctx.cancel(UNREADABLE);
+      ctx.cancel(t('annotation.image.unreadable'));
       return;
     }
 
     const annotation = ImageAnnotation.create(ctx.span, placePicture(imageId, prepared, ctx.picture));
-    if (!annotation) { ctx.cancel(NO_FIT); return; }
+    if (!annotation) { ctx.cancel(t('annotation.image.noFit')); return; }
     ctx.commit(annotation);
   }
 

@@ -437,6 +437,32 @@ take, `clip/` the clip and its review, `cutting/` a stretch and its cut,
 session, and `agent/` the surface an agent drives. `dom.ts` stays at the root as
 the one registry every group reaches.
 
+## Speaking the person's language
+
+The app speaks the person's own language. It reads the language their browser or operating
+system declares when it loads and shows every word in it; there is no chooser in the app —
+changing the browser's language and reloading changes the app. English is the source: every
+sentence is written there first, and it is what a person sees when their language is not one
+the app speaks. Two languages ship in this first version, English and Spanish.
+
+A sentence is not written into the markup or the code: it is a **translation key** in a
+**catalogue**, and the view asks the catalogue for it. The catalogues are held in step — the
+same keys in every language — so a language cannot ship half-written, and adding one is a new
+catalogue and nothing else.
+
+| word | what it is | in the code |
+|---|---|---|
+| **locale** | one of the languages the app speaks — **English** (`en_UK`, the default and the source) and **Spanish** (`es_ES`) in this version. The set is open | `LocaleCode` (`src/ui/i18n/locale.ts`) |
+| **active language** | the locale the page is using. Chosen once, at load, from the person's preferred language, and fixed for the life of the page | `setLocale()`, `currentLocale()` (`src/ui/i18n/index.ts`) |
+| **translation key** | the stable, language-independent name of one sentence (`record.button.start`), flat and dot-notation. Written once; only its text differs per language | `TranslationKey` (`src/ui/i18n/index.ts`) |
+| **catalogue** | the sentences for one language, as keys mapped to text. One per language, travelling with the app; the English one is the source the others are written from | `catalogs/en_UK.ts`, `catalogs/es_ES.ts` |
+| **fallback** | what is shown when the active language has no entry for a key: the English sentence, never a key or a blank | `t()` (`src/ui/i18n/index.ts`) |
+
+A label the app declares — a clip property's name, an annotation kind's, a colour's, a stock
+sound's — is a **translation key** too, resolved where it is drawn. The app's own name and its
+**logo** names are marks, not words, and are never translated; nor is anything the person wrote
+themselves — a clip's title, a project's name.
+
 ## Being driven by an agent
 
 A person asks their agent to start a session. An **MCP server** — a local program

@@ -22,7 +22,6 @@ describe('the stock sounds', () => {
   it('serves every sound from a path beside the app, not from the domain root', () => {
     for (const sound of STOCK_SOUNDS) {
       expect(sound.file).toBe(`./sounds/${sound.name}.wav`);
-      expect(sound.label.length).toBeGreaterThan(0);
     }
     expect(stockSound('chime')?.file).toBe('./sounds/chime.wav');
     expect(stockSound('applause')).toBeNull();

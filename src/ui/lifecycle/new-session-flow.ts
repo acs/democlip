@@ -8,6 +8,7 @@
 import { currentPhase } from '../../state.js';
 import { capture } from '../../infra/capture.js';
 import { el, setStatus } from '../dom.js';
+import { t } from '../i18n/index.js';
 import { syncSources, stopRecording, toggleScreen } from '../recording/record-flow.js';
 import { finishRecording } from './finish-session.js';
 
@@ -31,5 +32,5 @@ export async function startNewSession(): Promise<void> {
   else syncSources();
   // Sync decides what the preview shows, and clears the status when nothing is on; a
   // session that has just started is ready whatever the sources say.
-  if (currentPhase() === 'idle') setStatus('Ready');
+  if (currentPhase() === 'idle') setStatus(t('status.ready'));
 }

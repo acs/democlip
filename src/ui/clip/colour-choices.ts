@@ -11,6 +11,7 @@
 // **Not fixed**, and answers `null` so the caller hands the item back rather than setting it.
 
 import type { PropertyChoice } from './clip-properties.js';
+import { t } from '../i18n/index.js';
 
 export interface ColourChoiceOptions {
   /** What the group is called for a screen reader: the property's label. */
@@ -34,7 +35,7 @@ export function colourChoices(options: ColourChoiceOptions): HTMLElement {
 
   if (options.free !== undefined) {
     group.append(choiceButton({
-      label: 'Not fixed',
+      label: t('profile.notFixed'),
       value: null,
       pressed: options.free,
       disabled: options.disabled === true,

@@ -8,6 +8,7 @@
 // capture, draws the rows from the answer, and hands every press to the flow.
 
 import { el } from '../dom.js';
+import { t } from '../i18n/index.js';
 import { Projects } from '../../domain/project/Projects.js';
 import type { Project } from '../../domain/project/Project.js';
 import { avatarLetters, avatarTone } from '../profile/profile-rows.js';
@@ -108,7 +109,7 @@ class ProjectMenu {
     const locked = this.handlers.locked();
     const title = document.createElement('div');
     title.className = 'profile-title';
-    title.textContent = 'Projects';
+    title.textContent = t('project.menu.title');
 
     el.projectMenu.replaceChildren(
       title,
@@ -132,7 +133,7 @@ class ProjectMenu {
     // opening either.
     const purpose = document.createElement('div');
     purpose.className = 'project-purpose';
-    purpose.textContent = project.motivation.trim() || project.objectives.trim() || 'No description yet.';
+    purpose.textContent = project.motivation.trim() || project.objectives.trim() || t('project.menu.noDescription');
 
     host.append(line, purpose);
     return host;
@@ -155,7 +156,7 @@ class ProjectMenu {
     const count = document.createElement('span');
     count.className = 'project-count';
     count.textContent = String(this.handlers.counts().get(project.id) ?? 0);
-    count.title = `${count.textContent} recordings`;
+    count.title = t('project.menu.count', { count: count.textContent });
     const check = document.createElement('span');
     check.className = 'profile-check';
     check.textContent = active ? '✓' : '';
@@ -169,17 +170,17 @@ class ProjectMenu {
     const acts = document.createElement('div');
     acts.className = 'profile-acts';
     acts.append(
-      this.icon('overview', `Open the overview of ${project.name}`, LIST, true, () => {
+      this.icon('overview', t('project.menu.overviewAria', { name: project.name }), LIST, true, () => {
         this.close();
         this.handlers.overview(project.id);
       }),
-      this.icon('define', `Settings of ${project.name}`, PENCIL, true, () => {
+      this.icon('define', t('project.menu.settingsAria', { name: project.name }), PENCIL, true, () => {
         this.close();
         this.handlers.define(project.id);
       }),
     );
     if (project.id !== Projects.DEFAULT_ID) {
-      acts.append(this.icon('remove', `Remove ${project.name}`, BIN, true, () => {
+      acts.append(this.icon('remove', t('project.menu.removeAria', { name: project.name }), BIN, true, () => {
         this.close();
         this.handlers.remove(project.id);
       }));
@@ -205,7 +206,7 @@ class ProjectMenu {
   private lockLine(): HTMLElement {
     const line = document.createElement('div');
     line.className = 'profile-lock';
-    line.textContent = 'The project is fixed until this session ends.';
+    line.textContent = t('project.menu.fixed');
     return line;
   }
 
@@ -215,7 +216,7 @@ class ProjectMenu {
     const add = document.createElement('button');
     add.type = 'button';
     add.className = 'profile-new-btn';
-    add.textContent = 'New project';
+    add.textContent = t('project.def.new');
     add.addEventListener('click', () => { this.close(); this.handlers.create(); });
     foot.append(add);
     return foot;

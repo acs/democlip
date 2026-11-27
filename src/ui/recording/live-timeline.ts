@@ -22,6 +22,7 @@ import { currentPhase } from '../../state.js';
 import { session } from '../../session.js';
 import { capture } from '../../infra/capture.js';
 import { clock, el } from '../dom.js';
+import { t } from '../i18n/index.js';
 import { drawWebcamOverlay } from './webcam.js';
 import { keptLengthNow, keptOf } from '../clip/clip.js';
 import { waveform } from '../clip/waveform.js';
@@ -63,7 +64,7 @@ export class LiveTimeline {
     // room the strip would have had, as it does in the review.
     el.timeline.classList.toggle('sound-only', !capture.sources.screen && !capture.sources.webcam);
     el.timeline.classList.add('on', 'recording');
-    el.tlLabel.textContent = 'Timeline';
+    el.tlLabel.textContent = t('timeline.label');
     el.tLive.classList.add('on');
     el.tLiveTime.textContent = '00:00';
     el.tCut.textContent = '';
@@ -81,7 +82,7 @@ export class LiveTimeline {
     this.analyser = null;
     this.buf = new Uint8Array(0);
     el.timeline.classList.remove('recording');
-    el.tlLabel.textContent = 'Timeline';
+    el.tlLabel.textContent = t('timeline.label');
     el.tLive.classList.remove('on');
     el.waveform.style.display = 'none';
   }

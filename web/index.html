@@ -64,7 +64,7 @@
       <button class="ver-new" id="ver-new" type="button"></button>
     </div>
     <div class="hdr-actions">
-      <button class="icon-btn" id="theme-btn" aria-label="Toggle theme" title="Toggle light / dark">
+      <button class="icon-btn" id="theme-btn" data-i18n-aria-label="header.theme.aria" aria-label="Toggle theme" data-i18n-title="header.theme.title" title="Toggle light / dark">
         <svg id="theme-ico" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="12" r="5"/>
           <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
@@ -73,16 +73,16 @@
           <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
         </svg>
       </button>
-      <button class="icon-btn" id="help-btn" aria-label="Show instructions" title="Instructions">?</button>
-      <div class="agent-chip" id="agent-chip" role="status" title="DemoClip is being driven by an agent in your chat. Every change it makes is an ordinary change, and the undo takes it back." aria-label="Agent: this DemoClip is being driven by an agent in your chat">
+      <button class="icon-btn" id="help-btn" data-i18n-aria-label="header.help.aria" aria-label="Show instructions" data-i18n-title="header.help.title" title="Instructions">?</button>
+      <div class="agent-chip" id="agent-chip" role="status" data-i18n-title="header.agent.title" title="DemoClip is being driven by an agent in your chat. Every change it makes is an ordinary change, and the undo takes it back." data-i18n-aria-label="header.agent.aria" aria-label="Agent: this DemoClip is being driven by an agent in your chat">
         <div class="s-dot ready"></div>
-        <span>Agent</span>
+        <span data-i18n="header.agent.label">Agent</span>
       </div>
-      <button class="icon-btn profile-pill project-pill" id="project-btn" aria-haspopup="menu" aria-expanded="false" aria-label="Projects" title="Projects">
+      <button class="icon-btn profile-pill project-pill" id="project-btn" aria-haspopup="menu" aria-expanded="false" data-i18n-aria-label="header.projects.aria" aria-label="Projects" data-i18n-title="header.projects.title" title="Projects">
         <svg class="pill-ico" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
         <span class="icon-btn-lbl" id="project-initials">—</span>
       </button>
-      <button class="icon-btn profile-pill" id="profile-btn" aria-haspopup="menu" aria-expanded="false" aria-label="Profiles" title="Profiles">
+      <button class="icon-btn profile-pill" id="profile-btn" aria-haspopup="menu" aria-expanded="false" data-i18n-aria-label="header.profiles.aria" aria-label="Profiles" data-i18n-title="header.profiles.title" title="Profiles">
         <svg class="pill-ico" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/><circle cx="9" cy="6" r="2" fill="currentColor" stroke="none"/><circle cx="15" cy="12" r="2" fill="currentColor" stroke="none"/><circle cx="8" cy="18" r="2" fill="currentColor" stroke="none"/></svg>
         <span class="icon-btn-lbl" id="profile-initials">—</span>
       </button>
@@ -100,7 +100,7 @@
           <path d="M8 21h8M12 17v4"/>
         </svg>
       </div>
-      <span class="idle-hint">Turn on Screen, Webcam or Mic, or import a file</span>
+      <span class="idle-hint" data-i18n="preview.idle.hint">Turn on Screen, Webcam or Mic, or import a file</span>
     </div>
 
     <div class="corner tl"></div><div class="corner tr"></div>
@@ -112,48 +112,48 @@
          same place beside the same pencil mark — and the column's own gap is wider than the
          kinds' so the clip control reads as a different target. -->
     <div class="corner-actions">
-      <button class="clip-props" id="props-btn" type="button" style="display:none" aria-haspopup="dialog" aria-expanded="false" aria-label="Clip properties" title="What the clip says about itself — its title, its description, its clip size and the size the file is written at">
+      <button class="clip-props" id="props-btn" type="button" style="display:none" aria-haspopup="dialog" aria-expanded="false" data-i18n-aria-label="clip.props.aria" aria-label="Clip properties" data-i18n-title="clip.props.title" title="What the clip says about itself — its title, its description, its clip size and the size the file is written at">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>
-        <span class="clip-props-lbl">CLIP</span>
+        <span class="clip-props-lbl" data-i18n="clip.props.label">CLIP</span>
       </button>
 
       <!-- The annotate options: every kind as a row, below the clip's settings control, so a
            new kind is one more row rather than one more button on the selected stretch. -->
-      <div class="annotate-bar" id="annotate-bar" role="toolbar" aria-label="Annotate"></div>
+      <div class="annotate-bar" id="annotate-bar" role="toolbar" data-i18n-aria-label="annotate.bar.aria" aria-label="Annotate"></div>
     </div>
 
     <div class="rec-badge" id="rec-badge">
       <div class="rec-badge-dot"></div>
-      <span>REC</span>
+      <span data-i18n="record.badge">REC</span>
     </div>
   </div>
 
   <!-- CONTROLS: the record sources, the record button, and the actions -->
   <div class="ctrl" id="ctrl">
-    <div class="srcs" role="group" aria-label="Record sources">
-      <button class="src-btn" id="screen-btn" type="button" aria-pressed="false" title="Screen">
+    <div class="srcs" role="group" data-i18n-aria-label="sources.group.aria" aria-label="Record sources">
+      <button class="src-btn" id="screen-btn" type="button" aria-pressed="false" data-i18n-title="sources.screen.title" title="Screen">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/>
         </svg>
-        <span class="src-lbl">Screen</span>
+        <span class="src-lbl" data-i18n="sources.screen.label">Screen</span>
         <span class="src-pin"></span>
       </button>
-      <button class="src-btn" id="webcam-btn" type="button" aria-pressed="false" title="Webcam" disabled>
+      <button class="src-btn" id="webcam-btn" type="button" aria-pressed="false" data-i18n-title="sources.webcam.title" title="Webcam" disabled>
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
         </svg>
-        <span class="src-lbl">Webcam</span>
+        <span class="src-lbl" data-i18n="sources.webcam.label">Webcam</span>
         <span class="src-pin"></span>
       </button>
-      <button class="cam-pick-btn" id="cam-pick-btn" type="button" aria-haspopup="menu" aria-expanded="false" aria-label="Camera" title="Camera" hidden>
+      <button class="cam-pick-btn" id="cam-pick-btn" type="button" aria-haspopup="menu" aria-expanded="false" data-i18n-aria-label="sources.camera.aria" aria-label="Camera" data-i18n-title="sources.camera.title" title="Camera" hidden>
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
       </button>
-      <button class="src-btn" id="mic-btn" type="button" aria-pressed="false" title="Microphone" disabled>
+      <button class="src-btn" id="mic-btn" type="button" aria-pressed="false" data-i18n-title="sources.mic.title" title="Microphone" disabled>
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
           <path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/>
         </svg>
-        <span class="src-lbl">Mic</span>
+        <span class="src-lbl" data-i18n="sources.mic.label">Mic</span>
         <span class="src-pin"></span>
       </button>
       <div class="vu" id="vu" aria-hidden="true"><div class="vu-fill" id="vu-fill"></div></div>
@@ -164,30 +164,30 @@
         <div class="ring ring-1"></div>
         <div class="ring ring-2"></div>
         <div class="ring ring-3" id="ring-3"></div>
-        <button id="rec-btn" aria-label="Start or stop recording">
+        <button id="rec-btn" data-i18n-aria-label="record.button.aria" aria-label="Start or stop recording">
           <div class="rec-btn-core"></div>
         </button>
       </div>
-      <span class="rec-btn-lbl" id="rec-lbl">Record</span>
+      <span class="rec-btn-lbl" id="rec-lbl" data-i18n="record.button.start">Record</span>
     </div>
 
     <div class="ctrl-actions">
       <!-- Import and Export are the same mark: the tray is the app, at the foot in
            both, and only the arrow's head turns round — down into the tray for a file
            coming in, up out of it for the clip going out. -->
-      <button class="act-btn import" id="file-btn" type="button" aria-label="Import" title="Import a video or sound file (WebM or MP4)">
+      <button class="act-btn import" id="file-btn" type="button" data-i18n-aria-label="sources.import.aria" aria-label="Import" data-i18n-title="sources.import.title" title="Import a video or sound file (WebM or MP4)">
         <svg class="act-ico" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
-        <span class="act-lbl">Import</span>
+        <span class="act-lbl" data-i18n="sources.import.label">Import</span>
       </button>
-      <button class="act-btn" id="btn-new" style="display:none">New</button>
+      <button class="act-btn" id="btn-new" style="display:none" data-i18n="actions.new">New</button>
       <!-- The clip's size, under the button that writes it: the figure means "the file this clip
            will export" because the button above it says so, so it carries no label of its own. -->
       <div class="exp-stack" id="exp-stack" style="display:none">
-        <button class="act-btn export" id="btn-exp" aria-haspopup="menu" aria-expanded="false" aria-label="Export">
+        <button class="act-btn export" id="btn-exp" aria-haspopup="menu" aria-expanded="false" data-i18n-aria-label="export.button.aria" aria-label="Export">
           <svg class="act-ico" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 8l5-5 5 5"/><path d="M12 15V3"/></svg>
-          <span class="act-lbl">Export ▾</span>
+          <span class="act-lbl" data-i18n="export.button.label">Export ▾</span>
         </button>
-        <span class="exp-size" id="t-size" title="The size of the file this clip will export">—</span>
+        <span class="exp-size" id="t-size" data-i18n-title="export.size.title" title="The size of the file this clip will export">—</span>
       </div>
     </div>
   </div>
@@ -196,17 +196,17 @@
   <div class="timeline" id="timeline">
     <div class="tl-header">
       <div class="tl-left">
-        <button class="tl-play" id="play-btn" aria-label="Play" title="Play / pause"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg></button>
-        <span class="tl-label" id="tl-label">Timeline</span>
+        <button class="tl-play" id="play-btn" data-i18n-aria-label="timeline.play.aria" aria-label="Play" data-i18n-title="timeline.play.title" title="Play / pause"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg></button>
+        <span class="tl-label" id="tl-label" data-i18n="timeline.label">Timeline</span>
         <span class="tl-live" id="t-live" aria-hidden="true"><span class="tl-live-dot"></span>REC <span id="t-live-time">00:00</span></span>
         <span class="tl-cut" id="t-cut-wrap">
           <span id="t-cut"></span>
-          <button class="tl-act undo" id="cut-undo" title="Put the last change back" aria-label="Put the last change back">
+          <button class="tl-act undo" id="cut-undo" data-i18n-title="timeline.undo.title" title="Put the last change back" data-i18n-aria-label="timeline.undo.aria" aria-label="Put the last change back">
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-5"/></svg>
           </button>
         </span>
         <div class="tl-times" id="t-labels">
-          <span class="tl-now-wrap">NOW <span id="t-now">0.00s</span></span>
+          <span class="tl-now-wrap"><span data-i18n="timeline.now">NOW</span> <span id="t-now">0.00s</span></span>
           <span class="tl-dur">·</span>
           <span class="tl-dur"><span id="t-clip">0.00s</span></span>
         </div>
@@ -229,45 +229,45 @@
 <!-- HELP MODAL — the brief tutorial; its text lives in src/ui/shell/help-steps.html
      and the complete guide is the page web/help.html, which the link opens -->
 <div class="help-bd" id="help-bd">
-  <div class="help-panel" role="dialog" aria-modal="true" aria-label="DemoClip instructions">
-    <button class="help-close" id="help-close" aria-label="Close">×</button>
-    <h2 class="help-title">How to use</h2>
-    <p class="help-sub">DemoClip · Quick Reference · <span class="help-ver" id="help-ver"></span></p>
+  <div class="help-panel" role="dialog" aria-modal="true" data-i18n-aria-label="help.panel.aria" aria-label="DemoClip instructions">
+    <button class="help-close" id="help-close" data-i18n-aria-label="common.close" aria-label="Close">×</button>
+    <h2 class="help-title" data-i18n="help.title">How to use</h2>
+    <p class="help-sub"><span data-i18n="help.sub">DemoClip · Quick Reference</span> · <span class="help-ver" id="help-ver"></span></p>
     <div class="help-steps" id="help-steps"></div>
-    <a class="help-more" id="help-more" href="help.html" target="_blank" rel="noopener">Read the complete guide →</a>
+    <a class="help-more" id="help-more" href="help.html" target="_blank" rel="noopener" data-i18n="help.more">Read the complete guide →</a>
     <hr class="help-divider">
-    <p class="help-footer">Everything happens locally in your browser — your recordings and exports are never sent anywhere unless you choose to publish a clip to a video service.</p>
+    <p class="help-footer" data-i18n="help.footer">Everything happens locally in your browser — your recordings and exports are never sent anywhere unless you choose to publish a clip to a video service.</p>
   </div>
 </div>
 
 <div class="toast" id="toast"></div>
 
 <!-- CAMERA MENU — at the body, for the same reason as the Export menu -->
-<div class="cam-menu" id="cam-menu" role="menu" aria-label="Camera"></div>
+<div class="cam-menu" id="cam-menu" role="menu" data-i18n-aria-label="sources.camera.aria" aria-label="Camera"></div>
 
 <!-- PROJECT MENU — at the body, for the same reason as the profile menu -->
-<div class="cam-menu profile-menu project-menu" id="project-menu" role="menu" aria-label="Projects"></div>
+<div class="cam-menu profile-menu project-menu" id="project-menu" role="menu" data-i18n-aria-label="header.projects.aria" aria-label="Projects"></div>
 
 <!-- PROFILE MENU — at the body, because the header clips what overflows it -->
-<div class="cam-menu profile-menu" id="profile-menu" role="menu" aria-label="Profiles"></div>
+<div class="cam-menu profile-menu" id="profile-menu" role="menu" data-i18n-aria-label="header.profiles.aria" aria-label="Profiles"></div>
 
 <!-- PROFILE CONFIG — what a profile fixes, opened from its pencil mark -->
 <div class="pdef-bd" id="profile-def-bd" role="dialog" aria-modal="true" aria-labelledby="profile-def-title">
   <div class="pdef-panel">
-    <h2 class="pdef-title" id="profile-def-title">Profile</h2>
-    <p class="pdef-sub">What this profile fixes. An item left free is yours to change, exactly as it always was.</p>
+    <h2 class="pdef-title" id="profile-def-title" data-i18n="profile.dialog.title">Profile</h2>
+    <p class="pdef-sub" data-i18n="profile.dialog.sub">What this profile fixes. An item left free is yours to change, exactly as it always was.</p>
     <div class="pdef-rows" id="profile-def-rows"></div>
-    <div class="pdef-foot"><button class="pdef-done" id="profile-def-done" type="button">Done</button></div>
+    <div class="pdef-foot"><button class="pdef-done" id="profile-def-done" type="button" data-i18n="common.done">Done</button></div>
   </div>
 </div>
 
 <!-- PROJECT DIALOG — what a project is called, what it is for, and its default profile -->
 <div class="pdef-bd" id="project-def-bd" role="dialog" aria-modal="true" aria-labelledby="project-def-title">
   <div class="pdef-panel">
-    <h2 class="pdef-title" id="project-def-title">Project</h2>
-    <p class="pdef-sub">A project holds the recordings made for one purpose, and the profile they start under.</p>
+    <h2 class="pdef-title" id="project-def-title" data-i18n="project.dialog.title">Project</h2>
+    <p class="pdef-sub" data-i18n="project.dialog.sub">A project holds the recordings made for one purpose, and the profile they start under.</p>
     <div class="pdef-rows" id="project-def-rows"></div>
-    <div class="pdef-foot"><button class="pdef-done" id="project-def-done" type="button">Done</button></div>
+    <div class="pdef-foot"><button class="pdef-done" id="project-def-done" type="button" data-i18n="common.done">Done</button></div>
   </div>
 </div>
 
@@ -275,73 +275,73 @@
 <div class="pdef-bd" id="project-ov-bd" role="dialog" aria-modal="true" aria-labelledby="project-ov-title">
   <div class="pdef-panel proj-ov-panel">
     <div class="proj-ov-head">
-      <h2 class="pdef-title" id="project-ov-title">Project</h2>
-      <button class="icon-btn" id="project-ov-close" type="button" aria-label="Close the project overview" title="Close">×</button>
+      <h2 class="pdef-title" id="project-ov-title" data-i18n="project.overview.title">Project</h2>
+      <button class="icon-btn" id="project-ov-close" type="button" data-i18n-aria-label="project.overview.close.aria" aria-label="Close the project overview" data-i18n-title="common.close" title="Close">×</button>
     </div>
     <p class="pdef-sub proj-ov-desc" id="project-ov-desc"></p>
     <p class="proj-ov-progress" id="project-ov-progress"></p>
     <p class="proj-ov-stamp" id="project-ov-stamp" hidden></p>
     <ul class="proj-ov-list" id="project-ov-list"></ul>
-    <p class="proj-ov-empty" id="project-ov-empty" hidden>This project has no recordings yet. Record one, and it appears here.</p>
+    <p class="proj-ov-empty" id="project-ov-empty" hidden data-i18n="project.overview.empty">This project has no recordings yet. Record one, and it appears here.</p>
   </div>
 </div>
 
 <!-- PROPERTIES INSPECTOR — at the body, beside the picked annotation, so the preview cannot clip it -->
-<div class="prop-menu" id="prop-menu" role="dialog" aria-label="Annotation properties"></div>
+<div class="prop-menu" id="prop-menu" role="dialog" data-i18n-aria-label="annotate.props.aria" aria-label="Annotation properties"></div>
 
 <!-- CLIP PROPERTIES — at the body, beside the settings control in the timeline header -->
-<div class="prop-menu clip" id="clip-prop-menu" role="dialog" aria-label="Clip properties"></div>
+<div class="prop-menu clip" id="clip-prop-menu" role="dialog" data-i18n-aria-label="clip.props.aria" aria-label="Clip properties"></div>
 
 <!-- TEXT ENTRY — the app's own dialog for typing a line, used to enter a text and to edit its words -->
-<div class="te-bd" id="text-entry" role="dialog" aria-modal="true" aria-label="Text to show">
+<div class="te-bd" id="text-entry" role="dialog" aria-modal="true" data-i18n-aria-label="textEntry.aria" aria-label="Text to show">
   <div class="te-panel">
-    <label class="te-label" for="text-entry-input">Text</label>
+    <label class="te-label" for="text-entry-input" data-i18n="textEntry.label">Text</label>
     <input class="te-input" id="text-entry-input" type="text" autocomplete="off" spellcheck="false" />
     <div class="te-actions">
-      <button class="te-cancel" id="text-entry-cancel" type="button">Cancel</button>
-      <button class="te-add" id="text-entry-add" type="button">Add</button>
+      <button class="te-cancel" id="text-entry-cancel" type="button" data-i18n="common.cancel">Cancel</button>
+      <button class="te-add" id="text-entry-add" type="button" data-i18n="textEntry.add">Add</button>
     </div>
   </div>
 </div>
 
 <!-- EXPORT MENU — at the body, because the header clips what overflows it -->
-<div class="export-menu" id="exp-menu" role="menu" aria-label="Export">
-  <button class="export-item" id="exp-webm" role="menuitem"><span class="export-item-name">WebM file</span><span class="export-item-note">Small and sharp — PRs, chat</span></button>
-  <button class="export-item" id="exp-mp4" role="menuitem"><span class="export-item-name">MP4 file</span><span class="export-item-note">Plays anywhere — QuickTime</span></button>
-  <button class="export-item" id="exp-editing" role="menuitem"><span class="export-item-name">WebM for editing</span><span class="export-item-note">Picture alone — annotations travel beside it</span></button>
-  <button class="export-item" id="exp-bluesky" role="menuitem"><span class="export-item-name">Bluesky</span><span class="export-item-note">Publish as a video post</span></button>
-  <button class="export-item" id="exp-youtube" role="menuitem"><span class="export-item-name">YouTube</span><span class="export-item-note">Upload to your own channel</span></button>
+<div class="export-menu" id="exp-menu" role="menu" data-i18n-aria-label="export.button.aria" aria-label="Export">
+  <button class="export-item" id="exp-webm" role="menuitem"><span class="export-item-name" data-i18n="export.menu.webm.name">WebM file</span><span class="export-item-note" data-i18n="export.menu.webm.note">Small and sharp — PRs, chat</span></button>
+  <button class="export-item" id="exp-mp4" role="menuitem"><span class="export-item-name" data-i18n="export.menu.mp4.name">MP4 file</span><span class="export-item-note" data-i18n="export.menu.mp4.note">Plays anywhere — QuickTime</span></button>
+  <button class="export-item" id="exp-editing" role="menuitem"><span class="export-item-name" data-i18n="export.menu.editing.name">WebM for editing</span><span class="export-item-note" data-i18n="export.menu.editing.note">Picture alone — annotations travel beside it</span></button>
+  <button class="export-item" id="exp-bluesky" role="menuitem"><span class="export-item-name" data-i18n="export.menu.bluesky.name">Bluesky</span><span class="export-item-note" data-i18n="export.menu.bluesky.note">Publish as a video post</span></button>
+  <button class="export-item" id="exp-youtube" role="menuitem"><span class="export-item-name" data-i18n="export.menu.youtube.name">YouTube</span><span class="export-item-note" data-i18n="export.menu.youtube.note">Upload to your own channel</span></button>
 </div>
 
 <!-- PUBLISH DIALOG -->
 <div class="pub-bd" id="pub-bd">
-  <div class="pub-panel" role="dialog" aria-modal="true" aria-label="Publish to Bluesky">
-    <button class="pub-close" id="pub-close" aria-label="Close">×</button>
-    <h2 class="pub-title">Publish to Bluesky</h2>
+  <div class="pub-panel" role="dialog" aria-modal="true" data-i18n-aria-label="publish.bluesky.aria" aria-label="Publish to Bluesky">
+    <button class="pub-close" id="pub-close" data-i18n-aria-label="common.close" aria-label="Close">×</button>
+    <h2 class="pub-title" data-i18n="publish.bluesky.title">Publish to Bluesky</h2>
 
     <div id="pub-signin-view">
-      <p class="pub-note">Sign in with your handle — your server asks you to approve, then brings you back here. The page reloads on the way back, and your recording comes back with it; you only do this once.</p>
+      <p class="pub-note" data-i18n="publish.bluesky.signin.note">Sign in with your handle — your server asks you to approve, then brings you back here. The page reloads on the way back, and your recording comes back with it; you only do this once.</p>
       <input class="pub-input" id="pub-handle" placeholder="you.bsky.social" autocomplete="username" autocapitalize="off" spellcheck="false">
-      <button class="pub-btn" id="pub-signin">Sign in</button>
+      <button class="pub-btn" id="pub-signin" data-i18n="publish.bluesky.signin">Sign in</button>
     </div>
 
     <div id="pub-compose-view" style="display:none">
       <div class="pub-row">
         <span class="pub-as" id="pub-as"></span>
-        <button class="pub-link" id="pub-signout">Sign out</button>
+        <button class="pub-link" id="pub-signout" data-i18n="common.signout">Sign out</button>
       </div>
       <div class="pub-field">
-        <label class="pub-label" for="pub-text">Post text <span class="pub-hint">what the post says — optional</span></label>
-        <textarea class="pub-input pub-text" id="pub-text" rows="3" placeholder="Say something about this clip"></textarea>
+        <label class="pub-label" for="pub-text"><span data-i18n="publish.bluesky.text.label">Post text</span> <span class="pub-hint" data-i18n="publish.bluesky.text.hint">what the post says — optional</span></label>
+        <textarea class="pub-input pub-text" id="pub-text" rows="3" data-i18n-placeholder="publish.bluesky.text.placeholder" placeholder="Say something about this clip"></textarea>
       </div>
       <div class="pub-field">
-        <label class="pub-label" for="pub-alt">Video description <span class="pub-hint">alt text, read to people who cannot see it — optional</span></label>
-        <input class="pub-input" id="pub-alt" placeholder="What the video shows">
+        <label class="pub-label" for="pub-alt"><span data-i18n="publish.bluesky.alt.label">Video description</span> <span class="pub-hint" data-i18n="publish.bluesky.alt.hint">alt text, read to people who cannot see it — optional</span></label>
+        <input class="pub-input" id="pub-alt" data-i18n-placeholder="publish.bluesky.alt.placeholder" placeholder="What the video shows">
       </div>
-      <p class="pub-note" style="margin:0">Bluesky takes up to 10 minutes and 300 MB, and re-encodes at about 1920 wide — a wider screen is scaled down, and small text with it. Record a region (the red box) around the window you are filming and its text stays full size.</p>
+      <p class="pub-note" style="margin:0" data-i18n="publish.bluesky.limits">Bluesky takes up to 10 minutes and 300 MB, and re-encodes at about 1920 wide — a wider screen is scaled down, and small text with it. Record a region (the red box) around the window you are filming and its text stays full size.</p>
       <div class="pub-actions">
-        <button class="pub-btn ghost" id="pub-cancel">Cancel</button>
-        <button class="pub-btn" id="pub-go">Publish</button>
+        <button class="pub-btn ghost" id="pub-cancel" data-i18n="common.cancel">Cancel</button>
+        <button class="pub-btn" id="pub-go" data-i18n="publish.bluesky.go">Publish</button>
       </div>
     </div>
 
@@ -351,40 +351,40 @@
 </div>
 <!-- UPLOAD TO YOUTUBE DIALOG -->
 <div class="pub-bd" id="yt-bd">
-  <div class="pub-panel" role="dialog" aria-modal="true" aria-label="Upload to YouTube">
-    <button class="pub-close" id="yt-close" aria-label="Close">×</button>
-    <h2 class="pub-title">Upload to YouTube</h2>
+  <div class="pub-panel" role="dialog" aria-modal="true" data-i18n-aria-label="publish.youtube.aria" aria-label="Upload to YouTube">
+    <button class="pub-close" id="yt-close" data-i18n-aria-label="common.close" aria-label="Close">×</button>
+    <h2 class="pub-title" data-i18n="publish.youtube.title">Upload to YouTube</h2>
 
     <div id="yt-signin-view">
       <p class="pub-note" id="yt-note"></p>
-      <button class="pub-btn" id="yt-signin">Sign in with Google</button>
+      <button class="pub-btn" id="yt-signin" data-i18n="publish.youtube.signin">Sign in with Google</button>
     </div>
 
     <div id="yt-compose-view" style="display:none">
       <div class="pub-row">
         <span class="pub-as" id="yt-as"></span>
-        <button class="pub-link" id="yt-signout">Sign out</button>
+        <button class="pub-link" id="yt-signout" data-i18n="common.signout">Sign out</button>
       </div>
       <div class="pub-field">
-        <label class="pub-label" for="yt-title">Title <span class="pub-hint">left blank, the app names it</span></label>
-        <input class="pub-input" id="yt-title" placeholder="A demo of the thing">
+        <label class="pub-label" for="yt-title"><span data-i18n="publish.youtube.title.label">Title</span> <span class="pub-hint" data-i18n="publish.youtube.title.hint">left blank, the app names it</span></label>
+        <input class="pub-input" id="yt-title" data-i18n-placeholder="publish.youtube.title.placeholder" placeholder="A demo of the thing">
       </div>
       <div class="pub-field">
-        <label class="pub-label" for="yt-description">Description <span class="pub-hint">optional</span></label>
-        <textarea class="pub-input pub-text" id="yt-description" rows="3" placeholder="What the video shows"></textarea>
+        <label class="pub-label" for="yt-description"><span data-i18n="publish.youtube.description.label">Description</span> <span class="pub-hint" data-i18n="publish.youtube.description.hint">optional</span></label>
+        <textarea class="pub-input pub-text" id="yt-description" rows="3" data-i18n-placeholder="publish.youtube.description.placeholder" placeholder="What the video shows"></textarea>
       </div>
       <div class="pub-field">
-        <label class="pub-label" for="yt-visibility">Who can see it</label>
+        <label class="pub-label" for="yt-visibility" data-i18n="publish.youtube.visibility.label">Who can see it</label>
         <select class="pub-input" id="yt-visibility">
-          <option value="private" selected>Private — only you</option>
-          <option value="unlisted">Unlisted — anyone with the link</option>
-          <option value="public">Public — everyone</option>
+          <option value="private" selected data-i18n="publish.youtube.visibility.private">Private — only you</option>
+          <option value="unlisted" data-i18n="publish.youtube.visibility.unlisted">Unlisted — anyone with the link</option>
+          <option value="public" data-i18n="publish.youtube.visibility.public">Public — everyone</option>
         </select>
       </div>
-      <p class="pub-note" style="margin:0">A default YouTube account takes videos up to 15 minutes. The video is on your channel as soon as it is uploaded, and YouTube finishes processing it just after — so it may take a moment to play. The app is not allowed to read your channel, so it cannot watch that part.</p>
+      <p class="pub-note" style="margin:0" data-i18n="publish.youtube.note">A default YouTube account takes videos up to 15 minutes. The video is on your channel as soon as it is uploaded, and YouTube finishes processing it just after — so it may take a moment to play. The app is not allowed to read your channel, so it cannot watch that part.</p>
       <div class="pub-actions">
-        <button class="pub-btn ghost" id="yt-cancel">Cancel</button>
-        <button class="pub-btn" id="yt-go">Upload</button>
+        <button class="pub-btn ghost" id="yt-cancel" data-i18n="common.cancel">Cancel</button>
+        <button class="pub-btn" id="yt-go" data-i18n="publish.youtube.go">Upload</button>
       </div>
     </div>
 
@@ -401,7 +401,7 @@
      mostly "Ready", and the visible feedback is the REC badge, the timeline's progress and
      the toasts. Kept as a live region so a person using a screen reader still hears the
      app say what it is doing. -->
-<div class="status-live" role="status" aria-live="polite"><span id="s-text">Initialising</span></div>
+<div class="status-live" role="status" aria-live="polite"><span id="s-text" data-i18n="status.initialising">Initialising</span></div>
 
 <script type="module" src="/main.ts"></script>
 </body>

@@ -58,7 +58,7 @@ describe('defineRows', () => {
     expect(rows[1]).toMatchObject({ label: 'Add to export', control: 'toggle', free: false, value: 'true', editable: true });
     // The colour a new annotation is made in: another list, its own entries, free until fixed.
     expect(rows[2]).toMatchObject({ label: 'Annotation colour', control: 'colour', free: true, value: '', editable: true });
-    expect(rows[2].choices.map(choice => choice.label)).toEqual(['Red', 'Orange', 'White', 'Yellow', 'Green', 'Blue', 'Black']);
+    expect(rows[2].choices.map(choice => choice.label)).toEqual(['#e53e3e', '#ff6c23', '#ffffff', '#f6e05e', '#38a169', '#3182ce', '#111827']);
     // And the sound boost: the second switch, free here, which the sheet draws exactly as it
     // draws the card's — so the profile can be told to fix it on, off, or not at all.
     expect(rows[3]).toMatchObject({ label: 'Boost the sound', control: 'toggle', free: true, value: '', editable: true });

@@ -12,6 +12,7 @@
 import { capture } from '../../infra/capture.js';
 import { WebcamBubble } from '../../domain/capture/WebcamBubble.js';
 import { currentPhase } from '../../state.js';
+import { t } from '../i18n/index.js';
 import { el, toast } from '../dom.js';
 import { cameraOptions, shouldShowPicker } from './camera-list.js';
 import { cameraMenu } from './camera-menu.js';
@@ -40,7 +41,7 @@ export async function detectWebcam(): Promise<void> {
   setCameraPresent(present);
   renderCameras();
   if (!present) {
-    if (capture.sources.webcam) toast('The camera was disconnected', 4000);
+    if (capture.sources.webcam) toast(t('toast.cameraDisconnected'), 4000);
     stopWebcam();
   }
 }
@@ -54,7 +55,7 @@ async function onDeviceChange(): Promise<void> {
     selectedId = null;
     if (capture.sources.webcam) {
       stopWebcam();
-      toast('The camera was disconnected', 4000);
+      toast(t('toast.cameraDisconnected'), 4000);
     } else {
       renderCameras();
     }
@@ -80,7 +81,7 @@ async function startWebcam(): Promise<void> {
     await detectWebcam();                       // labels are only readable after permission
   } catch (error) {
     const name = (error as { name?: string }).name;
-    toast('Could not start the webcam' + (name ? ` (${name})` : ''), 4000);
+    toast(t('toast.cameraStart') + (name ? ` (${name})` : ''), 4000);
   }
 }
 
@@ -97,7 +98,7 @@ export async function switchWebcam(deviceId: string): Promise<void> {
     renderCameras();
   } catch (error) {
     const name = (error as { name?: string }).name;
-    toast('Could not switch the camera' + (name ? ` (${name})` : ''), 4000);
+    toast(t('toast.cameraSwitch') + (name ? ` (${name})` : ''), 4000);
     const current = capture.currentWebcam();
     if (current) {
       el.wcv.srcObject = current;

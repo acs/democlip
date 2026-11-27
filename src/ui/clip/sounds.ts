@@ -24,6 +24,7 @@ import { SOUND_LEVEL } from '../../domain/sound/StockSounds.js';
 import type { Sounding } from '../../domain/clip/ExportPlan.js';
 import { FADE_S } from './fade.js';
 import { toast } from '../dom.js';
+import { t } from '../i18n/index.js';
 
 /** The kept parts of the clip's sound annotations, in the file's own seconds. */
 let soundings: readonly Sounding[] = [];
@@ -129,7 +130,7 @@ export function previewStockSound(name: string): void {
   const buffer = stockSounds.get(name);
   if (buffer) { startOnce(name, 0, buffer.duration, true); return; }
   void stockSounds.buffer(name).then(ready => {
-    if (!ready) { toast('That sound could not be read'); return; }
+    if (!ready) { toast(t('toast.soundUnreadable')); return; }
     startOnce(name, 0, ready.duration, true);
   });
 }
@@ -145,7 +146,7 @@ function startOnce(name: string, offset: number, length: number, speakUp: boolea
   if (!(length > 0) || !(SOUND_LEVEL > 0)) return;
   const context = soundsContext();
   if (!context) {
-    if (speakUp) toast('Sound needs audio, which this browser did not give');
+    if (speakUp) toast(t('toast.soundNeedsAudio'));
     return;
   }
   const begin = (): void => {
@@ -167,7 +168,7 @@ function startOnce(name: string, offset: number, length: number, speakUp: boolea
       source.start(context.currentTime, from, forHow);
     } catch {
       playing = playing.filter(s => s !== source);
-      if (speakUp) toast('That sound would not play');
+      if (speakUp) toast(t('toast.soundWontPlay'));
     }
   };
   if (context.state === 'running') { begin(); return; }

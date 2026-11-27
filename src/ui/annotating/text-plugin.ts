@@ -22,6 +22,7 @@ import { TextAnnotation, type TextGeometry } from '../../domain/annotation/TextA
 import { isColour } from '../../domain/annotation/AnnotationColour.js';
 import type { Annotation } from '../../domain/annotation/Annotation.js';
 import { el } from '../dom.js';
+import { t } from '../i18n/index.js';
 import { registerRenderer, type AnnotationRenderer } from './annotation-layer.js';
 import {
   registerPlugin,
@@ -41,10 +42,6 @@ const OUTLINE = 'rgba(2,3,8,0.72)';   // a dark edge, so any palette colour read
 // A new line is made in the clip's annotation colour, red by default — the same colour a new
 // arrow takes, so the two kinds do not start in different ones. The white below is what a text
 // written before colours existed reads back as, not what a new one is made in.
-
-const ARMED = 'TEXT — type the text to show';
-const NO_TEXT = 'TEXT — no text entered';
-const NO_FIT = 'TEXT — that text did not fit';
 
 const ACTION_ICON = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 5h14"/><path d="M12 5v14"/><path d="M9 19h6"/></svg>';
 
@@ -125,7 +122,7 @@ export class TextPlugin implements AnnotationPlugin, AnnotationRenderer<Annotati
   }
 
   begin(ctx: CreationContext): void {
-    ctx.say(ARMED);
+    ctx.say(t('annotation.text.armed'));
     void this.create(ctx);
   }
 
@@ -149,12 +146,12 @@ export class TextPlugin implements AnnotationPlugin, AnnotationRenderer<Annotati
   /** A new text: the one entry the app has for typing a line, then measure and place. */
   private async create(ctx: CreationContext): Promise<void> {
     const typed = await textEntry.ask('');
-    if (typed === null) { ctx.cancel(NO_TEXT); return; }
+    if (typed === null) { ctx.cancel(t('annotation.text.noText')); return; }
     const text = typed.trim();
-    if (!text) { ctx.cancel(NO_TEXT); return; }
+    if (!text) { ctx.cancel(t('annotation.text.noText')); return; }
 
     const size = measureText(text, ctx.picture);
-    if (!size) { ctx.cancel(NO_FIT); return; }
+    if (!size) { ctx.cancel(t('annotation.text.noFit')); return; }
 
     const annotation = TextAnnotation.create(ctx.span, {
       text,
@@ -163,7 +160,7 @@ export class TextPlugin implements AnnotationPlugin, AnnotationRenderer<Annotati
       width: size.width,
       height: size.height,
     }, undefined, ctx.colour);
-    if (!annotation) { ctx.cancel(NO_FIT); return; }
+    if (!annotation) { ctx.cancel(t('annotation.text.noFit')); return; }
     ctx.commit(annotation);
   }
 

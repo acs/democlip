@@ -20,17 +20,6 @@ export type AnnotationColour = (typeof COLOURS)[number];
 /** The colour a new annotation is made in when the clip has none of its own — the app's red. */
 export const DEFAULT_ANNOTATION_COLOUR: AnnotationColour = '#e53e3e';
 
-/** What each colour is called where a person picks one from a list rather than a swatch. */
-export const COLOUR_LABELS: Readonly<Record<AnnotationColour, string>> = {
-  '#e53e3e': 'Red',
-  '#ff6c23': 'Orange',
-  '#ffffff': 'White',
-  '#f6e05e': 'Yellow',
-  '#38a169': 'Green',
-  '#3182ce': 'Blue',
-  '#111827': 'Black',
-};
-
 const KNOWN: ReadonlySet<string> = new Set(COLOURS);
 
 /** Is this one of the colours an annotation may be drawn in? */
