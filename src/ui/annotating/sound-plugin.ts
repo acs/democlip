@@ -17,12 +17,11 @@ import { SoundAnnotation } from '../../domain/annotation/SoundAnnotation.js';
 import { DEFAULT_STOCK_SOUND } from '../../domain/sound/StockSounds.js';
 import type { Annotation } from '../../domain/annotation/Annotation.js';
 import { registerRenderer, type AnnotationRenderer } from './annotation-layer.js';
+import { t } from '../i18n/index.js';
 import {
   registerPlugin,
   type AnnotationAction, type AnnotationPlugin, type AnnotationProperty, type CreationContext,
 } from './annotation-plugin.js';
-
-const NO_SOUND = 'SOUND — that sound could not be added';
 
 const ACTION_ICON = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg>';
 
@@ -62,7 +61,7 @@ export class SoundPlugin implements AnnotationPlugin, AnnotationRenderer<Annotat
 
   begin(ctx: CreationContext): void {
     const annotation = SoundAnnotation.create(ctx.span, DEFAULT_STOCK_SOUND);
-    if (!annotation) { ctx.cancel(NO_SOUND); return; }
+    if (!annotation) { ctx.cancel(t('annotation.sound.noSound')); return; }
     // It plays at once; the choice of which sound is one press away. The canvas opens a kind
     // with no box on the picture its preferences on commit, so this kind needs no knowledge of
     // the inspector — and stays free of the DOM.

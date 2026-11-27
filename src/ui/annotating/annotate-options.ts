@@ -22,6 +22,7 @@ import { player } from '../clip/clip.js';
 import { selection } from '../cutting/selection.js';
 import { canvas } from './annotation-canvas.js';
 import { plugins, type AnnotationPlugin } from './annotation-plugin.js';
+import { kindLabel, kindTitle } from '../i18n/labels.js';
 
 export function initAnnotateOptions(): void {
   el.annotateBar.addEventListener('click', onClick);
@@ -66,8 +67,8 @@ function row(plugin: AnnotationPlugin): HTMLElement {
   button.type = 'button';
   button.className = 'annotate-row';
   button.dataset.kind = plugin.id;
-  button.title = plugin.action.title;
-  button.setAttribute('aria-label', plugin.action.title);
-  button.innerHTML = plugin.action.icon + `<span class="annotate-lbl">${plugin.action.label}</span>`;
+  button.title = kindTitle(plugin.id, plugin.action.title);
+  button.setAttribute('aria-label', kindTitle(plugin.id, plugin.action.title));
+  button.innerHTML = plugin.action.icon + `<span class="annotate-lbl">${kindLabel(plugin.id, plugin.action.label)}</span>`;
   return button;
 }

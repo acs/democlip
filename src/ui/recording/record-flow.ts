@@ -14,6 +14,7 @@ import { takeProbe } from '../../infra/take-probe.js';
 import { clock } from '../../infra/clock.js';
 import { RecordTake } from '../../application/record-take.js';
 import { el, setStatus, toast } from '../dom.js';
+import { t } from '../i18n/index.js';
 import { refreshSourceButtons } from './source-buttons.js';
 import { drawGrid, drawSoundOnly, startMirror, stopMirror } from './preview.js';
 import { drawWebcamOverlay } from './webcam.js';
@@ -87,7 +88,7 @@ export function syncSources(): void {
     drawGrid();
     el.idleOv.classList.remove('gone');
     el.recBtn.disabled = false;
-    el.recLbl.textContent = 'Record';
+    el.recLbl.textContent = t('record.button.start');
     setPhase('idle');
     setStatus('');
     return;
@@ -100,18 +101,20 @@ export function syncSources(): void {
     drawSoundOnly();
     el.idleOv.classList.add('gone');
     el.recBtn.disabled = false;
-    el.recLbl.textContent = 'Record';
+    el.recLbl.textContent = t('record.button.start');
     setPhase('live');
-    setStatus(`Live — sound only${hasSound() ? '' : ' · no audio'}`);
+    setStatus(hasSound() ? t('status.liveSoundOnly') : t('status.liveSoundOnlyNoAudio'));
     return;
   }
   sizePreview();
   startMirror();
   el.idleOv.classList.add('gone');
   el.recBtn.disabled = false;
-  el.recLbl.textContent = 'Record';
+  el.recLbl.textContent = t('record.button.start');
   setPhase('live');
-  setStatus(`Live — ${capture.width}×${capture.height}${hasSound() ? '' : ' · no audio shared'}`);
+  setStatus(hasSound()
+    ? t('status.live', { size: `${capture.width}×${capture.height}` })
+    : t('status.liveNoAudio', { size: `${capture.width}×${capture.height}` }));
 }
 
 function sizePreview(): void {
@@ -166,14 +169,14 @@ export async function toggleScreen(): Promise<void> {
     return;
   }
   setPhase('starting');
-  setStatus('Select a screen…');
+  setStatus(t('status.selectScreen'));
   try {
     const captureSession = await capture.start();
     // Only silent if the microphone is off too: with it on, the take has the mic and
     // the status line says nothing. When neither has sound, the toast is the loud
     // version of the status line's "no audio shared".
     if (!captureSession.hasAudio && !capture.sources.mic) {
-      toast('No audio was shared — the recording will be silent. Press New to share again with audio.', 6000);
+      toast(t('toast.noAudioShared'), 6000);
     }
     el.sv.srcObject = captureSession.stream;
     await el.sv.play();
@@ -187,7 +190,7 @@ export async function toggleScreen(): Promise<void> {
     // place that decides the preview and the phase settle them.
     syncSources();
     const name = error instanceof Error ? error.name : '';
-    if (name !== 'AbortError') toast('The screen could not be shared');
+    if (name !== 'AbortError') toast(t('toast.screenNotShared'));
   }
 }
 
@@ -196,7 +199,7 @@ export async function toggleRecord(): Promise<void> {
   if (phase === 'starting' || phase === 'encoding') return;
   if (phase === 'recording') { await stopRecording(); return; }
   if (canRecord()) { await startRecording(); return; }
-  toast('Turn on a source first: the screen, the webcam or the mic');
+  toast(t('toast.turnOnSource'));
 }
 
 /**
@@ -221,9 +224,9 @@ async function startRecording(): Promise<void> {
   sizePreview();
   if (!hasPicture()) drawSoundOnly();
   el.recBtn.classList.add('recording');
-  el.recLbl.textContent = 'Stop';
+  el.recLbl.textContent = t('record.button.stop');
   el.badge.classList.add('on');
-  setStatus(hasPicture() ? 'Recording' : 'Recording — sound only');
+  setStatus(hasPicture() ? t('status.recording') : t('status.recordingSoundOnly'));
   if (outcome.kind === 'started') liveTimeline.start(outcome.stream);
   startMirror();
 }
@@ -233,12 +236,12 @@ export async function stopRecording(): Promise<void> {
   const outcome = await record.stop();
   setPhase('review');
   el.recBtn.classList.remove('recording');
-  el.recLbl.textContent = 'Record';
+  el.recLbl.textContent = t('record.button.start');
   el.badge.classList.remove('on');
   if (outcome.kind === 'stopped') {
     const index = session.clip.takes.count() - 1;
     await openReview(index, 0);
-    setStatus('Ready');
+    setStatus(t('status.ready'));
   }
 }
 
@@ -251,7 +254,7 @@ export function onScreenEnded(): void {
     stopMirror();
     refreshSourceButtons();
     setPhase('review');
-    setStatus('Ready to export · turn a source on to record again');
+    setStatus(t('status.readyToExport'));
     return;
   }
   syncSources();             // the webcam, if it is on, keeps the preview

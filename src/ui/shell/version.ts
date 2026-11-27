@@ -12,6 +12,7 @@
 // deployed build and the number in the header all agree.
 
 import { el } from '../dom.js';
+import { t } from '../i18n/index.js';
 
 // `typeof` is safe when the build never substituted it — a bare test run, say.
 const VERSION = typeof __APP_VERSION__ === 'string' ? __APP_VERSION__ : 'dev';
@@ -29,8 +30,9 @@ const ASK_EVERY_MS = 15 * 60 * 1000;   // how often to look, while the app stays
 export function initVersion(): void {
   const label = 'v' + appVersion();
   el.ver.textContent = label;
-  el.ver.title = 'DemoClip ' + label + ' — open the project on GitHub';
-  el.ver.setAttribute('aria-label', 'DemoClip ' + label + ' — open the project on GitHub');
+  const open = t('version.open', { label });
+  el.ver.title = open;
+  el.ver.setAttribute('aria-label', open);
   el.helpVer.textContent = label;
 
   el.verNew.addEventListener('click', () => location.reload());
@@ -51,7 +53,7 @@ async function askForDeployed(): Promise<void> {
 }
 
 function offerReload(deployed: string): void {
-  el.verNew.textContent = 'v' + VERSION + ' → v' + deployed + ' · reload';
-  el.verNew.title = 'A newer build (v' + deployed + ') has been deployed';
+  el.verNew.textContent = t('version.reload', { from: VERSION, to: deployed });
+  el.verNew.title = t('version.newer', { version: deployed });
   el.verNew.classList.add('on');
 }

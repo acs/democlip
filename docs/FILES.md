@@ -6,7 +6,8 @@ democlip/
 │   ├── index.html        # The page — links the stylesheet and the entry below
 │   ├── help.html         # The complete guide, a page of its own — the dialog links here
 │   ├── main.ts           # The page's entry — imports src/main.ts, one level up
-│   ├── help-page.ts      # The guide page's entry — the theme and the version
+│   ├── i18n-boot.ts      # The page's language: chosen from the browser, applied before the app
+│   ├── help-page.ts      # The guide page's entry — the language, the theme and the version
 │   ├── styles.css        # All styling (theme variables, layout, components)
 │   └── public/           # Copied verbatim into the build
 │       ├── manifest.json # PWA manifest
@@ -94,6 +95,11 @@ democlip/
 │   │   └── download.ts     # Blob download trigger, behind DownloadPort
 │   └── ui/               # View layer (DOM) — one module per widget, grouped by domain concept
 │       ├── dom.ts          # Central element registry + status/toast helpers
+│       ├── i18n/           # The app's language: the locale registry, the catalogues, t(), the DOM pass
+│       │   ├── locale.ts     # The languages the app speaks, and the resolver — pure
+│       │   ├── index.ts      # t(), tIn(), setLocale(), currentLocale(), TranslationKey
+│       │   ├── dom.ts        # applyTranslations(): the data-i18n pass over the static pages
+│       │   └── catalogs/     # en_UK.ts (the source of truth) and es_ES.ts (held in step)
 │       ├── shell/          # The frame around the app
 │       │   ├── theme.ts      # Light / dark theme
 │       │   ├── help.ts       # Instructions modal — the brief tutorial and the guide link

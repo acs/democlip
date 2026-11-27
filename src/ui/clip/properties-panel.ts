@@ -26,6 +26,8 @@
 
 import { session } from '../../session.js';
 import { el, toast } from '../dom.js';
+import { t, type TranslationKey } from '../i18n/index.js';
+import { clipChoiceLabel, clipPropertyLabel } from '../i18n/labels.js';
 import { clipProperties, type ClipProperty } from './clip-properties.js';
 import { colourChoices } from './colour-choices.js';
 import type { Controlling } from '../profile/control.js';
@@ -175,7 +177,7 @@ class ClipPropertiesPanel {
 
     const name = document.createElement('span');
     name.className = 'prop-name';
-    name.textContent = property.label;
+    name.textContent = clipPropertyLabel(property.id, property.label);
 
     // A property the app shows but the person does not set — the clip size — is its value and
     // nothing to type into. So is one a **profile** fixes: its value, and a **lock** in place of
@@ -194,7 +196,7 @@ class ClipPropertiesPanel {
         line.className = 'prop-fixed';
         const lock = document.createElement('span');
         lock.className = 'prop-lock';
-        const said = `Set by ${fixedBy}`;
+        const said = t('profile.setBy', { profile: fixedBy });
         lock.title = said;
         lock.setAttribute('role', 'img');
         lock.setAttribute('aria-label', said);
@@ -237,8 +239,11 @@ class ClipPropertiesPanel {
     // to type — and the row is rebuilt with the chosen one pressed.
     if (property.control === 'colour') {
       const group = colourChoices({
-        label: property.label,
-        choices: property.choices ?? [],
+        label: clipPropertyLabel(property.id, property.label),
+        choices: (property.choices ?? []).map(choice => ({
+          value: choice.value,
+          label: clipChoiceLabel(property.id, choice.value, choice.label),
+        })),
         value: property.value(session.clip.properties, session.clip),
         disabled: blocked !== null,
         pick: value => { if (value !== null) this.applyColour(property, value); },
@@ -257,7 +262,7 @@ class ClipPropertiesPanel {
       for (const choice of property.choices ?? []) {
         const option = document.createElement('option');
         option.value = choice.value;
-        option.textContent = choice.label;
+        option.textContent = clipChoiceLabel(property.id, choice.value, choice.label);
         select.append(option);
       }
       select.value = property.value(session.clip.properties, session.clip);
@@ -285,7 +290,8 @@ class ClipPropertiesPanel {
 
   /** Why the property's control cannot be moved now, or null when it can. */
   private blocked(property: ClipProperty): string | null {
-    return property.blocked?.(session.clip.properties, session.clip) ?? null;
+    const reason = property.blocked?.(session.clip.properties, session.clip) ?? null;
+    return reason ? t(reason as TranslationKey) : null;
   }
 
   /**
@@ -309,9 +315,10 @@ class ClipPropertiesPanel {
    */
   private shown(property: ClipProperty): string {
     const value = property.value(session.clip.properties, session.clip);
-    if (property.control === 'toggle') return value === 'true' ? 'On' : 'Off';
+    if (property.control === 'toggle') return value === 'true' ? t('clip.value.on') : t('clip.value.off');
     if (property.control === 'choice' || property.control === 'colour') {
-      return property.choices?.find(choice => choice.value === value)?.label ?? '—';
+      const choice = property.choices?.find(one => one.value === value);
+      return choice ? clipChoiceLabel(property.id, choice.value, choice.label) : '—';
     }
     return value || '—';
   }
@@ -331,7 +338,7 @@ class ClipPropertiesPanel {
   private applyColour(property: ClipProperty, value: string): void {
     if (value === property.value(session.clip.properties, session.clip)) return;
     const next = property.with(session.clip.properties, value);
-    if (!next) { toast(`${property.label} not changed — that colour is not one of ours`); return; }
+    if (!next) { toast(t('clip.notChangedColour', { name: clipPropertyLabel(property.id, property.label) })); return; }
     session.clip.setProperty(property.id, next.get(property.id));
     this.render();
     this.place();
@@ -346,7 +353,7 @@ class ClipPropertiesPanel {
     // A field left as it was is not a change.
     if (value === property.value(session.clip.properties, session.clip)) return;
     const next = property.with(session.clip.properties, value);
-    if (!next) { toast(`${property.label} not changed — that value is not allowed`); return; }
+    if (!next) { toast(t('clip.notChangedValue', { name: clipPropertyLabel(property.id, property.label) })); return; }
     session.clip.setProperty(property.id, next.get(property.id));
     this.refreshAvailability();
   }

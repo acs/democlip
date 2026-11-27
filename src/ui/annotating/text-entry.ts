@@ -9,6 +9,7 @@
 // when the user cancelled, so a caller can tell "no change" from "nothing to say".
 
 import { el } from '../dom.js';
+import { t } from '../i18n/index.js';
 
 class TextEntry {
   private pending: ((value: string | null) => void) | null = null;
@@ -31,7 +32,7 @@ class TextEntry {
     return new Promise(resolve => {
       this.pending = resolve;
       el.textEntryInput.value = initial;
-      el.textEntryAdd.textContent = initial.trim() ? 'Save' : 'Add';
+      el.textEntryAdd.textContent = t(initial.trim() ? 'textEntry.save' : 'textEntry.add');
       el.textEntry.classList.add('on');
       el.textEntryInput.focus();
       el.textEntryInput.select();

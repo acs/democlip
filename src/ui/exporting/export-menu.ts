@@ -11,6 +11,7 @@
 // the target the person picked, knowing nothing about the menu.
 
 import { el } from '../dom.js';
+import { t } from '../i18n/index.js';
 import { session } from '../../session.js';
 import type { ExportTarget } from '../../infra/export-target.js';
 
@@ -64,7 +65,7 @@ class ExportMenu {
     const hasPicture = session.clip.keepsPicture();
     for (const [item, destination] of [[el.expBluesky, 'Bluesky'], [el.expYoutube, 'YouTube']] as const) {
       item.disabled = !hasPicture;
-      item.title = hasPicture ? '' : `${destination} takes a video — this clip is sound only`;
+      item.title = hasPicture ? '' : t('export.soundOnly', { destination });
     }
     // The menu keeps its layout while hidden, so it can be measured and placed
     // without a flicker. The Export button sits in the control row under the

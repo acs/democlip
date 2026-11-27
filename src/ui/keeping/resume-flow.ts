@@ -8,6 +8,7 @@
 
 import { ClipProfile } from '../../domain/clip/ClipProfile.js';
 import { recordingStore } from '../../infra/recording-store.js';
+import { t } from '../i18n/index.js';
 import { images } from '../../infra/images.js';
 import { session } from '../../session.js';
 import { setPhase } from '../../state.js';
@@ -29,7 +30,7 @@ export async function resumeClip(): Promise<boolean> {
       await syncWatermark('picture');
       setPhase('review');
       await openReview(0, 0);
-      toast('Your recording was restored');
+      toast(t('status.restored'));
       return true;
     }
   }

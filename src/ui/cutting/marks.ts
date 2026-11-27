@@ -27,6 +27,8 @@ import { playback } from '../clip/playback.js';
 import { typingIn } from '../../util.js';
 import { MIN_SECTION, selection } from './selection.js';
 import { pluginOf } from '../annotating/annotation-plugin.js';
+import { t } from '../i18n/index.js';
+import { kindLabel } from '../i18n/labels.js';
 
 const DRAG_MIN   = 3;     // px of travel before a press counts as a drag
 const EDGE_GRIP  = 7;     // px near a section's edge that resizes instead of moves
@@ -146,7 +148,8 @@ function undoLabel(): string {
   if (!change) return '';
   if (change.type === 'cut-approved') return `CUT ${change.removed.toFixed(2)}s`;
   if (change.type === 'property-changed') return change.id.toUpperCase();
-  return (pluginOf(change.annotation.kind)?.action.label ?? 'ANNOTATION').toUpperCase();
+  const plugin = pluginOf(change.annotation.kind);
+  return (plugin ? kindLabel(plugin.id, plugin.action.label) : t('annotation.kind.generic')).toUpperCase();
 }
 
 // The scissors is drawn with the section, so it is read here rather than bound to an

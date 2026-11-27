@@ -10,19 +10,17 @@
 // client, which is the only place that knows what the destination said.
 
 import { el } from '../dom.js';
+import { t, type TranslationKey } from '../i18n/index.js';
 import { session } from '../../session.js';
 import {
   signInToYouTube, signOutOfYouTube, uploadClip, youTubeAccount, youtubeConfigured,
   type YouTubeAccount, type YouTubeProgress, type YouTubeVideoLink,
 } from './youtube-flow.js';
 
-const STAGE: Record<YouTubeProgress['stage'], string> = {
-  encoding: 'Writing the MP4…',
-  uploading: 'Uploading to YouTube…',
+const STAGE: Record<YouTubeProgress['stage'], TranslationKey> = {
+  encoding: 'publish.stage.writing',
+  uploading: 'publish.stage.uploadingYt',
 };
-
-const SIGNIN_NOTE = 'Sign in with your Google account — Google asks you to approve right here, and nothing is uploaded until you press Upload. The sign-in is not kept: it lasts this page.';
-const NOT_SET_UP = 'This build is not set up to upload to YouTube — it needs an app of its own on Google. Nothing is sent.';
 
 class YouTubeDialog {
   private busy = false;
@@ -68,13 +66,13 @@ class YouTubeDialog {
     el.ytSigninView.style.display = view === 'compose' ? 'none' : '';
     el.ytComposeView.style.display = view === 'compose' ? '' : 'none';
     el.ytSignin.style.display = view === 'signin' ? '' : 'none';
-    el.ytNote.textContent = view === 'not-configured' ? NOT_SET_UP : SIGNIN_NOTE;
+    el.ytNote.textContent = t(view === 'not-configured' ? 'publish.youtube.notSetUp' : 'publish.youtube.signinNote');
     // The channel is what a person recognises; when YouTube will not name it, the account
     // they just consented with is what the app can honestly say.
     if (account) {
       el.ytAs.textContent = account.channel
-        ? 'Signed in as ' + account.channel
-        : 'Signed in with Google — the clip goes to that account\'s channel';
+        ? t('publish.signedInAs', { account: account.channel })
+        : t('publish.youtube.signedInGoogle');
     }
     if (view === 'compose') this.prefill();
   }
@@ -89,7 +87,7 @@ class YouTubeDialog {
 
   private async signIn(): Promise<void> {
     this.fail('');
-    this.status('Asking Google…');
+    this.status(t('publish.youtube.asking'));
     try {
       await signInToYouTube();
     } catch (error) {
@@ -136,7 +134,7 @@ class YouTubeDialog {
   private uploaded(video: YouTubeVideoLink): void {
     this.done = true;
     this.controls(false);
-    el.ytStatus.textContent = 'Uploaded ✓ ';
+    el.ytStatus.textContent = t('publish.youtube.uploaded');
     const link = document.createElement('a');
     link.href = video.url;
     link.title = video.id;
@@ -168,7 +166,8 @@ class YouTubeDialog {
   }
 
   private line(progress: YouTubeProgress): string {
-    const base = STAGE[progress.stage] ?? progress.stage;
+    const key = STAGE[progress.stage];
+    const base = key ? t(key) : progress.stage;
     return progress.progress != null ? `${base} ${progress.progress}%` : base;
   }
 

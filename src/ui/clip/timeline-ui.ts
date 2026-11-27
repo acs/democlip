@@ -5,6 +5,7 @@
 // mapping (clip.ts). The recording's own time is what playback and the export use.
 
 import { clock, el } from '../dom.js';
+import { t } from '../i18n/index.js';
 import { currentPhase } from '../../state.js';
 import { session } from '../../session.js';
 import { estimatePictureText, estimateSoundText } from './size-estimate.js';
@@ -66,7 +67,7 @@ export function updateSizeUI(): void {
 export function beginEncoding(): string {
   const was = el.tCut.textContent ?? '';
   el.timeline.classList.add('encoding');
-  el.tCut.textContent = 'ENCODING';
+  el.tCut.textContent = t('timeline.encoding');
   el.tLive.classList.remove('on');
   return was;
 }
@@ -79,7 +80,7 @@ export function encodingAt(source: number, to: number): void {
   const head = keptOf(source), end = keptOf(to);
   el.playhead.style.left = ((head / kept) * 100).toFixed(2) + '%';
   el.tNow.textContent = head.toFixed(2) + 's';
-  el.tCut.textContent = 'ENCODING · ' + clock(Math.max(0, end - head)) + ' left';
+  el.tCut.textContent = t('status.encoding.left', { time: clock(Math.max(0, end - head)) });
 }
 
 export function endEncoding(was: string): void {

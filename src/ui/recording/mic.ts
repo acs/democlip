@@ -6,6 +6,7 @@
 
 import { capture } from '../../infra/capture.js';
 import { el, toast } from '../dom.js';
+import { t } from '../i18n/index.js';
 import { setMicPresent } from './source-buttons.js';
 
 export class Meter {
@@ -86,7 +87,7 @@ async function startMic(): Promise<void> {
     el.micBtn.setAttribute('aria-pressed', 'true');
   } catch (error) {
     const name = (error as { name?: string }).name;
-    toast('Could not start the microphone' + (name ? ` (${name})` : ''), 4000);
+    toast(t('toast.micStart') + (name ? ` (${name})` : ''), 4000);
   }
 }
 

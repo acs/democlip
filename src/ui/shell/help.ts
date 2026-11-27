@@ -7,11 +7,13 @@
 // to breathe on.
 
 import { el } from '../dom.js';
+import { applyTranslations } from '../i18n/dom.js';
 import stepsHtml from './help-steps.html?raw';
 
-/** Put the brief tutorial in the dialog. */
+/** Put the brief tutorial in the dialog, in the person's language. */
 export function initHelp(): void {
   el.helpSteps.innerHTML = stepsHtml;
+  applyTranslations(el.helpSteps);
 }
 
 export function toggleHelp(): void {

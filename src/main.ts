@@ -1,6 +1,7 @@
 // Composition root: wires the UI to the use cases and boots the app.
 
 import { el, setStatus, toast } from './ui/dom.js';
+import { t } from './ui/i18n/index.js';
 import { initVersion, appVersion } from './ui/shell/version.js';
 import { agentAskedFor, createAgentSurface } from './ui/agent/surface.js';
 import { describeClip } from './ui/agent/describe.js';
@@ -60,7 +61,7 @@ function init(): void {
   const canShare = typeof navigator.mediaDevices?.getDisplayMedia === 'function';
   // The app reads Ready only once the book and the recording are read in, below: a page
   // that says Ready is a page whose draft, profile and pictures are in place.
-  if (!hasMedia) setStatus('Not supported');
+  if (!hasMedia) setStatus(t('status.notSupported'));
 
   // Apply persisted preferences.
   const prefs = loadPrefs();
@@ -149,13 +150,13 @@ function init(): void {
     await adoptLegacyRecording();
     const restored = await resumeClip();
     if (!restored) applyProfile();
-    if (hasMedia) setStatus('Ready');
+    if (hasMedia) setStatus(t('status.ready'));
   })();
 
   // PWA install prompt
   window.addEventListener('beforeinstallprompt', e => {
     e.preventDefault();
-    toast('Install DemoClip — click the ⊕ in your address bar', 5000);
+    toast(t('toast.install'), 5000);
   });
 
   // Keep the audio waveform aligned with the strip on resize.

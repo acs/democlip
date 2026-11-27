@@ -10,6 +10,8 @@
 // it is the free profile, and the one the app falls back to.
 
 import { el } from '../dom.js';
+import { t } from '../i18n/index.js';
+import { clipChoiceLabel, clipPropertyLabel } from '../i18n/labels.js';
 import { Profile } from '../../domain/profile/Profile.js';
 import { Profiles } from '../../domain/profile/Profiles.js';
 import { colourChoices } from '../clip/colour-choices.js';
@@ -96,14 +98,14 @@ class ProfileDef {
 
     const label = document.createElement('span');
     label.className = 'pdef-name';
-    label.textContent = 'Name';
+    label.textContent = t('profile.def.name');
 
     const input = document.createElement('input');
     input.type = 'text';
     input.className = 'pdef-input';
     input.value = profile.name;
     input.disabled = !editable;
-    input.setAttribute('aria-label', 'Profile name');
+    input.setAttribute('aria-label', t('profile.def.nameAria'));
     input.addEventListener('change', () => {
       this.handlers.rename(profile.id, input.value);
       this.render();
@@ -120,7 +122,7 @@ class ProfileDef {
 
     const name = document.createElement('span');
     name.className = 'pdef-name';
-    name.textContent = row.label;
+    name.textContent = clipPropertyLabel(row.id, row.label);
     host.append(name);
 
     // A switch is three ways, because a profile can also fix it **off** — which is not the
@@ -129,11 +131,11 @@ class ProfileDef {
       const seg = document.createElement('div');
       seg.className = 'pdef-seg';
       seg.setAttribute('role', 'group');
-      seg.setAttribute('aria-label', row.label);
+      seg.setAttribute('aria-label', clipPropertyLabel(row.id, row.label));
       const options: Array<{ label: string; value: string | null; on: boolean }> = [
-        { label: 'Free', value: null, on: row.free },
-        { label: 'On', value: 'true', on: !row.free && row.value === 'true' },
-        { label: 'Off', value: '', on: !row.free && row.value !== 'true' },
+        { label: t('profile.value.free'), value: null, on: row.free },
+        { label: t('clip.value.on'), value: 'true', on: !row.free && row.value === 'true' },
+        { label: t('clip.value.off'), value: '', on: !row.free && row.value !== 'true' },
       ];
       for (const option of options) {
         const button = document.createElement('button');
@@ -155,8 +157,11 @@ class ProfileDef {
     // of the choice, so a person is not left reading names to tell one from another.
     if (row.control === 'colour') {
       host.append(colourChoices({
-        label: row.label,
-        choices: row.choices,
+        label: clipPropertyLabel(row.id, row.label),
+        choices: row.choices.map(choice => ({
+          value: choice.value,
+          label: clipChoiceLabel(row.id, choice.value, choice.label),
+        })),
         value: row.value,
         free: row.free,
         disabled: !row.editable,
@@ -172,12 +177,12 @@ class ProfileDef {
       const choices = row.choices;
       const select = document.createElement('select');
       select.className = 'pdef-input pdef-select';
-      select.setAttribute('aria-label', row.label);
+      select.setAttribute('aria-label', clipPropertyLabel(row.id, row.label));
       select.disabled = !row.editable;
       // The first is not one of the items: it says the profile fixes nothing here. Its own
       // value is a word no mark is called, and what the change handler reads is the *index* —
       // because the empty value is a choice of its own ("None").
-      const options = ['Not fixed', ...choices.map(choice => choice.label)].map((label, at) => {
+      const options = [t('profile.notFixed'), ...choices.map(choice => clipChoiceLabel(row.id, choice.value, choice.label))].map((label, at) => {
         const option = document.createElement('option');
         option.value = at === 0 ? NOT_FIXED : choices[at - 1].value;
         option.textContent = label;
@@ -199,9 +204,9 @@ class ProfileDef {
     input.type = 'text';
     input.className = 'pdef-input';
     input.value = row.value;
-    input.placeholder = 'none';
+    input.placeholder = t('profile.def.none');
     input.disabled = !row.editable;
-    input.setAttribute('aria-label', row.label);
+    input.setAttribute('aria-label', clipPropertyLabel(row.id, row.label));
     input.addEventListener('change', () => {
       const value = input.value.trim();
       this.declare(profileId, row.id, value === '' ? null : value);

@@ -97,7 +97,7 @@ describe('the clip property register', () => {
     const addToExport = clipProperty('addToExport')!;
     const soundOnly = { takes: { count: () => 1 }, hasPicture: () => false } as unknown as Clip;
     expect(addToExport.blocked?.(ClipProperties.EMPTY.with('title', 'A demo'), soundOnly))
-      .toMatch(/sound-only/i);
+      .toBe('clip.addToExport.blockedSoundOnly');
   });
 
   it('offers the clip size as a value the person does not set', () => {
@@ -143,7 +143,7 @@ describe('the clip property register', () => {
     // An empty clip is not blocked: a person or a profile may set it before the first take.
     expect(resolution.blocked?.(ClipProperties.EMPTY)).toBeNull();
     const soundOnly = { takes: { count: () => 1 }, hasPicture: () => false } as unknown as Clip;
-    expect(resolution.blocked?.(ClipProperties.EMPTY, soundOnly)).toMatch(/sound-only/i);
+    expect(resolution.blocked?.(ClipProperties.EMPTY, soundOnly)).toBe('clip.exportResolution.blockedSoundOnly');
   });
 
   it('marks the logo, the switch, the annotation colour, the boost and the export resolution as what a profile may control', () => {
@@ -163,17 +163,19 @@ describe('the clip property register', () => {
     expect(annotationColour(ClipProperties.EMPTY.with('annotationColour', '#123456'))).toBe('#e53e3e');
   });
 
-  it('offers the palette as a list, by name, and refuses a colour it does not hold', () => {
+  it('offers the palette as a list, by its values, and refuses a colour it does not hold', () => {
     const colour = clipProperty('annotationColour')!;
     expect(colour.control).toBe('colour');
+    // The label a choice carries is its value; the person reads the colour's own name from the
+    // catalogue where it is drawn (`ui/i18n/labels.ts`), so the domain holds no words.
     expect(colour.choices).toEqual([
-      { value: '#e53e3e', label: 'Red' },
-      { value: '#ff6c23', label: 'Orange' },
-      { value: '#ffffff', label: 'White' },
-      { value: '#f6e05e', label: 'Yellow' },
-      { value: '#38a169', label: 'Green' },
-      { value: '#3182ce', label: 'Blue' },
-      { value: '#111827', label: 'Black' },
+      { value: '#e53e3e', label: '#e53e3e' },
+      { value: '#ff6c23', label: '#ff6c23' },
+      { value: '#ffffff', label: '#ffffff' },
+      { value: '#f6e05e', label: '#f6e05e' },
+      { value: '#38a169', label: '#38a169' },
+      { value: '#3182ce', label: '#3182ce' },
+      { value: '#111827', label: '#111827' },
     ]);
     // The list is not the only way a value arrives — a profile written elsewhere, an agent — so
     // a colour outside the palette is refused rather than kept.

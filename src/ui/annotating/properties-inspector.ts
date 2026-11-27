@@ -13,6 +13,8 @@
 
 import { session } from '../../session.js';
 import { el, toast } from '../dom.js';
+import { t } from '../i18n/index.js';
+import { colourLabel, propertyLabel, soundLabel } from '../i18n/labels.js';
 import { COLOURS } from '../../domain/annotation/AnnotationColour.js';
 import { STOCK_SOUNDS } from '../../domain/sound/StockSounds.js';
 import type { Annotation } from '../../domain/annotation/Annotation.js';
@@ -140,7 +142,7 @@ class PropertiesInspector {
     host.dataset.id = property.id;
     const name = document.createElement('span');
     name.className = 'prop-name';
-    name.textContent = property.label;
+    name.textContent = propertyLabel(property.id, property.label);
     host.append(name, property.control === 'colour' ? this.swatches(property, annotation)
       : property.control === 'duration' ? this.seconds(property, annotation)
       : property.control === 'number' ? this.numbers(property, annotation)
@@ -157,11 +159,11 @@ class PropertiesInspector {
 
     const select = document.createElement('select');
     select.className = 'prop-sound-select';
-    select.setAttribute('aria-label', property.label);
+    select.setAttribute('aria-label', propertyLabel(property.id, property.label));
     for (const sound of STOCK_SOUNDS) {
       const option = document.createElement('option');
       option.value = sound.name;
-      option.textContent = sound.label;
+      option.textContent = soundLabel(sound.name, sound.name);
       option.selected = sound.name === current;
       select.append(option);
     }
@@ -172,8 +174,8 @@ class PropertiesInspector {
     const play = document.createElement('button');
     play.type = 'button';
     play.className = 'prop-sound-play';
-    play.title = 'Play the chosen sound';
-    play.setAttribute('aria-label', 'Play the chosen sound');
+    play.title = t('annotation.inspector.playSound');
+    play.setAttribute('aria-label', t('annotation.inspector.playSound'));
     play.innerHTML = PLAY_ICON;
     play.addEventListener('click', event => {
       event.stopPropagation();
@@ -192,9 +194,10 @@ class PropertiesInspector {
       const button = document.createElement('button');
       button.type = 'button';
       button.className = 'prop-swatch';
+      button.dataset.value = colour;
       button.style.background = colour;
-      button.title = colour;
-      button.setAttribute('aria-label', colour);
+      button.title = colourLabel(colour);
+      button.setAttribute('aria-label', colourLabel(colour));
       button.setAttribute('aria-pressed', String(colour === current));
       button.addEventListener('click', () => this.apply(property, annotation, colour));
       host.append(button);
@@ -212,9 +215,9 @@ class PropertiesInspector {
     readout.textContent = `${value}s`;
     const nudge = (delta: number) => this.apply(property, annotation, (Number(value) + delta).toFixed(2));
     host.append(
-      this.stepButton('−', 'Shorter', () => nudge(-DURATION_STEP_S)),
+      this.stepButton('−', t('annotation.inspector.shorter'), () => nudge(-DURATION_STEP_S)),
       readout,
-      this.stepButton('+', 'Longer', () => nudge(DURATION_STEP_S)),
+      this.stepButton('+', t('annotation.inspector.longer'), () => nudge(DURATION_STEP_S)),
     );
     return host;
   }
@@ -230,9 +233,9 @@ class PropertiesInspector {
     const step = property.step ?? 1;
     const nudge = (delta: number) => this.apply(property, annotation, String(Number(value) + delta));
     host.append(
-      this.stepButton('−', 'Lower', () => nudge(-step)),
+      this.stepButton('−', t('annotation.inspector.lower'), () => nudge(-step)),
       readout,
-      this.stepButton('+', 'Higher', () => nudge(step)),
+      this.stepButton('+', t('annotation.inspector.higher'), () => nudge(step)),
     );
     return host;
   }
@@ -259,7 +262,7 @@ class PropertiesInspector {
     const edit = document.createElement('button');
     edit.type = 'button';
     edit.className = 'prop-edit';
-    edit.textContent = 'Edit';
+    edit.textContent = t('annotation.inspector.edit');
     edit.addEventListener('click', () => {
       // The same entry the kind is created with. A cancelled entry changes nothing; an
       // empty one is refused by the kind and reported by `apply`.
@@ -276,7 +279,7 @@ class PropertiesInspector {
    *  panel re-renders from the event rather than from here. */
   private apply(property: AnnotationProperty, annotation: Annotation, value: string): void {
     const next = property.with(annotation, value);
-    if (!next) { toast(`${property.label} not changed — that value is not allowed`); return; }
+    if (!next) { toast(t('annotation.inspector.notChanged', { name: propertyLabel(property.id, property.label) })); return; }
     // A change that changes nothing — the same colour, the same words, a duration already
     // as long as the clip allows — is not announced, so it is not what the one undo holds.
     if (property.value(next) === property.value(annotation)) return;

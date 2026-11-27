@@ -621,7 +621,7 @@ test('a magnifier’s preferences correct its zoom, colour and duration, and its
   await expect.poll(async () => (await previewBand(page, LENS_BAND)).light).toBeGreaterThan(before);
 
   // The colour is the rim's: the green swatch paints the rim green.
-  await page.locator('#prop-menu .prop-row[data-id="colour"] .prop-swatch[title="#38a169"]').click();
+  await page.locator('#prop-menu .prop-row[data-id="colour"] .prop-swatch[data-value="#38a169"]').click();
   expect((await magnifier(page))?.colour).toBe('#38a169');
   await expect.poll(async () => {
     const rim = await pixelAt(page, 0.5, 0.5 - 0.3556);

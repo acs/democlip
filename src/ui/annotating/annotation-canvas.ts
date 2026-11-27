@@ -25,6 +25,8 @@ import { Span } from '../../domain/clip/Span.js';
 import type { Annotation, AnnotationHandle, Point } from '../../domain/annotation/Annotation.js';
 import { copyControl, drawAnnotations, drawOrder, pictureFor, removeControl, settingsControl } from './annotation-layer.js';
 import { pluginOf, propertiesFor, type AnnotationPlugin, type CreationContext } from './annotation-plugin.js';
+import { t } from '../i18n/index.js';
+import { kindLabel } from '../i18n/labels.js';
 import { inspector } from './properties-inspector.js';
 import { annotationColour } from '../clip/clip-properties.js';
 import { drawFrame } from '../recording/preview.js';
@@ -458,7 +460,8 @@ export class AnnotationCanvas {
 
   /** What a kind is called in a message, or a plain word for one this build cannot name. */
   private labelOf(kind: string): string {
-    return pluginOf(kind)?.action.label ?? 'Annotation';
+    const plugin = pluginOf(kind);
+    return plugin ? kindLabel(plugin.id, plugin.action.label) : t('annotation.kind.generic');
   }
 
   private fractionAt(clientX: number, clientY: number): Point {

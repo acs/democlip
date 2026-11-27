@@ -23,8 +23,7 @@ import { paintPill } from '../shell/pill.js';
 import { profileMenu } from './profile-menu.js';
 import { profileDef } from './profile-def.js';
 import { recordings } from '../project/project-flow.js';
-
-const LOCKED = 'A profile is fixed once recording has started — press New to start another session.';
+import { t } from '../i18n/index.js';
 
 export const profiles = new ManageProfiles({
   store: profileStore,
@@ -97,7 +96,7 @@ export function paintProfileButton(): void {
   const active = session.clip.profile;
   el.profileInitials.textContent = avatarLetters(active.name);
   paintPill(el.profileBtn, { colour: profileColour(active), tone: avatarTone(active.id) });
-  const label = `Profiles — making this clip under ${active.name}`;
+  const label = t('profile.flow.aria', { name: active.name });
   el.profileBtn.setAttribute('aria-label', label);
   el.profileBtn.title = label;
 }
@@ -107,7 +106,7 @@ export function paintProfileButton(): void {
  * first take the profile is fixed for the life of the recording, and the refusal says so.
  */
 async function chooseProfile(id: string): Promise<void> {
-  if (locked()) { toast(LOCKED); return; }
+  if (locked()) { toast(t('profile.locked')); return; }
   const outcome = profiles.choose(id);
   if (!outcome.ok) { toast(outcome.reason); return; }
   const live = profiles.current.get(id);

@@ -39,8 +39,9 @@ export interface Booted {
 }
 
 export function boot(page: Page): Booted {
-  // A person-visible signal, not a fixed timeout: the chip says the app is up.
-  const ready = async () => expect(page.locator('#s-text')).toHaveText('Ready');
+  // A person-visible signal, not a fixed timeout: the chip says the app is up. The word is
+  // the app's own, in whatever language the browser asked for, so both are accepted.
+  const ready = async () => expect(page.locator('#s-text')).toHaveText(/^(Ready|Listo)$/);
 
   return {
     async goto() {

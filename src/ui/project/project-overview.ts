@@ -9,6 +9,7 @@
 // listens rather than being re-rendered by whoever caused the change.
 
 import { el } from '../dom.js';
+import { t } from '../i18n/index.js';
 import type { RecordingProgress, RecordingSummary } from '../../application/recordings.js';
 import type { Project } from '../../domain/project/Project.js';
 import { Projects } from '../../domain/project/Projects.js';
@@ -86,16 +87,16 @@ class ProjectOverview {
     const description = [project.motivation, project.objectives].filter(line => line.trim() !== '');
     el.projectOvDesc.textContent = description.length
       ? description.join('\n')
-      : 'No description yet — open the project settings to write what it is for.';
+      : t('project.overview.noDescription');
 
     if (progress.total === 0) {
-      el.projectOvProgress.textContent = 'No recordings yet.';
+      el.projectOvProgress.textContent = t('project.overview.none');
       el.projectOvStamp.hidden = true;
     } else {
-      el.projectOvProgress.textContent = `${progress.finished} of ${progress.total} finished`;
+      el.projectOvProgress.textContent = t('project.overview.progress', { finished: progress.finished, total: progress.total });
       el.projectOvStamp.hidden = progress.finished !== progress.total;
       el.projectOvStamp.textContent = progress.finished === progress.total
-        ? 'Every recording in this project is finished.'
+        ? t('project.overview.allFinished')
         : '';
     }
 
@@ -120,19 +121,23 @@ class ProjectOverview {
     title.textContent = row.title;
     const meta = document.createElement('span');
     meta.className = 'proj-row-meta';
-    meta.textContent = `${formatLength(row.seconds)} · ${row.state === 'in-progress' ? 'in progress' : 'finished'} · ${row.profileName}`;
+    meta.textContent = t('project.overview.rowMeta', {
+      length: formatLength(row.seconds),
+      state: t(row.state === 'in-progress' ? 'project.state.inProgress' : 'project.state.finished'),
+      profile: row.profileName,
+    });
     main.append(title, meta);
 
     const acts = document.createElement('div');
     acts.className = 'proj-row-acts';
-    acts.append(this.button('Open', () => void this.handlers.open(row.id)));
+    acts.append(this.button(t('project.overview.open'), () => void this.handlers.open(row.id)));
 
     const move = document.createElement('select');
     move.className = 'proj-row-move pdef-select';
-    move.setAttribute('aria-label', `Move ${row.title} to another project`);
+    move.setAttribute('aria-label', t('project.overview.moveAria', { title: row.title }));
     const placeholder = document.createElement('option');
     placeholder.value = '';
-    placeholder.textContent = 'Move…';
+    placeholder.textContent = t('project.overview.move');
     move.append(placeholder);
     for (const other of book.all) {
       if (other.id === project.id) continue;
@@ -149,9 +154,9 @@ class ProjectOverview {
     acts.append(move);
 
     if (!row.inDefault) {
-      acts.append(this.button('Remove', () => void this.handlers.remove(row.id), 'danger'));
+      acts.append(this.button(t('project.overview.remove'), () => void this.handlers.remove(row.id), 'danger'));
     } else {
-      acts.append(this.button('Delete', () => void this.handlers.delete(row.id), 'danger'));
+      acts.append(this.button(t('project.overview.delete'), () => void this.handlers.delete(row.id), 'danger'));
     }
 
     host.append(main, acts);

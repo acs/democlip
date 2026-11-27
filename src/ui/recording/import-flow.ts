@@ -17,6 +17,7 @@ import { takeFile } from '../../infra/take-file.js';
 import { readSidecar } from '../../infra/annotation-sidecar.js';
 import { images } from '../../infra/images.js';
 import { el, setStatus, toast } from '../dom.js';
+import { t } from '../i18n/index.js';
 import { openReview } from '../clip/review-flow.js';
 import { syncWatermark } from '../clip/watermark.js';
 
@@ -50,17 +51,17 @@ export async function onFileChosen(): Promise<void> {
   // takes, and the sidecar is the `.json` beside it — read as ours, or not read at all.
   const video = chosen.find(candidate => TakeFile.of(candidate.name, candidate.type) !== null);
   if (!video) {
-    setStatus('Ready');
-    toast('Only WebM and MP4 files can be imported.');
+    setStatus(t('status.ready'));
+    toast(t('toast.onlyWebmMp4'));
     return;
   }
   const written = chosen.find(candidate => candidate !== video && candidate.name.toLowerCase().endsWith('.json'));
   const sidecar = written ? readSidecar(await written.text()) : null;
 
-  setStatus('Importing…');
+  setStatus(t('status.importing'));
   const outcome = await importTake.run({ name: video.name, type: video.type, blob: video }, sidecar);
   if (outcome.kind !== 'imported') {
-    setStatus('Ready');
+    setStatus(t('status.ready'));
     toast(outcome.reason);
     return;
   }
@@ -71,9 +72,9 @@ export async function onFileChosen(): Promise<void> {
   await syncWatermark('picture');
   setPhase('review');
   await openReview(session.clip.takes.count() - 1, 0);
-  setStatus('Ready');
+  setStatus(t('status.ready'));
 
   const carried = outcome.annotations;
   if (carried?.reason) toast(`Imported — ${carried.reason}`);
-  else if (carried?.count) toast(`Imported, and ${carried.count === 1 ? '1 annotation came' : `${carried.count} annotations came`} back with it`);
+  else if (carried?.count) toast(t('toast.importedAnnotations', { count: carried.count }));
 }

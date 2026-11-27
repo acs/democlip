@@ -6,6 +6,7 @@
 // is the app's and is not editable; its description and default profile are the person's.
 
 import { el } from '../dom.js';
+import { t } from '../i18n/index.js';
 import { Profiles } from '../../domain/profile/Profiles.js';
 import { Projects } from '../../domain/project/Projects.js';
 
@@ -73,25 +74,25 @@ class ProjectDef {
     const book = this.handlers.list();
     const project = this.id ? book.get(this.id) : null;
     const profiles = this.handlers.profiles();
-    el.projectDefTitle.textContent = project ? project.name : 'New project';
-    el.projectDefDone.textContent = project ? 'Done' : 'Create';
+    el.projectDefTitle.textContent = project ? project.name : t('project.def.new');
+    el.projectDefDone.textContent = project ? t('common.done') : t('project.def.create');
 
-    const name = this.field('Name', 'input');
+    const name = this.field(t('project.def.name'), 'input');
     name.value = project?.name ?? '';
     name.disabled = project?.id === Projects.DEFAULT_ID;
-    name.placeholder = 'Onboarding videos';
+    name.placeholder = t('project.def.namePlaceholder');
 
-    const motivation = this.field('Motivation', 'textarea');
+    const motivation = this.field(t('project.def.motivation'), 'textarea');
     motivation.value = project?.motivation ?? '';
-    motivation.placeholder = 'Why these recordings, and for whom';
+    motivation.placeholder = t('project.def.motivationPlaceholder');
 
-    const objectives = this.field('Objectives', 'textarea');
+    const objectives = this.field(t('project.def.objectives'), 'textarea');
     objectives.value = project?.objectives ?? '';
-    objectives.placeholder = 'What they must achieve';
+    objectives.placeholder = t('project.def.objectivesPlaceholder');
 
     const profile = document.createElement('select');
     profile.className = 'pdef-select';
-    profile.setAttribute('aria-label', 'Default profile');
+    profile.setAttribute('aria-label', t('project.def.defaultProfile'));
     for (const one of profiles.all) {
       const option = document.createElement('option');
       option.value = one.id;
@@ -104,7 +105,7 @@ class ProjectDef {
     profileField.className = 'pdef-row';
     const label = document.createElement('span');
     label.className = 'pdef-name';
-    label.textContent = 'Default profile';
+    label.textContent = t('project.def.defaultProfile');
     profileField.append(label, profile);
 
     el.projectDefRows.replaceChildren(name.parentElement!, motivation.parentElement!, objectives.parentElement!, profileField);

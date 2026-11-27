@@ -19,6 +19,7 @@ import { recordingStore } from '../../infra/recording-store.js';
 import { images } from '../../infra/images.js';
 import { setPhase } from '../../state.js';
 import { el, toast } from '../dom.js';
+import { t } from '../i18n/index.js';
 import { applyProfile, paintProfileButton, profiles } from '../profile/profile-flow.js';
 import { avatarLetters } from '../profile/profile-rows.js';
 import { paintPill } from '../shell/pill.js';
@@ -134,7 +135,7 @@ export function paintProjectButton(): void {
   const project = projects.current.current();
   el.projectInitials.textContent = avatarLetters(project.name);
   paintPill(el.projectBtn, { colour: null, tone: projectTone(project.id) });
-  const label = `Projects — in ${project.name}`;
+  const label = t('project.flow.fixedAria', { name: project.name });
   el.projectBtn.setAttribute('aria-label', label);
   el.projectBtn.title = label;
 }
@@ -197,12 +198,11 @@ async function removeProject(id: string): Promise<void> {
   const project = projects.current.get(id);
   if (!project) return;
   if (session.projectId === id && (session.hasCaptured || !session.clip.takes.isEmpty())) {
-    toast('This recording belongs to that project — end the session before removing it.');
+    toast(t('project.flow.belongs'));
     return;
   }
   const recordingsIn = await recordings.listProject(id);
-  const what = recordingsIn.length === 1 ? 'its recording moves' : 'its recordings move';
-  if (!window.confirm(`Remove “${project.name}”? ${what} to the Default project, and the project's description is lost.`)) return;
+  if (!window.confirm(t('project.flow.confirmRemove', { name: project.name }))) return;
 
   const wasCurrent = projects.current.currentId === id;
   const removed = projects.remove(id);
@@ -257,8 +257,8 @@ async function removeRecording(id: string): Promise<void> {
 async function deleteRecording(id: string): Promise<void> {
   const recording = (await recordings.list()).find(one => one.id === id);
   if (!recording) return;
-  const label = recording.title.trim() || 'this recording';
-  if (!window.confirm(`Delete “${label}” for good? Its recording is destroyed, and cannot come back.`)) return;
+  const label = recording.title.trim() || t('project.flow.thisRecording');
+  if (!window.confirm(t('project.flow.confirmDelete', { label }))) return;
   const wasOpen = session.recordingId === id;
   const outcome = await recordings.delete(id);
   if (!outcome.ok) { toast(outcome.reason); return; }
