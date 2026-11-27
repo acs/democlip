@@ -7,7 +7,7 @@ import { Profile } from '../profile/Profile.js';
 describe('ClipProfile', () => {
   it('is the built-in free profile when the app has nothing else', () => {
     expect(ClipProfile.DEFAULT.id).toBe(Profiles.DEFAULT_ID);
-    expect(ClipProfile.DEFAULT.name).toBe('Default');
+    expect(ClipProfile.DEFAULT.name).toBe('Empty');
     expect(ClipProfile.DEFAULT.declares('logo')).toBe(false);
   });
 
@@ -43,6 +43,13 @@ describe('ClipProfile', () => {
     const back = ClipProfile.restore(snapshot.stored());
 
     expect(back!.equals(snapshot)).toBe(true);
+  });
+
+  it('reads an old snapshot of the built-in profile as the app’s current built-in', () => {
+    const old = ClipProfile.restore({ id: Profiles.DEFAULT_ID, name: 'Default', controls: { logo: 'democlip' } });
+
+    expect(old!.name).toBe('Empty');
+    expect(old!.declares('logo')).toBe(false);
   });
 
   it('reads a record it cannot name as nothing', () => {

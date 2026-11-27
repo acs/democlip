@@ -103,7 +103,7 @@ item while its profile is in force: it is refused, naming the profile.
 3. **Given** a recording under a profile that declares an item, **When** the person tries to change that item, **Then** the app refuses and names the profile — the same rule as before projects existed.
 4. **Given** a clip made in the project, **When** the person opens another recording of the same project, **Then** that other recording still starts under the project's default profile.
 5. **Given** a project's default profile, **When** the person changes it, **Then** recordings made afterwards start under the new default, and recordings already made keep the configuration they were made with.
-6. **Given** the built-in **Default** profile as a project's default, **When** a recording is made, **Then** every item is the person's, exactly as it was before profiles or projects existed.
+6. **Given** the built-in **Empty** profile as a project's default, **When** a recording is made, **Then** every item is the person's, exactly as it was before profiles or projects existed.
 7. **Given** a recording that has begun to capture, **When** the person looks for a way to change its profile, **Then** it is fixed for the life of that recording, as it is today.
 
 ---
@@ -171,7 +171,7 @@ agent to remove a recording from the project; it appears in **Default**, still w
 - **A recording is removed from the Default project**: there is no other project to move it to, so removal from Default is not offered — deleting the recording is the separate act there, and it is confirmed.
 - **A recording is open in the review when its project is changed or removed elsewhere**: the open recording keeps the project it was opened from until the session ends, and the person is not left editing something that vanished.
 - **The person switches project while a session has begun to capture**: the switch is refused and explained, because the clip being made belongs to the project it started in; it may be moved afterwards.
-- **A project's default profile is removed or renamed**: the project points at a valid profile for new recordings — the app falls back to the built-in **Default** rather than to nothing — and a recording already made keeps what it was produced with.
+- **A project's default profile is removed or renamed**: the project points at a valid profile for new recordings — the app falls back to the built-in **Empty** profile rather than to nothing — and a recording already made keeps what it was produced with.
 - **A profile a recording was made under is edited afterwards**: the recording keeps the configuration it was made with; the edit reaches only recordings made afterwards.
 - **A project's default changes after recordings exist**: recordings made afterwards start under the new default; recordings already made keep the configuration they were made with, and nothing about them moves.
 - **A clip's profile is changed, then the project's default changes**: the clip keeps the profile and configuration the person chose for it; the project's default concerns recordings not yet made.
@@ -213,14 +213,14 @@ agent to remove a recording from the project; it appears in **Default**, still w
 
 - **FR-017**: Each project MUST name exactly one of the app's profiles as its **default profile**.
 - **FR-018**: A recording made in a project MUST start under the project's default profile.
-- **FR-019**: Users MUST be able to change a recording's profile before the recording has begun to capture, including to the app's built-in **Default**.
+- **FR-019**: Users MUST be able to change a recording's profile before the recording has begun to capture, including to the app's built-in **Empty**.
 - **FR-020**: Whichever profile is in force for a recording MUST lock every item it declares, exactly as a profile does without projects: the person MUST NOT be able to change a declared item.
 - **FR-021**: An item no profile in force declares MUST remain the person's to change, exactly as it is today.
 - **FR-022**: The profile a recording uses, and the configuration it declared when the recording began to capture, MUST be recorded with the recording and MUST be what is shown wherever a value it declares is displayed.
 - **FR-023**: Once a recording has begun to capture, its profile MUST be fixed for the life of that recording.
 - **FR-024**: Changing a project's default profile MUST affect only recordings made afterwards; a recording already made keeps the configuration it was made with.
-- **FR-025**: A project whose default profile no longer exists MUST fall back to the app's built-in **Default** profile for new recordings, and MUST continue to be usable.
-- **FR-026**: A project created without choosing a profile MUST use the app's built-in **Default** profile.
+- **FR-025**: A project whose default profile no longer exists MUST fall back to the app's built-in **Empty** profile for new recordings, and MUST continue to be usable.
+- **FR-026**: A project created without choosing a profile MUST use the app's built-in **Empty** profile.
 
 **Overview**
 
@@ -292,7 +292,7 @@ agent to remove a recording from the project; it appears in **Default**, still w
 - **A recording's title is the clip's own.** The list shows the clip's title when it has one, and otherwise a label made from the project's name and when the recording was made; the title remains the clip property it already is.
 - **The app is always in a project.** Exactly one project is current, the Default one until the person selects another, so the app never starts without somewhere to record. The current project is the app's state and is remembered across a reload, and every recording belongs to the project that was current when it was made.
 - **A recording is finished when its clip session is finished.** The session ends at **New**, on export or publish, and that is what makes the recording finished; no separate approval or export is required. Reopening a finished recording opens a session on it, so it is in progress until that session ends again.
-- **The Default project is named "Default"**, matching the app's built-in Default profile, and is the only project that cannot be removed or renamed.
+- **The Default project is named "Default"** — its own name, distinct from the built-in **Empty** profile — and is the only project that cannot be removed or renamed.
 - **The Default project is where the existing single-recording flow lands**, and where a recording removed from another project goes, so a person who ignores projects is never asked to choose one and no removal costs a recording.
 - **Removing a project or a recording is not the same as deleting one.** A removed recording moves to Default, and removing a project moves its recordings there; destroying recorded bytes is always a separate, explicit act.
 - **The agent interface is the existing bounded automation surface**, extended with project operations that **organise but never destroy**: list, read, create, select, edit the description and default profile, move, and remove to Default. Deleting a recording for good and removing a project remain the person's, behind a confirmation, and are not offered as tools.

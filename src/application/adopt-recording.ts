@@ -7,7 +7,7 @@
 // data untouched, and a retry writes the same fixed id — so nothing is duplicated and
 // nothing is lost.
 //
-// The adopted recording reads as the built-in Default profile: the old clip carried its
+// The adopted recording reads as the built-in Empty profile: the old clip carried its
 // values as clip properties, and inventing a lock over them would be a lie. Its project
 // is the Default project, which always exists.
 

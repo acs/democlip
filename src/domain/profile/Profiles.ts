@@ -21,7 +21,7 @@ export interface StoredProfiles {
   profiles: StoredProfile[];
 }
 
-const DEFAULT_NAME = 'Default';
+const DEFAULT_NAME = 'Empty';
 
 export class Profiles {
   /** The built-in default's id: the profile the app always has. */

@@ -89,7 +89,7 @@ export function initProfiles(): void {
 
 /**
  * The toolbar pill shows the profile the clip is made under — its first letters, Dem for
- * DemoClipTV, Def for Default — so what the clip is produced as is readable without opening
+ * DemoClipTV, Emp for Empty — so what the clip is produced as is readable without opening
  * anything. A profile that fixes an annotation colour wears that colour as its badge.
  */
 export function paintProfileButton(): void {

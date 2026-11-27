@@ -80,7 +80,7 @@ clip's profile may be changed (`Clip.chooseProfile`) only while the clip has no 
 from the first take it is fixed for the life of the recording.
 
 - `Clip.snapshot()` writes the profile; `Clip.restore()` reads it. A clip written before
-  projects reads as the built-in **Default** profile with no declarations, so an old
+  projects reads as the built-in **Empty** profile with no declarations, so an old
   recording gains no new lock over values it already holds.
 - The one `Controlling` seam — asked by the properties panel and the agent description —
   reads `clip.profile.controls` instead of the book's active profile.
@@ -144,7 +144,7 @@ An `adopt-recording` step runs before the first read of the open pointer:
 1. If `app.current` already exists, there is nothing to adopt.
 2. Otherwise, if the old `meta/current` record is usable, write — **in one transaction** —
    a recording under a fixed migration id (`adopted`), its takes, its images, and
-   `app.current` pointing at it, with `projectId = 'default'` and the built-in Default
+   `app.current` pointing at it, with `projectId = 'default'` and the built-in Empty profile
    profile.
 3. After the transaction commits, clear the old stores.
 

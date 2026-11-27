@@ -52,7 +52,7 @@ A production works under **DemoClipTV**, and its profile **fixes** the export re
 
 1. **Given** a profile that fixes the export resolution to 1080p, **When** a clip is made under it, **Then** the clip's settings show 1080p as a value naming the profile, with no control.
 2. **Given** that clip, **When** the person exports it, **Then** the file's picture is 1080p in the clip's aspect ratio, whatever the takes' own sizes.
-3. **Given** the built-in **Default** active, **When** the person opens the clip's settings, **Then** the export resolution is an ordinary list they can set, on **the clip size** by default.
+3. **Given** the built-in **Empty** active, **When** the person opens the clip's settings, **Then** the export resolution is an ordinary list they can set, on **the clip size** by default.
 4. **Given** a profile that fixes the export resolution, **When** an agent asks the app to change it, **Then** the app refuses and names the profile.
 5. **Given** a profile that fixes the export resolution, **When** it is removed, **Then** the clip keeps the size it last had and the export resolution is the person's to change from then on.
 

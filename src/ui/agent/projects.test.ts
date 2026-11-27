@@ -38,7 +38,7 @@ const build = () => {
       finished: recordings.filter(one => one.state === 'finished').length,
       inProgress: recordings.filter(one => one.state === 'in-progress').length,
     }),
-    defaultProfile: () => ({ id: 'default', name: 'Default' }),
+    defaultProfile: () => ({ id: 'default', name: 'Empty' }),
     create: async input => {
       calls.push(`create:${input.name}`);
       const created = project('p2', input.name);
@@ -78,7 +78,7 @@ describe('the projects an agent drives', () => {
     expect(listed.projects[1]).toMatchObject({
       motivation: 'Launch why',
       objectives: 'Launch what',
-      defaultProfile: { id: 'default', name: 'Default' },
+      defaultProfile: { id: 'default', name: 'Empty' },
       current: true,
     });
   });

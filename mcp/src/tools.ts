@@ -352,7 +352,7 @@ const readProject: Tool = {
 const createProject: Tool = {
   name: 'create_project',
   description:
-    'Create a project with a name, a motivation and objectives. It joins the list, and becomes the project new recordings go into unless a session has begun to capture. The default profile is the app\u2019s built-in Default until changed with edit_project.',
+    'Create a project with a name, a motivation and objectives. It joins the list, and becomes the project new recordings go into unless a session has begun to capture. The default profile is the app\u2019s built-in Empty until changed with edit_project.',
   inputSchema: objectSchema({
     name: { type: 'string', description: 'The project\u2019s name; required, and unique among the projects' },
     motivation: { type: 'string', description: 'Why the project exists — may be empty' },

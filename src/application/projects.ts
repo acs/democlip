@@ -49,7 +49,7 @@ export class ManageProjects {
     return this.storedAtLoad;
   }
 
-  /** Read the written book in. A failure leaves the app on its built-in Default. */
+  /** Read the written book in. A failure leaves the app on its built-in Empty profile. */
   async load(): Promise<Projects> {
     let stored = null;
     try {
@@ -150,7 +150,7 @@ export class ManageProjects {
     return this.commit(next, { currentId: next.currentId });
   }
 
-  /** The profile a project's recordings start under, resolved; the built-in Default when gone. */
+  /** The profile a project's recordings start under, resolved; the built-in Empty profile when gone. */
   defaultProfileOf(project: Project): string {
     return this.deps.hasProfile(project.defaultProfileId)
       ? project.defaultProfileId

@@ -37,7 +37,7 @@ const book = (controls: Record<string, string>) => ({
   version: 2,
   activeId: 'tv',
   profiles: [
-    { id: 'default', name: 'Default', controls: {} },
+    { id: 'default', name: 'Empty', controls: {} },
     { id: 'tv', name: 'DemoClipTV', controls },
   ],
 });
@@ -53,7 +53,7 @@ const writeBook = (page: Page, state: unknown): Promise<void> =>
       { version: number; currentId: string; projects: Array<Record<string, unknown>> } | null;
     const projects = stored?.projects ?? [];
     const at = projects.findIndex(project => project.id === 'default');
-    const next = { id: 'default', name: 'Default', motivation: '', objectives: '', defaultProfileId: profileId };
+    const next = { id: 'default', name: 'Empty', motivation: '', objectives: '', defaultProfileId: profileId };
     if (at >= 0) projects[at] = next;
     else projects.unshift(next);
     localStorage.setItem(projectsKey, JSON.stringify({
@@ -327,7 +327,7 @@ test('a profile is made in the selector, defined in its own sheet, chosen, kept 
   await expect(page.locator('.profile-row.active')).toHaveAttribute('data-id', 'default');
   await expect(page.locator('.profile-row')).toHaveCount(1);
   await page.keyboard.press('Escape');
-  await expect(page.locator('#profile-initials')).toHaveText('Def');
+  await expect(page.locator('#profile-initials')).toHaveText('Emp');
   // The default fixes no colour, so the pill is the app's glass again.
   await expect(page.locator('#profile-btn')).not.toHaveClass(/wears-colour/);
   expect((await readBook(page))?.activeId).toBe('default');

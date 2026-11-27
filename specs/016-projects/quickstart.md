@@ -34,7 +34,7 @@ What must hold, by test:
 - `remove` of the current project lands on Default, and the use case moves its recordings
   to Default.
 - `Clip.chooseProfile` succeeds on an empty clip and is refused after a take; a snapshot
-  writes and reads the profile; a snapshot without one restores as the built-in Default.
+  writes and reads the profile; a snapshot without one restores as the built-in Empty profile.
 - A recording is in progress only while it is the open one with a take; a project's counts
   agree with its list.
 - `adopt-recording` over a fake store writes the recording, its takes, its images and the

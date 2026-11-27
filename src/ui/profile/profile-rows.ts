@@ -53,7 +53,7 @@ export const AVATAR_TONES = 5;
 
 /**
  * The letters a profile's pill shows: the first three of its name, the first one
- * capitalised — DemoClipTV is Dem, Default is Def. A name is never empty, so a pill always
+ * capitalised — DemoClipTV is Dem, Empty is Emp. A name is never empty, so a pill always
  * has something in it.
  */
 export function avatarLetters(name: string): string {

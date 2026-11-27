@@ -112,7 +112,7 @@ the profile with nothing to press, and the file follows it.
 
 **Independent Test**: define a profile that fixes **Boost the sound** off, make a clip under it,
 and confirm the row is fixed by the profile and the export is un-boosted; switch to the built-in
-**Default** and the same row is an ordinary switch, on by the app's default.
+**Empty** and the same row is an ordinary switch, on by the app's default.
 
 ### Tests for User Story 3
 

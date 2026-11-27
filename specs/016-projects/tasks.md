@@ -50,7 +50,7 @@ when it lands.
 - [X] T005 [P] Create `ClipProfile` in `src/domain/clip/ClipProfile.ts` and its test, with the snapshot's `id`, `name` and `controls`, `declares`/`valueFor`, and `ClipProfile.DEFAULT` — constraints: `data-model.md` `ClipProfile.id`, `ClipProfile.name`, `ClipProfile.controls`.
 - [X] T006 [P] Create `Project` in `src/domain/project/Project.ts` and `Project.test.ts` — constraints: `data-model.md` `Project.id`, `Project.name` (trimmed, required, case- and space-insensitive uniqueness helper), `Project.motivation`, `Project.objectives`, `Project.defaultProfileId`; derivation of the description.
 - [X] T007 Create `Projects` in `src/domain/project/Projects.ts` and `Projects.test.ts`: the Default project, `starting`, `of` repair, `currentId`, create/select/rename/remove/setDefaultProfile — constraints: `data-model.md` `Projects.projects`, `Projects.currentId`, and `Project.name` for the uniqueness rule; depends on T006.
-- [X] T008 Add the profile snapshot to `src/domain/clip/Clip.ts`: a `profile` field, `chooseProfile(profile)` refused once a take exists, and `profile` in `snapshot()`/`restore()` with the built-in Default for an old snapshot — constraints: `data-model.md` `Clip.profile`; extend `Clip.test.ts`; depends on T005.
+- [X] T008 Add the profile snapshot to `src/domain/clip/Clip.ts`: a `profile` field, `chooseProfile(profile)` refused once a take exists, and `profile` in `snapshot()`/`restore()` with the built-in Empty profile for an old snapshot — constraints: `data-model.md` `Clip.profile`; extend `Clip.test.ts`; depends on T005.
 - [X] T009 Add the open recording's identity to `src/domain/session/Session.ts` and its test — constraints: `data-model.md` `Session.recordingId`, `Session.projectId`; the capture latch and `end()` unchanged.
 
 ### Ports and adapters
@@ -142,7 +142,7 @@ project's default again.
 ### Tests for User Story 3
 
 - [X] T036 [P] [US3] Unit-test the profile resolution and application: `src/ui/profile/apply.test.ts` and `src/application/projects.test.ts` cover an unknown default profile falling back to Default, a snapshot being taken on a draft, and declared properties being applied while undeclared ones stay the person's — cite `data-model.md` `Project.defaultProfileId`, `ClipProfile.controls`.
-- [X] T037 [P] [US3] Extend `src/domain/clip/Clip.test.ts` for the snapshot: a profile chosen before a take is kept, after a take refused, and an old snapshot restores as the built-in Default — cite `data-model.md` `Clip.profile`.
+- [X] T037 [P] [US3] Extend `src/domain/clip/Clip.test.ts` for the snapshot: a profile chosen before a take is kept, after a take refused, and an old snapshot restores as the built-in Empty profile — cite `data-model.md` `Clip.profile`.
 - [X] T038 [US3] Extend `e2e/checks/profiles.spec.ts` with the project's default: a project-level default locks an item, a draft chooses another profile, and a second recording follows the project again.
 
 ### Implementation for User Story 3

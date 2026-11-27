@@ -20,7 +20,7 @@ declaring it, not by adding a second kind of configuration. No new surface, no n
 
 **Alternatives considered**: a profile-only setting, kept outside the clip — rejected: a
 profile's items are clip properties by construction, the export must read one value, and a
-clip made under the app's free **Default** must still be boosted (which a profile-only
+clip made under the app's free **Empty** must still be boosted (which a profile-only
 setting could not express). A setting on the session — rejected: it would not survive a
 reload, would not be a profile's to fix, and would be a second place for the value.
 

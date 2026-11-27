@@ -30,7 +30,7 @@ export class ClipProfile {
   ) {}
 
   /** The app's free profile: what a recording written before projects reads as. */
-  static readonly DEFAULT = new ClipProfile(Profiles.DEFAULT_ID, 'Default', {});
+  static readonly DEFAULT = new ClipProfile(Profiles.DEFAULT_ID, 'Empty', {});
 
   /** A snapshot with this id and name, or null when either is not usable. */
   static create(id: string, name: string, controls?: Readonly<Record<string, string>> | null): ClipProfile | null {
@@ -44,9 +44,14 @@ export class ClipProfile {
     return new ClipProfile(profile.id, profile.name, { ...profile.controls });
   }
 
-  /** Read one back, or null when the record cannot name one. */
+  /**
+   * Read one back, or null when the record cannot name one. The built-in profile is the
+   * app's own: a recording that names its id reads as the app's current built-in — so the
+   * free profile's name can change without every old recording still saying the old one.
+   */
   static restore(stored: StoredClipProfile | null | undefined): ClipProfile | null {
     if (!stored || typeof stored !== 'object') return null;
+    if (stored.id === Profiles.DEFAULT_ID) return ClipProfile.DEFAULT;
     return ClipProfile.create(stored.id, stored.name, stored.controls);
   }
 

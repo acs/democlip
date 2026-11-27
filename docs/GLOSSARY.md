@@ -201,7 +201,7 @@ settings show it as a value with a **lock** beside it, whose tooltip names the p
 the panel offers nothing to press, and the automation surface refuses it with the
 profile named. An item no profile declares is the person's, exactly as it was before
 there were profiles at all — so a profile that declares nothing is a **free** profile,
-and the built-in **Default** is that profile.
+and the built-in **Empty** is that profile.
 
 In its first iterations a profile controls four items: the clip properties **add to export**,
 **logo**, **annotation colour** — the colour a new arrow or text is made in — and **sound
@@ -232,7 +232,7 @@ profile reaches only recordings made afterwards.
 | **profile badge** | the pill of a profile's first letters — on its row in the selector, and for the active one in the toolbar. A profile that fixes an **annotation colour** wears that colour as its badge, with the ink that reads on it, so a way of working is recognised by its colour; a profile that fixes none keeps one of the app's own tones, taken from its id so it never changes | `profileRows()` / `profileColour()` / `badgeInk()` (`src/ui/profile/profile-rows.ts`); the toolbar pill in `src/ui/profile/profile-flow.ts` |
 | **controlled item** | an item the active profile declares: applied to the clip, shown as a value with a **lock** naming the profile, and not the person's to change. An item no profile declares is the person's, as always | `Profiles.controlling()`, the `Controlling` seam (`src/ui/profile/control.ts`) |
 | **declaration** | what a profile says about one item — that it controls it, and the value it is fixed at. An item may legitimately be declared fixed at an empty value (a switch fixed **off**), which is why *declared* and *empty* are told apart here and not in the clip's own properties | `Profile.declare()`, `Profile.free()` (`src/domain/profile/Profile.ts`) |
-| **built-in default profile** | the profile the app always has and falls back to, so an app with nothing set up behaves as it always did. It declares nothing — it is the app's free profile — and is never renamed, removed or defined | `Profiles.DEFAULT_ID` (`src/domain/profile/Profiles.ts`) |
+| **built-in default profile** | the profile the app always has and falls back to, so an app with nothing set up behaves as it always did. It is named **Empty**, declares nothing — it is the app's free profile — and is never renamed, removed or defined | `Profiles.DEFAULT_ID` (`src/domain/profile/Profiles.ts`) |
 
 ## Projects
 

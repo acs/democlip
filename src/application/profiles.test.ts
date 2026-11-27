@@ -105,7 +105,7 @@ describe('ManageProfiles', () => {
   it('lets a profile be created while capturing without becoming active', () => {
     const { profiles } = manage({ capturing: true });
     expect(profiles.create('DemoClipTV').ok).toBe(true);
-    expect(profiles.current.all.map(p => p.name)).toEqual(['Default', 'DemoClipTV']);
+    expect(profiles.current.all.map(p => p.name)).toEqual(['Empty', 'DemoClipTV']);
     expect(profiles.current.activeId).toBe(Profiles.DEFAULT_ID);
   });
 

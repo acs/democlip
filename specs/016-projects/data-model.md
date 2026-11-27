@@ -17,7 +17,7 @@ One body of work and its reason. A value object with identity, held by `Projects
 | `name` | `string` | Trimmed, required. Unique among the person's projects, ignoring case and surrounding spaces. The Default project's name is `Default` and cannot change. |
 | `motivation` | `string` | Free text; may be empty; preserved exactly as written. |
 | `objectives` | `string` | Free text; may be empty; preserved exactly as written. |
-| `defaultProfileId` | `string` | Not empty. Must name a profile in the book when set; resolved to the built-in Default on read when it does not. |
+| `defaultProfileId` | `string` | Not empty. Must name a profile in the book when set; resolved to the built-in Empty profile on read when it does not. |
 
 **Derived**: `description` is the pair (motivation, objectives) shown together; it is not a
 stored field. `Project.description()` returns both for the overview and the agent.
@@ -65,7 +65,7 @@ The snapshotted production configuration a recording is made under. A value obje
 **Derived**: `declares(propertyId)`, `valueFor(propertyId)` — the same questions `Profile`
 answers, so the panel and the surface ask one shape.
 
-**Built-in**: `ClipProfile.DEFAULT` is `{ id: 'default', name: 'Default', controls: {} }`
+**Built-in**: `ClipProfile.DEFAULT` is `{ id: 'default', name: 'Empty', controls: {} }`
 — the free profile an old recording reads as.
 
 ### Clip (extended)
