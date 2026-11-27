@@ -111,6 +111,8 @@ bounded — anything holding the port can do anything to the page — so the bou
 - `src/domain/` runs in **node**, with a fake behind any port — the most tested
   part by far. Anything **drawn** needs a browser harness instead.
 - Nothing is told how long the clip is; `Clip.total()` is the sum of the takes.
+- **Every message a person can see is a translation key** in `src/ui/i18n/catalogs/`, not
+  a literal — the app speaks the person's language. The **Domain model** skill has the rule.
 - `main` is written to through pull requests, and **CI owns the version** — never
   bump `package.json` by hand.
 
