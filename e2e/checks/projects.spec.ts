@@ -84,6 +84,19 @@ async function createProject(page: Page, name: string, motivation: string, objec
 
 test('an update keeps the recording, a project gathers new ones, and a removal moves one to Default', async ({ page }) => {
   const app = boot(page);
+
+  // The overview's storage line reads the browser's own estimate. It is fixed here so the
+  // figure is predictable — the real quota depends on the machine — and so both answers can
+  // be seen: a reading, and a browser that will not give one.
+  await page.addInitScript(() => {
+    const w = window as unknown as { __e2eStorage?: { usage: number; quota: number } | null };
+    w.__e2eStorage = { usage: 120_000_000, quota: 2_000_000_000 };
+    Object.defineProperty(navigator.storage, 'estimate', {
+      configurable: true,
+      value: () => Promise.resolve(w.__e2eStorage ?? undefined),
+    });
+  });
+
   await app.goto();
 
   // Both toolbar pills carry an icon and the colour of the entry they open, so the two
@@ -115,6 +128,13 @@ test('an update keeps the recording, a project gathers new ones, and a removal m
   await openOverview(page, DEFAULT_NAME);
   await expect(page.locator('#project-ov-progress')).toHaveText('0 of 1 finished');
   await expect(page.locator('.proj-row-title')).toHaveText(['Kept']);
+  // The storage the app is using, read out under the counts.
+  await expect(page.locator('#project-ov-storage')).toHaveText('Storage: using ~120 MB of ~2 GB');
+  // A browser that will not say shows nothing rather than a wrong number.
+  await page.evaluate(() => { (window as unknown as { __e2eStorage?: unknown }).__e2eStorage = null; });
+  await page.locator('#project-ov-close').click();
+  await openOverview(page, DEFAULT_NAME);
+  await expect(page.locator('#project-ov-storage')).toBeHidden();
   await page.locator('#project-ov-close').click();
 
   // End its session: the recording is finished, and the next draft is in the same project.
