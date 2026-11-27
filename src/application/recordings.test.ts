@@ -5,7 +5,6 @@ import { Clip, type ClipSnapshot } from '../domain/clip/Clip.js';
 import { ClipProfile } from '../domain/clip/ClipProfile.js';
 import { Session } from '../domain/session/Session.js';
 import { Take } from '../domain/clip/Take.js';
-import { Projects } from '../domain/project/Projects.js';
 import type { TakeRepository } from '../domain/clip/TakeRepository.js';
 import type {
   LegacyRecording,
@@ -242,23 +241,14 @@ describe('Recordings', () => {
     expect((await recordings.move(session.recordingId, 'default')).ok).toBe(false);
   });
 
-  it('removes a recording to Default, keeping its bytes', async () => {
+  it('deletes a recording wherever it lives, and says so when it is not here', async () => {
     const { store, recordings } = build();
     store.seed('r1', snapshotWith(2), { projectId: 'p1', profile: ClipProfile.DEFAULT.stored(), createdAt: 500 });
 
-    expect(await recordings.remove('r1')).toEqual({ ok: true, projectId: Projects.DEFAULT_ID });
-    expect(store.records.get('r1')!.place.projectId).toBe(Projects.DEFAULT_ID);
-    expect(store.calls).not.toContain('delete:r1');
-  });
-
-  it('deletes only a recording already in Default', async () => {
-    const { store, recordings } = build();
-    store.seed('r1', snapshotWith(2), { projectId: 'p1', profile: ClipProfile.DEFAULT.stored(), createdAt: 500 });
-    store.seed('r2', snapshotWith(2), { projectId: 'default', profile: ClipProfile.DEFAULT.stored(), createdAt: 600 });
-
-    expect((await recordings.delete('r1')).ok).toBe(false);
-    expect(await recordings.delete('r2')).toEqual({ ok: true });
-    expect(store.records.has('r2')).toBe(false);
+    expect(await recordings.delete('gone')).toEqual({ ok: false, reason: 'that recording is not here' });
+    expect(await recordings.delete('r1')).toEqual({ ok: true });
+    expect(store.records.has('r1')).toBe(false);
+    expect(store.calls).toContain('delete:r1');
   });
 
   it('ends the sitting when the open recording itself is deleted', async () => {

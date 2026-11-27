@@ -12,7 +12,6 @@
 
 import type { Clip } from '../domain/clip/Clip.js';
 import type { ClipProfile } from '../domain/clip/ClipProfile.js';
-import { Projects } from '../domain/project/Projects.js';
 import type { Session } from '../domain/session/Session.js';
 import type {
   RecordingHeader,
@@ -181,18 +180,13 @@ export class Recordings {
     return { ok: true, projectId };
   }
 
-  /** Remove a recording from its project: it moves to Default, and stays whole. */
-  async remove(recordingId: string): Promise<RecordingsResult<{ projectId: string }>> {
-    return this.move(recordingId, Projects.DEFAULT_ID);
-  }
-
-  /** Destroy a recording for good. Only one already in Default, and never an open session. */
+  /**
+   * Destroy a recording for good, wherever it lives. Deleting the open one ends the sitting,
+   * so nothing is left pointing at bytes that are gone.
+   */
   async delete(recordingId: string): Promise<RecordingsResult> {
     const header = (await this.deps.store.list()).find(recording => recording.id === recordingId);
     if (!header) return { ok: false, reason: 'that recording is not here' };
-    if (header.projectId !== Projects.DEFAULT_ID) {
-      return { ok: false, reason: 'only a recording in the Default project can be deleted; remove it there first' };
-    }
     if (recordingId === this.deps.session.recordingId) {
       await this.deps.store.clearOpen();
       this.deps.session.end();
