@@ -17,7 +17,11 @@ export default defineConfig({
   // checks each encode a 120-frame vp8 take at once, and the encode that costs 0.9 s
   // alone takes longer than the 30 s test timeout under that contention. Four workers
   // keep the suite inside its budget without starving the encoders.
-  workers: process.env.CI ? 2 : 4,
+  //
+  // The same number runs locally and in CI. The CI job is two shards, each on a standard
+  // four-core runner, so each shard has its own four workers and its own encoders rather
+  // than competing with the other shard for them.
+  workers: 4,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
   reporter: [
