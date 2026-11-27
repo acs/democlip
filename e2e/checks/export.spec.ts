@@ -34,43 +34,37 @@ async function canEncodeMp4(page: Page): Promise<boolean> {
 // The regression this holds: an 854×480 take used to be encoded at 1280×720, six times
 // the bytes and less detail than went in. The file is asked for its own track size, not
 // the encoder's default — and it carries a real duration, not a MediaRecorder's zero.
-test('exporting writes a file with a real duration, in the take’s own size — WebM and MP4', async ({ page }) => {
-  const app = boot(page);
-  await app.goto();
-  const takes = await makeTakes(page, { width: 854, height: 480, seconds: 1 });
-  await app.seed(takes);
-  await app.review();
-
-  const webm = await probeFile(page, await exportFile(page, '#exp-webm'), 'video/webm');
-  expect(webm.duration).toBeGreaterThan(0.5);
-  expect(webm.duration).toBeLessThan(2);
-  expect({ width: webm.width, height: webm.height }).toEqual({ width: 854, height: 480 });
-
-  test.skip(!(await canEncodeMp4(page)), 'this browser cannot encode MP4 (AVC) offline');
-  const mp4 = await probeFile(page, await exportFile(page, '#exp-mp4'), 'video/mp4');
-  expect(mp4.duration).toBeGreaterThan(0.5);
-  expect(mp4.duration).toBeLessThan(2);
-  expect({ width: mp4.width, height: mp4.height }).toEqual({ width: 854, height: 480 });
-});
-
-// A cut leaves the file: the frames inside it are not written at all. They used to be — the
-// plan maps a moment inside a cut to the time just before it, and the frame loop drew each
-// such frame there, handing the encoder a frame of no duration that a player never lands on.
-// The file literally carried the cut's own pictures. The plan now says which moments a cut
-// took away, and the loop writes nothing for them.
-test('a cut leaves the file: its frames are not written, WebM or MP4', async ({ page }) => {
+// A cut leaves the file too: the frames inside it are not written at all. They used to
+// be — the plan maps a moment inside a cut to the time just before it, and the frame loop
+// drew each such frame there, handing the encoder a frame of no duration that a player
+// never lands on. The file literally carried the cut's own pictures. The plan now says
+// which moments a cut took away, and the loop writes nothing for them.
+test('exporting writes a real file in the take’s own size, and a cut leaves the file — WebM and MP4', async ({ page }) => {
   const app = boot(page);
   await app.gotoAgent();
   const takes = await makeTakes(page, { width: 854, height: 480, seconds: 3 });
   await app.seed(takes);
   await app.review();
-
   const hasMp4 = await canEncodeMp4(page);
 
-  // The take whole, before any cut: every frame the recording holds, for the count to compare
-  // against — so the check does not have to guess the fixture's frame rate.
-  const wholeWebm = await videoPackets(page, await exportFile(page, '#exp-webm'));
-  const wholeMp4 = hasMp4 ? await videoPackets(page, await exportFile(page, '#exp-mp4')) : [];
+  // The take whole, before any cut: a real duration and the take's own size, and every frame
+  // the recording holds, for the count the cut is compared against — so the check does not
+  // have to guess the fixture's frame rate.
+  const wholeWebmBytes = await exportFile(page, '#exp-webm');
+  const webm = await probeFile(page, wholeWebmBytes, 'video/webm');
+  expect(webm.duration).toBeGreaterThan(2.5);
+  expect(webm.duration).toBeLessThan(4);
+  expect({ width: webm.width, height: webm.height }).toEqual({ width: 854, height: 480 });
+  const wholeWebm = await videoPackets(page, wholeWebmBytes);
+
+  const wholeMp4Bytes = hasMp4 ? await exportFile(page, '#exp-mp4') : null;
+  if (wholeMp4Bytes) {
+    const mp4 = await probeFile(page, wholeMp4Bytes, 'video/mp4');
+    expect(mp4.duration).toBeGreaterThan(2.5);
+    expect(mp4.duration).toBeLessThan(4);
+    expect({ width: mp4.width, height: mp4.height }).toEqual({ width: 854, height: 480 });
+  }
+  const wholeMp4 = wholeMp4Bytes ? await videoPackets(page, wholeMp4Bytes) : [];
 
   // The middle 0.9s out, through the app's own operation — a cut is a fraction of the clip.
   const cut = await page.evaluate(async () => {
@@ -88,30 +82,20 @@ test('a cut leaves the file: its frames are not written, WebM or MP4', async ({ 
   expect(keptWebm.length).toBeLessThan(wholeWebm.length - 20);
   expect(keptWebm.length).toBeGreaterThan(wholeWebm.length - 35);
 
-  test.skip(!hasMp4, 'this browser cannot encode MP4 (AVC) offline');
-  const keptMp4 = await videoPackets(page, await exportFile(page, '#exp-mp4'));
-  expect(keptMp4.length).toBeLessThan(wholeMp4.length - 20);
-  expect(keptMp4.length).toBeGreaterThan(wholeMp4.length - 35);
-});
+  if (hasMp4) {
+    const keptMp4 = await videoPackets(page, await exportFile(page, '#exp-mp4'));
+    expect(keptMp4.length).toBeLessThan(wholeMp4.length - 20);
+    expect(keptMp4.length).toBeGreaterThan(wholeMp4.length - 35);
+  }
 
-/** Choose an export resolution in the clip's settings, the way a person does. */
-async function chooseResolution(page: Page, value: string): Promise<void> {
-  await page.locator('#props-btn').click();
-  await page.locator('#clip-prop-menu .prop-row[data-id="exportResolution"] select').selectOption(value);
-  await page.locator('#props-btn').click();
-  await expect(page.locator('#clip-prop-menu')).not.toHaveClass(/on/);
-}
-
-// The clip is worked in at its **clip size** and written at its **export resolution**: the size the
-// file is finally written at, which is the clip size when none is chosen. The file's own video
-// track is asked for its size — not the encoder's default — the review canvas is asked not to have
-// moved, and a level below another is asked to be a smaller file, which is the comparison a flat
-// bitrate floor fails: every level under about 1080p used to come out the same size.
-test('an export is written at the clip’s export resolution, and at the clip size with none chosen', async ({ page }) => {
-  const app = boot(page);
-  await app.goto();
-  const takes = await makeTakes(page, { width: 1920, height: 1080, seconds: 1 });
-  await app.seed(takes);
+  // The clip is worked in at its **clip size** and written at its **export resolution**: the
+  // size the file is finally written at, which is the clip size when none is chosen. The file's
+  // own video track is asked for its size — not the encoder's default — the review canvas is
+  // asked not to have moved, and a level below another is asked to be a smaller file, which
+  // the comparison a flat bitrate floor fails: every level under about 1080p used to come out
+  // the same size.
+  const large = await makeTakes(page, { width: 1920, height: 1080, seconds: 1 });
+  await app.seed(large);
   await app.review();
 
   // Nothing chosen: the file is the clip size, exactly as before the resolution existed.
@@ -133,16 +117,12 @@ test('an export is written at the clip’s export resolution, and at the clip si
   expect(await probeFile(page, eightFifty, 'video/webm')).toMatchObject({ width: 854, height: 480 });
   expect(eightFifty.length).toBeLessThan(seventy.length);
   expect(eightFifty.length).toBeLessThan(big.length);
-});
 
-// The card at the head of a file: the clip's title and description over its first frame,
-// for two seconds, when the clip asks for it. It is read the moment it appears, so its
-// words are on its **first frame** — the poster a player and a file listing show.
-test('a clip that asks for the card gets two seconds of it, with its words on the first frame', async ({ page }) => {
-  const app = boot(page);
-  await app.goto();
-  const takes = await makeTakes(page, { width: 640, height: 360, seconds: 1 });
-  await app.seed(takes);
+  // The card at the head of a file: the clip's title and description over its first frame,
+  // for two seconds, when the clip asks for it. It is read the moment it appears, so its
+  // words are on its **first frame** — the poster a player and a file listing show.
+  const cardedTakes = await makeTakes(page, { width: 640, height: 360, seconds: 1 });
+  await app.seed(cardedTakes);
   await app.review();
 
   // The recording's own first frame: whatever light the take itself carries.
@@ -167,6 +147,14 @@ test('a clip that asks for the card gets two seconds of it, with its words on th
   const words = await frameCounts(page, carded, 'video/webm', 0);
   expect(words.light).toBeGreaterThan(plain.light * 3);
 });
+
+/** Choose an export resolution in the clip's settings, the way a person does. */
+async function chooseResolution(page: Page, value: string): Promise<void> {
+  await page.locator('#props-btn').click();
+  await page.locator('#clip-prop-menu .prop-row[data-id="exportResolution"] select').selectOption(value);
+  await page.locator('#props-btn').click();
+  await expect(page.locator('#clip-prop-menu')).not.toHaveClass(/on/);
+}
 
 /** An arrow over the middle of the clip, through the app's own operation. */
 async function drawAnArrow(page: Page): Promise<void> {
@@ -286,9 +274,9 @@ async function waveformPixels(page: Page): Promise<number> {
 // **Two takes of different levels, deliberately**: the loudness is measured over the whole kept
 // sound, and reading a piece's times against the wrong take's buffer once made a clip of two
 // takes measured by its first alone — one gain, far too large, over both. One take hides it.
-test('the sound is boosted by default, and the switch gives the recording back', async ({ page }) => {
+test('the sound is boosted by default, the switch gives the recording back, and a mixed clip keeps its picture and sound in step', async ({ page }) => {
   const app = boot(page);
-  await app.goto();
+  await app.gotoAgent();
   // Quiet on purpose, and 6 dB apart: about −30 and −24 LUFS, the level a microphone a little
   // far leaves, and the two levels that catch a measurement that stops at the first take.
   const takes = await makeTakes(
@@ -344,19 +332,15 @@ test('the sound is boosted by default, and the switch gives the recording back',
   expect(without.painted).toBeGreaterThan(0);
   expect(without.light).toBeGreaterThan(withBoost.light * 0.9);
   expect(without.light).toBeLessThan(withBoost.light * 1.1);
-});
 
-// A clip with both kinds of take is a video; its sound-only stretch is black, so the file
-// and the review stay in step. Cut the picture away and the same clip is a sound file.
-test('a mixed clip writes black over its sound-only stretch, and sound alone once the picture is cut', async ({ page }) => {
-  const app = boot(page);
-  await app.gotoAgent();
-  const takes = await makeTakes(
+  // A clip with both kinds of take is a video; its sound-only stretch is black, so the file
+  // and the review stay in step. Cut the picture away and the same clip is a sound file.
+  const mixedTakes = await makeTakes(
     page,
     { soundOnly: true, seconds: 1 },
     { width: 640, height: 360, seconds: 1 },
   );
-  await app.seed(takes);
+  await app.seed(mixedTakes);
   await app.review();
 
   const mixed = await exportFile(page, '#exp-webm');

@@ -13,7 +13,7 @@ import { makeTakes } from '../fixtures/takes.js';
 test.describe('a Spanish browser', () => {
   test.use({ locale: 'es' });
 
-  test('sees the shell in Spanish', async ({ page }) => {
+  test('sees the shell, the help panel, the annotate bar and the guide in Spanish', async ({ page }) => {
     const app = boot(page);
     await app.goto();
     await expect(page.locator('#screen-btn .src-lbl')).toHaveText('Pantalla');
@@ -21,29 +21,20 @@ test.describe('a Spanish browser', () => {
     await expect(page.locator('#props-btn .clip-props-lbl')).toHaveText('CLIP');
     await expect(page.locator('#rec-lbl')).toHaveText('Grabar');
     await expect(page.locator('#tl-label')).toHaveText('Línea de tiempo');
-  });
 
-  test('sees the help panel in Spanish', async ({ page }) => {
-    const app = boot(page);
-    await app.goto();
     await page.locator('#help-btn').click();
     await expect(page.locator('.help-title')).toHaveText('Cómo se usa');
     await expect(page.locator('.help-step-title').first()).toHaveText('Elige qué grabar');
     await expect(page.locator('.help-more')).toHaveText('Leer la guía completa →');
-  });
+    await page.locator('#help-close').click();
 
-  test('sees the annotate bar and the clip panel in Spanish', async ({ page }) => {
-    const app = boot(page);
-    await app.goto();
     const takes = await makeTakes(page, { width: 640, height: 360, seconds: 2 });
     await app.seed(takes);
     await app.review();
     await expect(page.locator('.annotate-row[data-kind="arrow"] .annotate-lbl')).toHaveText('Flecha');
     await page.locator('#props-btn').click();
     await expect(page.locator('#clip-prop-menu .prop-row[data-id="title"] .prop-name')).toHaveText('Título');
-  });
 
-  test('sees the guide page in Spanish, tab title included', async ({ page }) => {
     await page.goto('/help.html');
     await expect(page.locator('.guide-title')).toHaveText('Cómo se usa');
     await expect(page.locator('.guide-section h2').first()).toHaveText('1. Elige qué grabar');
