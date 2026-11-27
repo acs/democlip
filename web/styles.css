@@ -616,7 +616,7 @@ html.guide-html body{height:auto;min-height:100%;overflow:visible;}
 /* ── Projects ─────────────────────────────────────────────────────────────── */
 /* The pill sits beside the profile pill and wears the current project's initials. */
 .project-pill{color:var(--text);}
-.project-avatar{background:var(--glass-b2);color:var(--text);font-family:var(--font-mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;}
+.project-avatar{font-family:var(--font-mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;}
 .project-row .profile-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .project-menu{min-width:300px;}
 
@@ -640,3 +640,13 @@ html.guide-html body{height:auto;min-height:100%;overflow:visible;}
 .proj-ov-empty{margin:2px 0 0;font-family:var(--font-ui);font-size:12px;color:var(--text-mid);}
 .project-purpose{padding:0 6px 2px;font-family:var(--font-ui);font-size:10px;color:var(--text-mid);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .project-count{font-family:var(--font-mono);font-size:9px;color:var(--text-mid);padding:1px 5px;border:1px solid var(--glass-b);border-radius:100px;}
+
+/* The pill's icon and the tone it wears: the project's or the profile's own, so the
+   button reads as the entry it opens. */
+.profile-pill{gap:5px;}
+.pill-ico{width:13px;height:13px;flex-shrink:0;}
+.profile-pill.av-0{background:var(--crimson);color:#fff;border-color:transparent;}
+.profile-pill.av-1{background:#7C3AED;color:#fff;border-color:transparent;}
+.profile-pill.av-2{background:var(--blue);color:#fff;border-color:transparent;}
+.profile-pill.av-3{background:var(--green);color:#fff;border-color:transparent;}
+.profile-pill.av-4{background:var(--amber);color:#2A1C00;border-color:transparent;}

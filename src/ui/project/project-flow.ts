@@ -21,11 +21,12 @@ import { setPhase } from '../../state.js';
 import { el, toast } from '../dom.js';
 import { applyProfile, paintProfileButton, profiles } from '../profile/profile-flow.js';
 import { avatarLetters } from '../profile/profile-rows.js';
+import { paintPill } from '../shell/pill.js';
 import { createProjectsSurface } from '../agent/projects.js';
 import type { ProjectsSurface } from '../agent/surface.js';
 import { openReview } from '../clip/review-flow.js';
 import { syncWatermark } from '../clip/watermark.js';
-import { projectMenu } from './project-menu.js';
+import { projectMenu, projectTone } from './project-menu.js';
 import { projectDef, type ProjectDraft } from './project-def.js';
 import { projectOverview } from './project-overview.js';
 
@@ -132,6 +133,7 @@ export function initProjects(): void {
 export function paintProjectButton(): void {
   const project = projects.current.current();
   el.projectInitials.textContent = avatarLetters(project.name);
+  paintPill(el.projectBtn, { colour: null, tone: projectTone(project.id) });
   const label = `Projects — in ${project.name}`;
   el.projectBtn.setAttribute('aria-label', label);
   el.projectBtn.title = label;

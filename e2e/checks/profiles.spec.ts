@@ -328,8 +328,10 @@ test('a profile is made in the selector, defined in its own sheet, chosen, kept 
   await expect(page.locator('.profile-row')).toHaveCount(1);
   await page.keyboard.press('Escape');
   await expect(page.locator('#profile-initials')).toHaveText('Emp');
-  // The default fixes no colour, so the pill is the app's glass again.
-  await expect(page.locator('#profile-btn')).not.toHaveClass(/wears-colour/);
+  // The default fixes no colour, so the pill wears the built-in profile's own tone —
+  // not the orange the removed profile fixed.
+  await expect(page.locator('#profile-btn')).toHaveClass(/wears-colour/);
+  await expect(page.locator('#profile-btn')).not.toHaveCSS('background-color', 'rgb(255, 108, 35)');
   expect((await readBook(page))?.activeId).toBe('default');
 
   // The item is the person's again: the value the profile left is still there and it moves.
