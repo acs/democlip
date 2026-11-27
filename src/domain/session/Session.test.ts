@@ -53,9 +53,21 @@ describe('Session', () => {
 
   it('holds no view state: ending it needs no view', () => {
     const session = sessionWith([2]);
-    // Nothing but the session's own state is on it: the clip and whether it has begun
-    // to capture. Neither is a view's.
-    expect(Object.keys(session).sort()).toEqual(['captured', 'clip']);
+    // Nothing but the session's own state is on it: the clip, whether it has begun
+    // to capture, and the recording and project it is on. None of it is a view's.
+    expect(Object.keys(session).sort()).toEqual(['captured', 'clip', 'currentProject', 'currentRecording']);
+  });
+
+  it('knows the recording and the project it is on, and forgets them when it ends', () => {
+    const session = sessionWith([2]);
+
+    session.open('r1', 'p1');
+    expect(session.recordingId).toBe('r1');
+    expect(session.projectId).toBe('p1');
+
+    session.end();
+    expect(session.recordingId).toBe('');
+    expect(session.projectId).toBe('');
   });
 
   // The capture latch: what a **profile** is fixed by. Raised by a take that really
@@ -78,5 +90,21 @@ describe('Session', () => {
     session.beginCapture();
     session.end();
     expect(session.hasCaptured).toBe(false);
+  });
+});
+
+describe('Session close', () => {
+  it('closes without clearing the clip, as an export leaves it', () => {
+    const session = sessionWith([2]);
+    session.beginCapture();
+    session.open('r1', 'p1');
+
+    session.close();
+
+    expect(session.clip.takes.count()).toBe(1);
+    expect(session.clip.total()).toBe(2);
+    expect(session.hasCaptured).toBe(false);
+    expect(session.recordingId).toBe('');
+    expect(session.projectId).toBe('');
   });
 });

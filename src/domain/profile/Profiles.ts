@@ -6,7 +6,7 @@
 // one profile is; this holds what is true of the set.
 //
 // Nothing here reaches for storage or the browser: the app keeps the book in memory and
-// writes it down through a port (the same split `KeptClipPort` uses for the clip). What
+// writes it down through a port (the same split `RecordingStorePort` uses for a recording). What
 // it reads back is treated as untrusted — a person's browser holds it, and it may be old
 // or written by another version — so `of` repairs what it can and never throws.
 
@@ -21,7 +21,7 @@ export interface StoredProfiles {
   profiles: StoredProfile[];
 }
 
-const DEFAULT_NAME = 'Default';
+const DEFAULT_NAME = 'Empty';
 
 export class Profiles {
   /** The built-in default's id: the profile the app always has. */

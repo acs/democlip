@@ -26,7 +26,7 @@ Expected:
   `valueFor('title')` is `null`, and `declares('title')` is `false`.
 - A profile declaring `{ addToExport: '' }` **does** declare it and answers `''` — a switch fixed
   **off**, which is a different state from letting it go; `free('addToExport')` is what lets it go.
-- `Profiles.starting().controlling('addToExport')` is `null`: the built-in **Default** controls
+- `Profiles.starting().controlling('addToExport')` is `null`: the built-in **Empty** controls
   nothing. With a profile that declares it chosen, `controlling('addToExport')?.name` is
   `'DemoClipTV'` — and only while that profile is active.
 - `Profiles.of` repairs a dangling `activeId`, drops an entry that cannot be named, replaces an
@@ -64,7 +64,7 @@ The check boots the app and drives the toolbar:
    than 2.5 s.
 3. **An agent is refused** — the surface reports the item read-only, and `setClipProperty` answers
    `ok: false` naming the profile.
-4. **A free item is the person's** — under the built-in **Default** the switch is there, and moving
+4. **A free item is the person's** — under the built-in **Empty** the switch is there, and moving
    it works.
 5. **The selector shows nothing about a profile** — `#profile-menu` holds no config rows at all; a
    profile's row carries **two** marks, the sliders and the bin, and **no** rename control, because
@@ -76,7 +76,7 @@ The check boots the app and drives the toolbar:
    is shown, and the active profile is unchanged.
 8. **It comes back** — after a reload the profile, what it controls and the active choice are all
    there; a rename made in its own dialog is shown in the list behind it; letting it go falls back
-   to **Default** and the item is the person's again.
+   to **Empty** and the item is the person's again.
 
 And the use case the feature is for, in `e2e/checks/profile-logo.spec.ts`:
 
@@ -110,7 +110,7 @@ npm run dev
 ```
 
 1. Press the pill at the right-hand end of the header (it wears the active profile's first letters,
-   `Def` for **Default**); the selector shows **Default**, active, offering no config.
+   `Emp` for **Empty**); the selector shows **Empty**, active, offering no config.
 2. Press **+ New Profile**, name it **DemoClipTV**, then press the **sliders** mark on its row. Fix
    **Add to export** to **On** and press Done.
 3. Press its row to choose it. The pill now reads `Dem`. To rename it, open it again with the
@@ -121,7 +121,7 @@ npm run dev
 6. Open the selector again: the other rows are out (the reason says a profile is fixed once
    recording has started), and **DemoClipTV** stays active.
 7. Press **New**; the selector is usable again. Rename the profile in its own dialog (the sliders
-   mark), or remove it with the bin — the app falls back to **Default**, and the item is yours
+   mark), or remove it with the bin — the app falls back to **Empty**, and the item is yours
    again.
 8. Pick **Graditone** from the **Logo** list in the same sheet, and export: the file opens with the
    clef on the card, above the clip's words.

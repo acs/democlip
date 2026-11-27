@@ -53,7 +53,7 @@ export const AVATAR_TONES = 5;
 
 /**
  * The letters a profile's pill shows: the first three of its name, the first one
- * capitalised — DemoClipTV is Dem, Default is Def. A name is never empty, so a pill always
+ * capitalised — DemoClipTV is Dem, Empty is Emp. A name is never empty, so a pill always
  * has something in it.
  */
 export function avatarLetters(name: string): string {
@@ -73,7 +73,7 @@ export function avatarTone(id: string): number {
 }
 
 /** The colour a profile fixes its annotations to, or null when it fixes none. */
-export function profileColour(profile: Profile): AnnotationColour | null {
+export function profileColour(profile: { valueFor(id: string): string | null }): AnnotationColour | null {
   const value = profile.valueFor('annotationColour');
   return isColour(value) ? value : null;
 }
@@ -102,9 +102,9 @@ function luminance(hex: string): number {
  * without touching the clip in front of the person. The built-in default is left alone: it
  * is the app's free profile, and the one guaranteed to define nothing.
  */
-export function profileRows(book: Profiles, locked: boolean): ProfileRow[] {
+export function profileRows(book: Profiles, locked: boolean, activeId: string = book.activeId): ProfileRow[] {
   return book.all.map(profile => {
-    const active = profile.id === book.activeId;
+    const active = profile.id === activeId;
     const fixed = profile.id === Profiles.DEFAULT_ID;
     const colour = profileColour(profile);
     return {

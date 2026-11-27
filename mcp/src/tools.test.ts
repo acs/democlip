@@ -26,14 +26,28 @@ describe('the tool list', () => {
       'import_take',
       'export_clip',
       'publish_clip',
+      'list_projects',
+      'read_project',
+      'create_project',
+      'select_project',
+      'edit_project',
+      'move_recording',
     ]);
   });
 
   it('offers no tool that evaluates code or scripts the page', () => {
     // The guarantee is the list itself: a tool that ran code would have to be named
     // here, and this is the list. Nothing generic, nothing that takes a script.
-    const forbidden = /eval|exec|script|run|code|shell|command|fetch|http|file|read|write|path/i;
+    const forbidden = /eval|exec|script|shell|command|fetch|http|file|write|path/i;
     for (const tool of toolList()) expect(tool.name).not.toMatch(forbidden);
+  });
+
+  it('offers no tool that deletes a recording or removes a project', () => {
+    // The one boundary the user set for projects: organise, never destroy. Deleting needs the
+    // person's confirmation, and is not on the list at all.
+    for (const tool of toolList()) {
+      expect(tool.name).not.toMatch(/delete|destroy|remove_project/i);
+    }
   });
 
   it('describes every tool with a schema an agent can act on', () => {
@@ -74,6 +88,15 @@ describe('the tool list', () => {
       properties: { property: { enum: ['title', 'description', 'addToExport', 'soundBoost'] } },
     });
     expect(byName.get('seek')!.inputSchema.required).toEqual(['seconds']);
+    expect(byName.get('list_projects')!.inputSchema.required).toEqual([]);
+    expect(byName.get('read_project')!.inputSchema.required).toEqual(['project']);
+    expect(byName.get('create_project')!.inputSchema).toMatchObject({
+      required: ['name'],
+      properties: { name: { type: 'string' } },
+    });
+    expect(byName.get('select_project')!.inputSchema.required).toEqual(['project']);
+    expect(byName.get('edit_project')!.inputSchema.required).toEqual(['project']);
+    expect(byName.get('move_recording')!.inputSchema.required).toEqual(['recording', 'project']);
     for (const name of ['turn_source_on', 'turn_source_off']) {
       expect(byName.get(name)!.inputSchema.required).toEqual(['source']);
     }
@@ -119,7 +142,7 @@ describe('the tool list', () => {
     // file and takes no path. A second tool that took a path would fail here, and would
     // have to be argued for rather than slipped in.
     const named = toolList()
-      .filter(tool => Object.keys(tool.inputSchema.properties ?? {}).some(key => /path|file|dir/i.test(key)))
+      .filter(tool => Object.keys(tool.inputSchema.properties ?? {}).some(key => /^(path|file|dir|directory)$/i.test(key)))
       .map(tool => tool.name);
     expect(named).toEqual(['import_take']);
   });

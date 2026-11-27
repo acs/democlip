@@ -2,7 +2,7 @@
 //
 // The picture is megabytes and never changes once it is chosen — exactly like a take —
 // so it is written once, apart from the clip's small half (the cuts and the annotation
-// geometries, which change on every drag). That split is what `src/infra/clip-store.ts`
+// geometries, which change on every drag). That split is what `src/infra/recording-store.ts`
 // was built for; this port is the picture's half of it.
 //
 // The annotation itself carries only an `imageId`; the bytes are here, addressed by it.

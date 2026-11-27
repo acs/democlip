@@ -59,7 +59,7 @@ several profiles live. `ClipProperties` and `AnnotationSet` are the same shape.
 
 ## R3 — The built-in default
 
-**Decision**: one profile with a fixed id (`default`) and a fixed name (**Default**) and
+**Decision**: one profile with a fixed id (`default`) and a fixed name (**Empty**) and
 **no settings** is always present. It cannot be renamed, removed or edited. A new person
 therefore works exactly as today (`Add to export` unset ⇒ the app's own default, off).
 
@@ -246,7 +246,7 @@ person's profiles for one bad entry; the app repairs what it can instead.
 **Decision**: a profile holds **declarations**, not defaults. It says which items it **controls**,
 and the value each is fixed at; while it is active those items are applied to the clip and are
 **not the person's to change**. An item no profile controls is the person's exactly as before, so a
-profile that declares nothing is a **free** profile — and the built-in **Default** is that profile.
+profile that declares nothing is a **free** profile — and the built-in **Empty** is that profile.
 A profile's configuration is set in **its own sheet** (the sliders mark on its row), never in the
 selector; a controlled item reads in the clip's settings as **a value naming the profile**, with
 no control; and applying it is a **load**, announced but not what the one undo takes back.

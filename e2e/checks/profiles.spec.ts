@@ -20,6 +20,7 @@ import { pageModule } from '../helpers/page-module.js';
 const HOOKS = pageModule('e2e/support/app-hooks.ts');
 
 const KEY = 'democlip_profiles';
+const PROJECTS_KEY = 'democlip_projects';
 
 /**
  * The band of the card the logo is drawn in: the top of the picture, above the words. The box
@@ -36,7 +37,7 @@ const book = (controls: Record<string, string>) => ({
   version: 2,
   activeId: 'tv',
   profiles: [
-    { id: 'default', name: 'Default', controls: {} },
+    { id: 'default', name: 'Empty', controls: {} },
     { id: 'tv', name: 'DemoClipTV', controls },
   ],
 });
@@ -44,7 +45,37 @@ const book = (controls: Record<string, string>) => ({
 interface Book { activeId: string; profiles: Array<{ name: string; controls: Record<string, string> }> }
 
 const writeBook = (page: Page, state: unknown): Promise<void> =>
-  page.evaluate(([key, value]) => localStorage.setItem(key, JSON.stringify(value)), [KEY, state]);
+  page.evaluate(async ([key, value, projectsKey, profileId]) => {
+    localStorage.setItem(key, JSON.stringify(value));
+    // The project the app is in carries the profile its recordings start under; the checks
+    // write the book before the first draft so a clip is made under that profile.
+    const stored = JSON.parse(localStorage.getItem(projectsKey) ?? 'null') as
+      { version: number; currentId: string; projects: Array<Record<string, unknown>> } | null;
+    const projects = stored?.projects ?? [];
+    const at = projects.findIndex(project => project.id === 'default');
+    const next = { id: 'default', name: 'Empty', motivation: '', objectives: '', defaultProfileId: profileId };
+    if (at >= 0) projects[at] = next;
+    else projects.unshift(next);
+    localStorage.setItem(projectsKey, JSON.stringify({
+      version: 1,
+      currentId: stored?.currentId ?? 'default',
+      projects,
+    }));
+    // A written book is the state before the app ran: there is no open draft holding an
+    // older profile, so the next start takes the Default project's default.
+    await new Promise<void>(resolve => {
+      const opened = indexedDB.open('democlip');
+      opened.onsuccess = () => {
+        const db = opened.result;
+        if (!db.objectStoreNames.contains('app')) { resolve(); return; }
+        const tx = db.transaction('app', 'readwrite');
+        tx.objectStore('app').delete('current');
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => resolve();
+      };
+      opened.onerror = () => resolve();
+    });
+  }, [KEY, state, PROJECTS_KEY, (state as { activeId: string }).activeId]);
 
 const readBook = (page: Page): Promise<Book | null> =>
   page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? 'null'), KEY);
@@ -296,7 +327,7 @@ test('a profile is made in the selector, defined in its own sheet, chosen, kept 
   await expect(page.locator('.profile-row.active')).toHaveAttribute('data-id', 'default');
   await expect(page.locator('.profile-row')).toHaveCount(1);
   await page.keyboard.press('Escape');
-  await expect(page.locator('#profile-initials')).toHaveText('Def');
+  await expect(page.locator('#profile-initials')).toHaveText('Emp');
   // The default fixes no colour, so the pill is the app's glass again.
   await expect(page.locator('#profile-btn')).not.toHaveClass(/wears-colour/);
   expect((await readBook(page))?.activeId).toBe('default');

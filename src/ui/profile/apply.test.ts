@@ -1,10 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { applyActiveProfile } from './apply.js';
+import { applyClipProfile } from './apply.js';
+import { ClipProfile } from '../../domain/clip/ClipProfile.js';
 import { boostsSound } from '../../domain/sound/SoundBoost.js';
 import { Clip } from '../../domain/clip/Clip.js';
-import { Profile } from '../../domain/profile/Profile.js';
-import { Profiles } from '../../domain/profile/Profiles.js';
 import { Take } from '../../domain/clip/Take.js';
 import type { TakeRepository } from '../../domain/clip/TakeRepository.js';
 
@@ -29,95 +28,93 @@ class FakeTakes implements TakeRepository {
   clear() { this.takes = []; }
 }
 
-const bookWith = (controls: Record<string, string>): Profiles => {
-  const profile = Profile.create('tv', 'DemoClipTV', controls)!;
-  return Profiles.starting().add(profile)!.choose('tv')!;
-};
+const under = (controls: Record<string, string>): Clip =>
+  Clip.empty(new FakeTakes(), ClipProfile.create('tv', 'DemoClipTV', controls)!);
 
-describe('applyActiveProfile', () => {
+describe('applyClipProfile', () => {
   it('fixes an item the active profile controls onto an empty clip', () => {
-    const clip = Clip.empty(new FakeTakes());
-    applyActiveProfile(clip, bookWith({ addToExport: 'true' }));
+    const clip = under({ addToExport: 'true' });
+    applyClipProfile(clip);
     expect(clip.properties.get('addToExport')).toBe('true');
   });
 
   it('fixes the colour a new annotation is made in, so the clip\'s arrows and text take it', () => {
-    const clip = Clip.empty(new FakeTakes());
-    applyActiveProfile(clip, bookWith({ annotationColour: '#3182ce' }));
+    const clip = under({ annotationColour: '#3182ce' });
+    applyClipProfile(clip);
     expect(clip.properties.get('annotationColour')).toBe('#3182ce');
   });
 
   it('leaves a clip that already holds a take exactly as it is', () => {
-    const clip = Clip.empty(new FakeTakes());
+    const clip = under({ addToExport: 'true' });
     clip.addTake(new Blob(['x']), 2);
-    applyActiveProfile(clip, bookWith({ addToExport: 'true' }));
+    applyClipProfile(clip);
     expect(clip.properties.get('addToExport')).toBe('');
   });
 
   it('leaves the clip’s own value when the profile does not control the item', () => {
-    const clip = Clip.empty(new FakeTakes());
+    const clip = under({});
     clip.setProperty('addToExport', 'true');   // the person's, before any profile was chosen
-    applyActiveProfile(clip, bookWith({}));
+    applyClipProfile(clip);
     expect(clip.properties.get('addToExport')).toBe('true');
   });
 
   it('fixes an item the profile controls off, over what the clip held', () => {
-    const clip = Clip.empty(new FakeTakes());
+    const clip = under({ addToExport: '' });
     clip.setProperty('addToExport', 'true');
-    applyActiveProfile(clip, bookWith({ addToExport: '' }));
+    applyClipProfile(clip);
     expect(clip.properties.get('addToExport')).toBe('');
   });
 
   it('fixes the sound boost on, off or free, and tells the three apart', () => {
-    const off = Clip.empty(new FakeTakes());
-    applyActiveProfile(off, bookWith({ soundBoost: '' }));
+    const off = under({ soundBoost: '' });
+    applyClipProfile(off);
     // The switch's default is on, so a profile fixing it off must store an explicit off —
     // otherwise "fixed off" and "never set" would be the same value on the clip.
     expect(off.properties.get('soundBoost')).toBe('false');
     expect(boostsSound(off.properties)).toBe(false);
 
-    const on = Clip.empty(new FakeTakes());
-    applyActiveProfile(on, bookWith({ soundBoost: 'true' }));
+    const on = under({ soundBoost: 'true' });
+    applyClipProfile(on);
     expect(on.properties.get('soundBoost')).toBe('');
     expect(boostsSound(on.properties)).toBe(true);
 
     // Free: the profile says nothing, so the clip is the person's — and reads as on.
-    const free = Clip.empty(new FakeTakes());
-    applyActiveProfile(free, bookWith({}));
+    const free = under({});
+    applyClipProfile(free);
     expect(boostsSound(free.properties)).toBe(true);
   });
 
   it('fixes the export resolution, so a clip made under a production is written at its size', () => {
-    const clip = Clip.empty(new FakeTakes());
-    applyActiveProfile(clip, bookWith({ exportResolution: '1080' }));
+    const clip = under({ exportResolution: '1080' });
+    applyClipProfile(clip);
     expect(clip.properties.get('exportResolution')).toBe('1080');
   });
 
   it('fixes nothing for a value the app does not offer, so no clip waits on a size it cannot write', () => {
-    const clip = Clip.empty(new FakeTakes());
-    applyActiveProfile(clip, bookWith({ exportResolution: '999' }));
+    const clip = under({ exportResolution: '999' });
+    applyClipProfile(clip);
     expect(clip.properties.get('exportResolution')).toBe('');
   });
 
   it('does not apply a declaration for an item this build does not preload', () => {
-    const clip = Clip.empty(new FakeTakes());
-    applyActiveProfile(clip, bookWith({ title: 'A demo', addToExport: 'true' }));
+    const clip = under({ title: 'A demo', addToExport: 'true' });
+    applyClipProfile(clip);
     expect(clip.properties.get('title')).toBe('');
     expect(clip.properties.get('addToExport')).toBe('true');
   });
 
   it('is not what the one undo takes back: a profile’s value stays', () => {
-    const clip = Clip.empty(new FakeTakes());
+    const clip = under({ addToExport: 'true' });
     clip.setProperty('title', 'A demo');        // the person's last change
-    applyActiveProfile(clip, bookWith({ addToExport: 'true' }));
+    applyClipProfile(clip);
     clip.undo();                                // takes the title back, and only that
     expect(clip.properties.get('title')).toBe('');
     expect(clip.properties.get('addToExport')).toBe('true');
   });
 
   it('changes nothing for the built-in default, which controls nothing', () => {
-    const clip = Clip.empty(new FakeTakes());
-    applyActiveProfile(clip, Profiles.starting());
+    const clip = under({});
+    applyClipProfile(clip);
     expect(clip.properties.toRecord()).toEqual({});
   });
 });

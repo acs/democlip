@@ -12,6 +12,7 @@ import { boot } from '../helpers/app.js';
 import { openSettings } from '../helpers/annotations.js';
 import { makeTakes } from '../fixtures/takes.js';
 import { pageModule } from '../helpers/page-module.js';
+import { storedRecording } from '../helpers/store.js';
 
 const HOOKS = pageModule('e2e/support/app-hooks.ts');
 
@@ -22,21 +23,8 @@ const properties = (page: Page): Promise<Record<string, string>> =>
     return session.clip.properties.toRecord();
   }, HOOKS);
 
-/** What the clip store has written down for them — the debounced write, awaited. */
-const stored = (page: Page): Promise<Record<string, string>> =>
-  page.evaluate(async () => {
-    const db = await new Promise<IDBDatabase>((resolve, reject) => {
-      const opened = indexedDB.open('democlip');
-      opened.onsuccess = () => resolve(opened.result);
-      opened.onerror = () => reject(opened.error);
-    });
-    const meta = await new Promise<{ properties?: Record<string, string> } | undefined>((resolve, reject) => {
-      const request = db.transaction('meta', 'readonly').objectStore('meta').get('current');
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = () => reject(request.error);
-    });
-    return meta?.properties ?? {};
-  });
+const stored = async (page: Page): Promise<Record<string, string>> =>
+  (await storedRecording(page))?.properties ?? {};
 
 test('the panel gives the clip a title and a description, kept across a reload, with the one undo', async ({ page }) => {
   const app = boot(page);

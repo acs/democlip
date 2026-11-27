@@ -4,7 +4,7 @@
 // controls, and the value each of them is fixed at — and while that profile is active, an
 // item it controls is applied to the app and **cannot be changed by the person**. An item it
 // does not control is free, exactly as it is with no profile at all. A profile that declares
-// nothing is therefore a free profile, and the built-in **Default** is that profile.
+// nothing is therefore a free profile, and the built-in **Empty** is that profile.
 //
 // A declaration is a named string, and a key present is what makes it a declaration: the
 // value may be empty, because for a boolean item empty *is* the off value. That is the one

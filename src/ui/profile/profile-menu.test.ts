@@ -43,7 +43,7 @@ describe('profileRows', () => {
   });
 
   it('shows a profile’s name as a pill of its first letters', () => {
-    expect(profileRows(book(), false).map(row => row.avatar)).toEqual(['Def', 'Dem', 'Gra']);
+    expect(profileRows(book(), false).map(row => row.avatar)).toEqual(['Emp', 'Dem', 'Gra']);
   });
 });
 
@@ -126,7 +126,7 @@ describe('defineRows', () => {
 describe('the avatar a profile is drawn with', () => {
   it('is the first three letters of the name, with the first capitalised', () => {
     expect(avatarLetters('DemoClipTV')).toBe('Dem');
-    expect(avatarLetters('Default')).toBe('Def');
+    expect(avatarLetters('Empty')).toBe('Emp');
     expect(avatarLetters('GraditoneTV')).toBe('Gra');
     expect(avatarLetters('Ana')).toBe('Ana');
   });

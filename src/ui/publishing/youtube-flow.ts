@@ -8,11 +8,11 @@
 // popup in the same page, so there is no trip away for the clip to survive.
 
 import { session } from '../../session.js';
+import { finishRecording } from '../lifecycle/finish-session.js';
 import { publishToYouTube, type YouTubePublicationProgress } from '../../application/publish-to-youtube.js';
 import { encoder } from '../../infra/offline-encoder.js';
 import { frameRenderer } from '../exporting/frame-renderer.js';
 import { introFor } from '../exporting/intro.js';
-import { keep } from '../keeping/keep.js';
 import { el } from '../dom.js';
 import { VideoDetails } from '../../domain/youtube/VideoDetails.js';
 import { Visibility } from '../../domain/youtube/Visibility.js';
@@ -123,7 +123,7 @@ export async function uploadClip(settings: YouTubeSettings, handlers: YouTubeHan
       },
       onProgress: handlers.onProgress,
     });
-    keep.forget();
+    await finishRecording({ keepClip: true });
     handlers.onDone({ id: video.id, url: video.url });
   } catch (error) {
     handlers.onError(error instanceof Error ? error.message : 'the upload failed');

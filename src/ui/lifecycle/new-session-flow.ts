@@ -1,17 +1,17 @@
 // The New flow: start over.
 //
-// It sequences the browser work — let go of the share, end the session, go back for
-// a screen — and decides nothing about the clip. Ending the session is one event:
-// the clip is cleared and every view resets itself (view-lifetime.ts).
+// It sequences the browser work — let go of the share, end the recording, go back for a
+// screen — and decides nothing about the clip. Ending the session is one event: the clip is
+// cleared and every view resets itself (view-lifetime.ts); the recording it became stays in
+// its project, finished, and a fresh draft begins under the same project's default profile.
 
-import { currentPhase, setPhase } from '../../state.js';
-import { session } from '../../session.js';
+import { currentPhase } from '../../state.js';
 import { capture } from '../../infra/capture.js';
 import { el, setStatus } from '../dom.js';
 import { syncSources, stopRecording, toggleScreen } from '../recording/record-flow.js';
-import { applyProfile } from '../profile/profile-flow.js';
+import { finishRecording } from './finish-session.js';
 
-export function startNewSession(): void {
+export async function startNewSession(): Promise<void> {
   if (currentPhase() === 'recording') { void stopRecording(); return; }
   if (currentPhase() === 'encoding' || currentPhase() === 'starting') return;
 
@@ -22,16 +22,14 @@ export function startNewSession(): void {
   capture.stop();
   el.sv.srcObject = null;
 
-  setPhase('idle');
-  session.end();               // the clip announces `cleared`; the views reset
-  // The fresh clip is given what the active profile fixes. The session has ended, so a
-  // profile may be chosen again — and this one is what a new clip is made under.
-  applyProfile();
-  setStatus('Ready');
+  await finishRecording();
 
   // Same as the app start: go back for a share — but only while the screen is a
   // source. The webcam, if it is on, keeps the preview and nothing reaches for the
   // screen.
   if (screenWasOn) void toggleScreen();
   else syncSources();
+  // Sync decides what the preview shows, and clears the status when nothing is on; a
+  // session that has just started is ready whatever the sources say.
+  if (currentPhase() === 'idle') setStatus('Ready');
 }

@@ -15,7 +15,7 @@
 - Q: Which of the *improve the sound* recipe's steps does the boost perform? → A: **Loudness with peak safety alone.** The sound is brought to the app's target and held below its peak ceiling; the recording's channels, its low end and its dynamics are left exactly as they were. The recipe's mono fold-down, rumble high-pass and presence lift are not performed.
 - Q: Is the boosted sound what the person hears in the review, or only what the exported file carries? → A: **Review and export alike.** What the review plays and what the file carries are the same boosted sound, produced the same way.
 - Q: One target, a choice of targets, or the destination's own? → A: **One speech target**, fixed for the build — about **−16 LUFS** integrated, with a true-peak ceiling near **−1.5 dBFS**. Not a choice, and not chosen per destination.
-- Q: Is the switch set — and so in force — before the recording starts? → A: **Yes, before the first take.** The value is applied to the **empty clip**: at start-up, at **New**, and when a profile is chosen, which is possible until capture begins. A recording therefore starts already boosted, or already un-boosted under a profile that fixes it **off**. "On by default" is the **property's own default**, not a declaration in the built-in **Default** profile, which declares nothing by design. The switch is drawn in the clip's settings, which the app shows in the **review** — so a person decides it before recording **through a profile**, and while the item is free may still move it in the review. It never changes what a take captures: the boost is applied to the sound *after it is recorded*.
+- Q: Is the switch set — and so in force — before the recording starts? → A: **Yes, before the first take.** The value is applied to the **empty clip**: at start-up, at **New**, and when a profile is chosen, which is possible until capture begins. A recording therefore starts already boosted, or already un-boosted under a profile that fixes it **off**. "On by default" is the **property's own default**, not a declaration in the built-in **Empty** profile, which declares nothing by design. The switch is drawn in the clip's settings, which the app shows in the **review** — so a person decides it before recording **through a profile**, and while the item is free may still move it in the review. It never changes what a take captures: the boost is applied to the sound *after it is recorded*.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -84,13 +84,13 @@ may control rather than a setting buried in the clip.
 **Independent Test**: Define a profile that fixes **Boost the sound** off, make a clip
 under it, and confirm the row reads as fixed by the profile with no control and that the
 export carries the recorded sound; switch to a profile that fixes it on and confirm the
-opposite. With the built-in **Default** active, the same row is an ordinary switch.
+opposite. With the built-in **Empty** active, the same row is an ordinary switch.
 
 **Acceptance Scenarios**:
 
 1. **Given** a profile that fixes **Boost the sound** on, **When** a clip is made under it, **Then** the clip's settings show the boost as a value naming the profile, with no control, and the clip is boosted.
 2. **Given** a profile that fixes **Boost the sound** off, **When** a clip is made under it, **Then** the clip is not boosted and the row names the profile.
-3. **Given** the built-in **Default** active, **When** the person opens the clip's settings, **Then** **Boost the sound** is an ordinary switch, on by the app's own default.
+3. **Given** the built-in **Empty** active, **When** the person opens the clip's settings, **Then** **Boost the sound** is an ordinary switch, on by the app's own default.
 4. **Given** a clip whose boost a profile fixes, **When** an agent asks the app to change it, **Then** the app refuses and says which profile fixes it.
 5. **Given** a profile's own sheet, **When** the person sets **Boost the sound** to **Free**, **On** or **Off**, **Then** the profile does exactly that — the three are told apart, as they are for **Add to export**.
 
@@ -156,7 +156,7 @@ opposite. With the built-in **Default** active, the same row is an ordinary swit
 ## Assumptions
 
 - **"Audio boost" is the user's word for what this project calls the sound** of a clip — the audio a take carries (`docs/GLOSSARY.md`). The item is a **sound boost**, and the code, the tests and the messages use the project's word.
-- **On by default is the property's own default, not a declaration.** The built-in **Default** profile declares nothing by design, so a clip made under it is boosted because the switch itself defaults on; a profile may still fix the item **on** or **off**.
+- **On by default is the property's own default, not a declaration.** The built-in **Empty** profile declares nothing by design, so a clip made under it is boosted because the switch itself defaults on; a profile may still fix the item **on** or **off**.
 - **The target is a speech target**, in the recipe's own terms — the web/podcast one, about **−16 LUFS**, with a true-peak ceiling near **−1.5 dBFS** — and it is the app's **one** target: the same for every clip, not a choice and not per destination. It is a speech target because DemoClip's recording is mostly voice and that is where the recipe starts; a clip of music gets the same treatment, and a person who wants it raw turns the switch off.
 - **The boost performs the recipe's loudness step and none of its others.** The mono fold-down, the rumble high-pass and the measurement-driven presence lift are not performed, and neither are compression or noise removal (which the recipe itself warns against). What the boost does is bring the sound to the target with peak safety and change nothing else.
 - **The picture is kept bit for bit**, as the recipe insists, and the work is done offline as the export already is, so the boost adds no wait the person watches.

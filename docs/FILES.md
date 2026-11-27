@@ -46,8 +46,11 @@ democlip/
 │   │   ├── AnnotationColour.ts # The colours an annotation may be drawn in, and how one is read back
 │   │   ├── AnnotationSet.ts # The clip's annotations: identified, and free to overlap
 │   │   └── kinds.ts        # The register: how a written-down annotation is read back
-│   ├── domain/session/   # The sitting: the clip and the capture latch
-│   │   └── Session.ts      # The sitting's one rule: ending it clears the clip
+│   ├── domain/project/   # Projects: a body of work and the reason for it
+│   │   ├── Project.ts      # One project: its name, description and default profile
+│   │   └── Projects.ts     # The book: the Default project, the current one, unique names
+│   ├── domain/session/   # The sitting: the clip, the capture latch, the open recording
+│   │   └── Session.ts      # The sitting's rules: ending it clears the clip; closing it keeps it
 │   ├── domain/bluesky/   # Pure logic for publishing: what a Bluesky post may hold
 │   │   ├── AspectRatio.ts  # width:height, whole numbers, reducible to smallest terms
 │   │   ├── PublishableVideo.ts # the MP4 Bluesky takes, up to 300 MB
@@ -57,6 +60,9 @@ democlip/
 │   │   ├── VideoDetails.ts # the title (defaulted when blank), the description, the visibility
 │   │   └── UploadableVideo.ts # the MP4 YouTube takes, and the ceilings it enforces
 │   ├── application/      # Use cases: the thinking, without a browser
+│   │   ├── projects.ts     # ManageProjects: create, select, edit and remove, through the book
+│   │   ├── recordings.ts   # Recordings: open, start a draft, finish, list, move, remove, delete
+│   │   ├── adopt-recording.ts # The previous version's one clip becomes a recording of Default
 │   │   ├── record-take.ts  # RecordTake: sources → mix → record → stop → take added
 │   │   ├── import-take.ts  # ImportTake: a video file read, then appended as a take
 │   │   ├── export-video.ts # ExportVideo: the plan encoded, or a refusal
@@ -67,7 +73,8 @@ democlip/
 │   │   ├── bluesky-service.ts # the port the publish use case reaches Bluesky through
 │   │   ├── publish-to-youtube.ts # publishToYouTube(clip, settings, deps) → a video
 │   │   ├── youtube-service.ts # the port it reaches the YouTube destination through
-│   │   └── ports/          # The capabilities a use case may ask for, named without a browser
+│   │   └── ports/          # The capabilities a use case may ask for, named without a browser:
+│   │                       #   RecordingStorePort, ProjectStorePort, the capture and export ones
 │   ├── infra/            # Browser boundary adapters
 │   │   ├── capture.ts      # Screen, webcam and microphone over getDisplayMedia/getUserMedia
 │   │   ├── clock.ts        # performance.now + setTimeout, behind ClockPort
@@ -77,7 +84,9 @@ democlip/
 │   │   ├── take-file.ts    # Reading a chosen file's length and sound, behind TakeFilePort
 │   │   ├── offline-encoder.ts # Decode, draw, encode, mux — behind EncoderPort
 │   │   ├── takes.ts        # InMemoryTakeRepository — owns the takes' object URLs
-│   │   ├── clip-store.ts   # IndexedDB — where a clip outlives the page, behind KeptClipPort
+│   │   ├── recording-store.ts # IndexedDB — many recordings, keyed by id, behind RecordingStorePort
+│   │   ├── project-store.ts   # localStorage — the project book, behind ProjectStorePort
+│   │   ├── images.ts       # The pictures an image annotation draws, kept under their recording
 │   │   ├── codecs.ts       # WebM mime / codec selection
 │   │   ├── export-target.ts # which container an export writes (WebM, MP4) and its codecs
 │   │   ├── bluesky.ts      # the OAuth session + XRPC calls; loaded only when publishing
@@ -140,11 +149,19 @@ democlip/
 │       │   ├── publish-dialog.ts # The post's settings and preview
 │       │   ├── youtube-flow.ts # The Upload button — a sequence over publishToYouTube
 │       │   └── youtube-dialog.ts # The video's title, description and visibility
+│       ├── project/        # Projects: the pill, the list, the dialog, the overview
+│       │   ├── project-flow.ts   # The composition: the current project and the draft's profile
+│       │   ├── project-menu.ts   # The pill's popover: select, create, overview, settings, remove
+│       │   ├── project-def.ts    # A project's own dialog: name, description, default profile
+│       │   ├── project-overview.ts # The description, the progress and every recording
+│       │   ├── recording-rows.ts # The label and length a recording is listed under
+│       │   └── recording-rows.test.ts
 │       ├── keeping/        # Keeping a clip and coming back to it
-│       │   ├── keep.ts       # The KeepClip composition the app uses
-│       │   └── resume-flow.ts # The startup restore — a sequence over RestoreClip
+│       │   ├── keep.ts       # The KeepClip composition the app uses, under the open recording
+│       │   └── resume-flow.ts # The startup restore: the open recording, or a fresh draft
 │       ├── lifecycle/      # Starting and ending a session
-│       │   ├── new-session-flow.ts # The New button — end the session and go back for a source
+│       │   ├── new-session-flow.ts # The New button — finish the recording, start a draft
+│       │   ├── finish-session.ts   # Finish on New, export or publish; the next draft
 │       │   └── view-lifetime.ts # The view's answer to clip.cleared: every view resets itself
 │       └── agent/          # The automation surface an agent drives — published only when asked
 │           ├── surface.ts    # The operations, the gate, and the clip as data
@@ -153,6 +170,7 @@ democlip/
 │           ├── make.ts       # Making an annotation of a kind from data: an arrow, a text, an image's rect and picture
 │           ├── view.ts       # The transport: seek, play, pause
 │           ├── takes.ts      # The sources and the takes, through the app's own flow
+│           ├── projects.ts   # The projects an agent may drive: list, read, create, select, edit, move
 │           └── out.ts        # The file, and the post
 ├── mcp/                  # The MCP server: a second artefact, released with the app
 │   ├── package.json      # Its own dependencies (Playwright, the MCP SDK) and its version
@@ -162,7 +180,7 @@ democlip/
 │   │   ├── session.ts      # One session: the build served, the browser, the version checked
 │   │   ├── browser.ts      # Launching the browser, on a profile of its own
 │   │   ├── serve.ts        # Serving the app's build on loopback
-│   │   ├── tools.ts        # The tool list, in the app's own words
+│   │   ├── tools.ts        # The tool list, in the app's own words, projects included
 │   │   ├── clipboard.ts    # The picture on the person's clipboard, read from the host
 │   │   ├── press.ts        # The one trusted press: turning the screen source on
 │   │   ├── downloads.ts    # Taking the exported file from the browser

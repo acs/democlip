@@ -9,6 +9,7 @@ import { openSettings } from '../helpers/annotations.js';
 import { makeTakes } from '../fixtures/takes.js';
 import { exportFile, frameCounts, hasSound, meanLumaIn, rmsIn } from '../helpers/exports.js';
 import { pageModule } from '../helpers/page-module.js';
+import { storedRecording } from '../helpers/store.js';
 
 const HOOKS = pageModule('e2e/support/app-hooks.ts');
 
@@ -250,19 +251,8 @@ const pixelAt = (page: Page, fx: number, fy: number) => page.evaluate(([x, y]) =
 }, [fx, fy] as [number, number]);
 
 /** The annotation kinds the clip store has written down — the debounced write, awaited. */
-const kept = (page: Page) => page.evaluate(async () => {
-  const db = await new Promise<IDBDatabase>((resolve, reject) => {
-    const opened = indexedDB.open('democlip');
-    opened.onsuccess = () => resolve(opened.result);
-    opened.onerror = () => reject(opened.error);
-  });
-  const meta = await new Promise<{ annotations?: { kind: string }[] } | undefined>((resolve, reject) => {
-    const request = db.transaction('meta', 'readonly').objectStore('meta').get('current');
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  });
-  return meta?.annotations?.map(annotation => annotation.kind) ?? [];
-});
+const kept = async (page: Page): Promise<string[]> =>
+  (await storedRecording(page))?.annotations?.map(annotation => annotation.kind) ?? [];
 
 /** The one text annotation: its box, and the width the words are actually drawn at. */
 const read = (page: Page) => page.evaluate(async url => {

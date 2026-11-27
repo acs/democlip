@@ -15,7 +15,7 @@ describe('Profiles', () => {
     const book = Profiles.starting();
     expect(book.all.map(p => p.id)).toEqual([Profiles.DEFAULT_ID]);
     expect(book.activeId).toBe(Profiles.DEFAULT_ID);
-    expect(book.active().name).toBe('Default');
+    expect(book.active().name).toBe('Empty');
     // The free profile: it controls nothing, so everything is the person's, as always.
     expect(book.active().controls).toEqual({});
   });
@@ -110,7 +110,7 @@ describe('Profiles', () => {
       ],
     });
     expect(book.all.map(p => p.id)).toEqual([Profiles.DEFAULT_ID, 'tv']);
-    expect(book.active().name).toBe('Default');
+    expect(book.active().name).toBe('Empty');
     // The default is the app's own, and controls nothing however the record had it.
     expect(book.active().controls).toEqual({});
   });
@@ -129,7 +129,7 @@ describe('Profiles', () => {
       version: 2,
       activeId: 'tv',
       profiles: [
-        { id: Profiles.DEFAULT_ID, name: 'Default', controls: {} },
+        { id: Profiles.DEFAULT_ID, name: 'Empty', controls: {} },
         { id: 'tv', name: 'DemoClipTV', controls: { addToExport: 'true' } },
       ],
     });

@@ -90,7 +90,7 @@ under `e2e/`.
 - [x] T025 [US2] Create `src/ui/profile/profile-flow.ts`: hold the `ManageProfiles`, wire `el.profileBtn` to the menu, hand the menu `list`/`choose`/`create` callbacks that call the use case and re-render, seed the clip after a successful `choose`, and refresh the menu on the lock changing (a take starts, or the session ends) (research.md R5, R7, R8).
 - [x] T026 [US2] Wire the flow in `src/main.ts`: initialise the menu, add the button's click listener, and refresh the menu when the session's lock changes, alongside the existing header controls (contracts/profile.md §6).
 - [x] T027 [US2] Set the latch when a take really starts: call `session.beginCapture()` in `src/ui/recording/record-flow.ts`'s `startRecording` when the outcome is not `refused`, so a take begun and then discarded still locks the profile (research.md R4; spec FR-013).
-- [x] T028 [US2] Add the User Story 2 half to `e2e/checks/profiles.spec.ts`: `#profile-btn` is visible and is the last control in `.hdr-actions`; the menu lists **Default** active; creating **DemoClipTV** and choosing it marks it; with a take in the session the other rows are disabled, the reason is shown, and the active profile is unchanged; a new clip started under it carries the setting (spec SC-002, SC-009, SC-010).
+- [x] T028 [US2] Add the User Story 2 half to `e2e/checks/profiles.spec.ts`: `#profile-btn` is visible and is the last control in `.hdr-actions`; the menu lists **Empty** active; creating **DemoClipTV** and choosing it marks it; with a take in the session the other rows are disabled, the reason is shown, and the active profile is unchanged; a new clip started under it carries the setting (spec SC-002, SC-009, SC-010).
 
 **Checkpoint**: User Stories 1 and 2 both work independently — the clip is seeded, and the person can choose and create profiles.
 
@@ -100,13 +100,13 @@ under `e2e/`.
 
 **Goal**: the person's profiles, and the active one, come back after a reload and a restart; they can be renamed and removed, the built-in default cannot, and removing the active one falls back.
 
-**Independent Test**: create a profile with a setting, reload, and confirm it is there, active and whole; rename it, remove it while it is active, and confirm the app falls back to **Default** and stays usable; remove **Default** and confirm it is refused.
+**Independent Test**: create a profile with a setting, reload, and confirm it is there, active and whole; rename it, remove it while it is active, and confirm the app falls back to **Empty** and stays usable; remove **Empty** and confirm it is refused.
 
 ### Implementation for User Story 3
 
 - [x] T029 [US3] Add rename and remove to the menu's own rows in `src/ui/profile/profile-menu.ts`: an **Rename…** action taking a new name and a **Remove** action per the person's own rows, neither on the built-in default row, and both refused on the active row while locked (research.md R8; spec FR-016, FR-017).
 - [x] T030 [US3] Persist through the flow in `src/ui/profile/profile-flow.ts`: hand the menu the rename/remove callbacks, save every change through `ManageProfiles` (which already writes the port), re-seed only when a change happens while unlocked, and refresh the shown active profile after a remove (spec FR-011, FR-017).
-- [x] T031 [US3] Add the User Story 3 half to `e2e/checks/profiles.spec.ts`: after a reload the profile and its setting are back and the same one is active; a rename is shown; removing the active profile leaves **Default** active and the app usable; the **Default** row offers no remove and removing it is refused; a fresh load with nothing kept shows **Default** active (spec SC-003, SC-006, SC-007).
+- [x] T031 [US3] Add the User Story 3 half to `e2e/checks/profiles.spec.ts`: after a reload the profile and its setting are back and the same one is active; a rename is shown; removing the active profile leaves **Empty** active and the app usable; the **Empty** row offers no remove and removing it is refused; a fresh load with nothing kept shows **Empty** active (spec SC-003, SC-006, SC-007).
 
 **Checkpoint**: all three stories are functional and independent.
 

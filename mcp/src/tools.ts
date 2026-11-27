@@ -312,6 +312,114 @@ const publishClip: Tool = {
   }),
 };
 
+/** Resolve a project by its id or, as a person would say it, its name. */
+async function resolveProject(session: Session, wanted: string): Promise<{ ok: true; id: string } | { ok: false; reason: string }> {
+  const listed = await callSurface<{ ok: boolean; projects?: Array<{ id: string; name: string }>; reason?: string }>(
+    session, 'projects.list',
+  );
+  if (!listed.ok) return { ok: false, reason: listed.reason ?? 'the projects could not be read' };
+  const wantedText = wanted.trim().toLocaleLowerCase();
+  const match = (listed.projects ?? []).find(project =>
+    project.id === wanted || project.name.toLocaleLowerCase() === wantedText);
+  return match ? { ok: true, id: match.id } : { ok: false, reason: `there is no project called ${wanted}` };
+}
+
+/** List the projects and which one the app is in. */
+const listProjects: Tool = {
+  name: 'list_projects',
+  description:
+    'List the projects on this machine: each one\u2019s name, its motivation and objectives, the profile its recordings start under, how many recordings it holds, and which project the app is in. Read-only; call it before reading or changing one.',
+  inputSchema: objectSchema(),
+  run: session => callSurface(session, 'projects.list'),
+};
+
+/** Read one project: its description, recordings and progress. */
+const readProject: Tool = {
+  name: 'read_project',
+  description:
+    'Read one project by its id or name: its motivation, objectives, default profile, every recording with its title, length and state — in progress or finished — and how many recordings are finished. This answers \u201cwhat is in this project, and what is left?\u201d in one call.',
+  inputSchema: objectSchema({
+    project: { type: 'string', description: 'The project\u2019s id, or its name as a person says it' },
+  }, ['project']),
+  async run(session, args) {
+    const project = await resolveProject(session, String(args.project ?? ''));
+    if (!project.ok) return project;
+    return callSurface(session, 'projects.read', project.id);
+  },
+};
+
+/** Create a project. */
+const createProject: Tool = {
+  name: 'create_project',
+  description:
+    'Create a project with a name, a motivation and objectives. It joins the list, and becomes the project new recordings go into unless a session has begun to capture. The default profile is the app\u2019s built-in Empty until changed with edit_project.',
+  inputSchema: objectSchema({
+    name: { type: 'string', description: 'The project\u2019s name; required, and unique among the projects' },
+    motivation: { type: 'string', description: 'Why the project exists — may be empty' },
+    objectives: { type: 'string', description: 'What it must achieve — may be empty' },
+  }, ['name']),
+  run: (session, args) => callSurface(session, 'projects.create', {
+    name: args.name,
+    motivation: args.motivation,
+    objectives: args.objectives,
+  }),
+};
+
+/** Make a project the one the app is in. */
+const selectProject: Tool = {
+  name: 'select_project',
+  description:
+    'Make a project the one the app is in, so the next recording belongs to it. Refused once the session has begun to capture: the recording being made keeps its project until the session ends.',
+  inputSchema: objectSchema({
+    project: { type: 'string', description: 'The project\u2019s id, or its name' },
+  }, ['project']),
+  async run(session, args) {
+    const project = await resolveProject(session, String(args.project ?? ''));
+    if (!project.ok) return project;
+    return callSurface(session, 'projects.select', project.id);
+  },
+};
+
+/** Change a project\u2019s description or default profile. */
+const editProject: Tool = {
+  name: 'edit_project',
+  description:
+    'Change a project: its name (never the Default\u2019s), its motivation, its objectives, or the profile its recordings start under — a profile id or name. A change to the default profile reaches recordings made afterwards, never one already made.',
+  inputSchema: objectSchema({
+    project: { type: 'string', description: 'The project\u2019s id, or its name' },
+    name: { type: 'string', description: 'A new name; the Default project cannot be renamed' },
+    motivation: { type: 'string', description: 'The project\u2019s motivation' },
+    objectives: { type: 'string', description: 'The project\u2019s objectives' },
+    defaultProfile: { type: 'string', description: 'The id or name of a profile in the book' },
+  }, ['project']),
+  async run(session, args) {
+    const project = await resolveProject(session, String(args.project ?? ''));
+    if (!project.ok) return project;
+    return callSurface(session, 'projects.edit', project.id, {
+      ...(args.name === undefined ? {} : { name: args.name }),
+      ...(args.motivation === undefined ? {} : { motivation: args.motivation }),
+      ...(args.objectives === undefined ? {} : { objectives: args.objectives }),
+      ...(args.defaultProfile === undefined ? {} : { defaultProfile: args.defaultProfile }),
+    });
+  },
+};
+
+/** Move a recording to another project. */
+const moveRecording: Tool = {
+  name: 'move_recording',
+  description:
+    'Move a recording to another project. To remove it from its project, move it to the Default project (id "default"): nothing is destroyed, and it stays whole. Refused for the recording being made once its session has begun to capture.',
+  inputSchema: objectSchema({
+    recording: { type: 'string', description: 'The recording\u2019s id, from read_project' },
+    project: { type: 'string', description: 'The project\u2019s id or name; "default" is the Default project' },
+  }, ['recording', 'project']),
+  async run(session, args) {
+    const project = await resolveProject(session, String(args.project ?? ''));
+    if (!project.ok) return project;
+    return callSurface(session, 'projects.move', args.recording, project.id);
+  },
+};
+
 /** Every tool the server offers, in the order a reader should meet them. */
 export function toolList(): readonly Tool[] {
   return [
@@ -331,6 +439,12 @@ export function toolList(): readonly Tool[] {
     importTake,
     exportClip,
     publishClip,
+    listProjects,
+    readProject,
+    createProject,
+    selectProject,
+    editProject,
+    moveRecording,
   ];
 }
 
