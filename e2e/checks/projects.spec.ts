@@ -3,8 +3,8 @@
 // The rules live in node (`src/domain/project/*.test.ts`, `src/application/projects.test.ts`,
 // `src/application/recordings.test.ts`). What a person must be able to see — an update that
 // keeps the recording they had, a project that gathers recordings, the overview's counts, a
-// reload that comes back to them, and a removal that moves a recording to Default without
-// destroying it — is here. The agent's path is the second check.
+// reload that comes back to them, and a Delete that destroys a recording where it is while
+// another project's is untouched — is here. The agent's path is the second check.
 
 import { expect, test, type Page } from '@playwright/test';
 import { boot } from '../helpers/app.js';
@@ -82,7 +82,7 @@ async function createProject(page: Page, name: string, motivation: string, objec
   await expect(page.locator('#project-initials')).toHaveText(name.slice(0, 3));
 }
 
-test('an update keeps the recording, a project gathers new ones, and a removal moves one to Default', async ({ page }) => {
+test('an update keeps the recording, a project gathers new ones, and a Delete destroys one where it is', async ({ page }) => {
   const app = boot(page);
 
   // The overview's storage line reads the browser's own estimate. It is fixed here so the
@@ -167,18 +167,35 @@ test('an update keeps the recording, a project gathers new ones, and a removal m
   await openOverview(page, 'Launch');
   await expect(page.locator('#project-ov-progress')).toHaveText('1 of 1 finished');
 
-  // Remove it: it leaves Launch, and Default keeps it whole.
-  await page.locator('.proj-row').first().locator('.proj-btn', { hasText: 'Remove' }).click();
+  // Move it out to Default from the row's own menu: it leaves Launch whole, and Default lists
+  // it beside the recording it already had.
+  await page.locator('.proj-row').first().locator('.proj-row-move').selectOption({ label: DEFAULT_NAME });
   await expect(page.locator('#project-ov-progress')).toHaveText('No recordings yet.');
   await page.locator('#project-ov-close').click();
 
   await openOverview(page, DEFAULT_NAME);
   await expect(page.locator('.proj-row-title')).toHaveCount(2);
   await expect(page.locator('.proj-row-title', { hasText: 'Kept' })).toHaveCount(1);
-  // The removed one has no title, so its fallback starts with the project it now lives in.
-  const removed = page.locator('.proj-row').filter({ hasNotText: 'Kept' });
+  // The moved one has no title, so it is listed under the project it now lives in.
+  await expect(page.locator('.proj-row-title', { hasText: 'Default ·' })).toHaveCount(1);
+
+  // Move it back to Launch: a move the other way leaves Default's own recording alone.
+  await page.locator('.proj-row').filter({ hasNotText: 'Kept' }).locator('.proj-row-move').selectOption({ label: 'Launch' });
+  await expect(page.locator('.proj-row-title')).toHaveText(['Kept']);
+  await page.locator('#project-ov-close').click();
+
+  await openOverview(page, 'Launch');
+  await expect(page.locator('#project-ov-progress')).toHaveText('1 of 1 finished');
+
+  // Delete it where it is: the confirmation names it, and it is destroyed in place — there is
+  // no move to Default first — so Launch goes back to empty.
   page.once('dialog', dialog => dialog.accept());
-  await removed.locator('.proj-btn', { hasText: 'Delete' }).click();
+  await page.locator('.proj-row').first().locator('.proj-btn', { hasText: 'Delete' }).click();
+  await expect(page.locator('#project-ov-progress')).toHaveText('No recordings yet.');
+  await page.locator('#project-ov-close').click();
+
+  // Deleting in Launch destroyed nothing else: Default's own recording is untouched.
+  await openOverview(page, DEFAULT_NAME);
   await expect(page.locator('.proj-row-title')).toHaveText(['Kept']);
 });interface SurfaceWindow {
   democlip?: Record<string, unknown>;

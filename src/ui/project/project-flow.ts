@@ -118,7 +118,6 @@ export function initProjects(): void {
     storage: () => storageReading(),
     open: openRecording,
     move: moveRecording,
-    remove: removeRecording,
     delete: deleteRecording,
   });
 
@@ -244,13 +243,6 @@ async function openRecording(id: string): Promise<void> {
 
 async function moveRecording(id: string, projectId: string): Promise<void> {
   const outcome = await recordings.move(id, projectId);
-  if (!outcome.ok) toast(outcome.reason);
-  projectOverview.refresh();
-  void refreshProjectCounts().then(() => projectMenu.refresh());
-}
-
-async function removeRecording(id: string): Promise<void> {
-  const outcome = await recordings.remove(id);
   if (!outcome.ok) toast(outcome.reason);
   projectOverview.refresh();
   void refreshProjectCounts().then(() => projectMenu.refresh());

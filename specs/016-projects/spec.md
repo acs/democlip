@@ -38,7 +38,7 @@ reason. Without this, nothing else here has a subject.
 
 **Independent Test**: Create a project with a name, a motivation and objectives. Record two clips in it.
 Reload the app. Both are listed under the project. Open the second, cut it, and return to the list;
-remove the first (it moves to the Default project); the second still opens with its cut in place.
+move the first to the Default project; the second still opens with its cut in place.
 
 **Acceptance Scenarios**:
 
@@ -46,8 +46,8 @@ remove the first (it moves to the Default project); the second still opens with 
 2. **Given** a project with two recordings, **When** the person returns to it after a reload, **Then** both recordings are listed with their title, length and state, beside the project's own purpose.
 3. **Given** a listed recording, **When** the person opens it, **Then** the review shows exactly what that recording held — its takes, cuts, annotations and properties — and it can be changed as any clip can, including with further takes.
 4. **Given** a listed recording that the person has changed, **When** they return to the project's list, **Then** the recording is still there with its changes kept.
-5. **Given** a project, **When** the person removes one of its recordings, **Then** that recording leaves the project, appears in the **Default** project with everything it held, and the project's other recordings are untouched.
-6. **Given** a recording in the **Default** project, **When** the person deletes it for good, **Then** it is destroyed only after a confirmation naming it, and its storage is freed.
+5. **Given** a project, **When** the person moves one of its recordings to the **Default** project, **Then** that recording leaves the project, appears in **Default** with everything it held, and the project's other recordings are untouched.
+6. **Given** a recording in any project, **When** the person deletes it for good, **Then** it is destroyed where it is, only after a confirmation naming it, and its storage is freed.
 7. **Given** a project, **When** the person changes its name, its motivation or its objectives, **Then** the change is kept and shown wherever the project's description is shown.
 
 ---
@@ -168,7 +168,6 @@ agent to remove a recording from the project; it appears in **Default**, still w
 
 - **The last recording of a project is removed**: the project remains, empty, with its purpose intact and a way to start another recording; the recording itself is in the Default project, not lost.
 - **A project is removed while it holds recordings**: its recordings move to the Default project, and the confirmation names them and says the project's own purpose will be lost; the recordings are never silently destroyed.
-- **A recording is removed from the Default project**: there is no other project to move it to, so removal from Default is not offered — deleting the recording is the separate act there, and it is confirmed.
 - **A recording is open in the review when its project is changed or removed elsewhere**: the open recording keeps the project it was opened from until the session ends, and the person is not left editing something that vanished.
 - **The person switches project while a session has begun to capture**: the switch is refused and explained, because the clip being made belongs to the project it started in; it may be moved afterwards.
 - **A project's default profile is removed or renamed**: the project points at a valid profile for new recordings — the app falls back to the built-in **Empty** profile rather than to nothing — and a recording already made keeps what it was produced with.
@@ -203,11 +202,11 @@ agent to remove a recording from the project; it appears in **Default**, still w
 - **FR-009**: Every recording MUST be kept when the page is closed, reloaded or updated, and MUST reappear in its project without the person re-importing or re-recording it.
 - **FR-010**: Users MUST be able to see every recording of a project, listed with at least its title, its length and its state.
 - **FR-011**: Users MUST be able to open any listed recording and change it exactly as a clip in the current session — cut it, annotate it, change its properties, record further takes into it — and the change MUST be kept.
-- **FR-012**: Users MUST be able to remove a recording from a project other than the Default project; removing it MUST move it to the Default project, preserving everything it held, and MUST NOT destroy it.
+- **FR-012**: Users MUST be able to move a recording out of a project to the **Default** project; the move MUST preserve everything the recording held and MUST NOT destroy it.
 - **FR-013**: Users MUST be able to move a recording from one project to another.
 - **FR-014**: A recording MUST belong to exactly one project at any time.
 - **FR-015**: The app MUST refuse to change the current project, or the project of the open recording, once the session has begun to capture, explaining that the recording may be moved when the session ends.
-- **FR-016**: Users MUST be able to delete a recording for good from the Default project, after a confirmation naming the recording; deletion is the only operation that destroys a recording's bytes and MUST NOT be offered as an undoable action.
+- **FR-016**: Users MUST be able to delete a recording for good from the overview of the project it is in, after a confirmation naming the recording; deletion is the only operation that destroys a recording's bytes and MUST NOT be offered as an undoable action.
 
 **Profiles**
 

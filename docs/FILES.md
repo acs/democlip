@@ -62,7 +62,7 @@ democlip/
 │   │   └── UploadableVideo.ts # the MP4 YouTube takes, and the ceilings it enforces
 │   ├── application/      # Use cases: the thinking, without a browser
 │   │   ├── projects.ts     # ManageProjects: create, select, edit and remove, through the book
-│   │   ├── recordings.ts   # Recordings: open, start a draft, finish, list, move, remove, delete
+│   │   ├── recordings.ts   # Recordings: open, start a draft, finish, list, move, delete
 │   │   ├── adopt-recording.ts # The previous version's one clip becomes a recording of Default
 │   │   ├── record-take.ts  # RecordTake: sources → mix → record → stop → take added
 │   │   ├── import-take.ts  # ImportTake: a video file read, then appended as a take

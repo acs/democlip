@@ -248,8 +248,8 @@ takes, cuts, annotations and properties, plus the project it belongs to and the 
 was made under. A recording is **in progress** while its clip session is open and
 **finished** once that session ends — at New, on an export or a publish — so every
 recording but the open one is finished, and the state is derived rather than stored.
-Removing a recording from a project moves it to Default; deleting one for good is a
-separate, confirmed act.
+Deleting a recording for good is a confirmed act offered wherever it is listed, and it
+destroys the recording's bytes; a move to Default, or to another project, keeps it whole.
 
 The **recording store** is where recordings outlive the page: IndexedDB, keyed by
 recording, with the **open pointer** naming the one the sitting is on. The **project book**

@@ -26,7 +26,6 @@ export interface ProjectOverviewHandlers {
   storage(): Promise<StorageReading | null>;
   open(recordingId: string): Promise<void>;
   move(recordingId: string, projectId: string): Promise<void>;
-  remove(recordingId: string): Promise<void>;
   delete(recordingId: string): Promise<void>;
 }
 
@@ -38,7 +37,6 @@ const NO_HANDLERS: ProjectOverviewHandlers = {
   storage: async () => null,
   open: async () => {},
   move: async () => {},
-  remove: async () => {},
   delete: async () => {},
 };
 
@@ -109,7 +107,7 @@ class ProjectOverview {
     el.projectOvStorage.hidden = !line;
     el.projectOvStorage.textContent = line ? t('project.overview.storage', line) : '';
 
-    const rows = recordingRows(recordings, project.name, Projects.DEFAULT_ID);
+    const rows = recordingRows(recordings, project.name);
     el.projectOvList.replaceChildren(...rows.map(row => this.row(row, book, project)));
     el.projectOvEmpty.hidden = rows.length > 0;
   }
@@ -162,11 +160,7 @@ class ProjectOverview {
     });
     acts.append(move);
 
-    if (!row.inDefault) {
-      acts.append(this.button(t('project.overview.remove'), () => void this.handlers.remove(row.id), 'danger'));
-    } else {
-      acts.append(this.button(t('project.overview.delete'), () => void this.handlers.delete(row.id), 'danger'));
-    }
+    acts.append(this.button(t('project.overview.delete'), () => void this.handlers.delete(row.id), 'danger'));
 
     host.append(main, acts);
     return host;

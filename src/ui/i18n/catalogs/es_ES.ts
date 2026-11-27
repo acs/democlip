@@ -266,7 +266,6 @@ export const es_ES: Record<TranslationKey, string> = {
   'project.overview.open': 'Abrir',
   'project.overview.move': 'Mover…',
   'project.overview.moveAria': 'Mover {title} a otro proyecto',
-  'project.overview.remove': 'Quitar',
   'project.overview.delete': 'Eliminar',
   'project.state.inProgress': 'en curso',
   'project.state.finished': 'terminada',

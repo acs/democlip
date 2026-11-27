@@ -269,7 +269,6 @@ export const en_UK = {
   'project.overview.open': 'Open',
   'project.overview.move': 'Move…',
   'project.overview.moveAria': 'Move {title} to another project',
-  'project.overview.remove': 'Remove',
   'project.overview.delete': 'Delete',
   'project.state.inProgress': 'in progress',
   'project.state.finished': 'finished',

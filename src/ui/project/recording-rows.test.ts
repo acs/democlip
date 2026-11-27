@@ -36,15 +36,15 @@ describe('recordingRows', () => {
     expect(formatLength(-4)).toBe('0:00');
   });
 
-  it('marks which rows are in the Default project and whose profile they name', () => {
+  it('names the profile a recording was made under, and its state', () => {
     const tv = ClipProfile.create('tv', 'DemoTV', {})!.stored();
     const rows = recordingRows([
       recording({ id: 'a', projectId: 'default', profile: tv, state: 'in-progress' }),
       recording({ id: 'b', projectId: 'p1' }),
-    ], 'Launch', 'default');
+    ], 'Launch');
 
-    expect(rows.map(row => row.inDefault)).toEqual([true, false]);
     expect(rows[0]!.profileName).toBe('DemoTV');
     expect(rows[0]!.state).toBe('in-progress');
+    expect(rows[1]!.state).toBe('finished');
   });
 });

@@ -13,7 +13,6 @@ export interface RecordingRow {
   readonly seconds: number;
   readonly state: 'in-progress' | 'finished';
   readonly projectId: string;
-  readonly inDefault: boolean;
   /** The profile the recording was made under, by name. */
   readonly profileName: string;
 }
@@ -46,7 +45,6 @@ export function formatLength(seconds: number): string {
 export function recordingRows(
   recordings: readonly RecordingSummary[],
   projectName: string,
-  defaultProjectId: string,
 ): RecordingRow[] {
   return recordings.map(recording => ({
     id: recording.id,
@@ -54,7 +52,6 @@ export function recordingRows(
     seconds: recording.duration,
     state: recording.state,
     projectId: recording.projectId,
-    inDefault: recording.projectId === defaultProjectId,
     profileName: recording.profile.name,
   }));
 }
