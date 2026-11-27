@@ -191,7 +191,7 @@ test('the surface is published only on a page that asked, and refuses what a han
   expect(toTheService).toEqual([]);
 });
 
-test('a cut and a clip property through the surface land where a person sees it, and the undo takes them back', async ({ page }) => {
+test('the surface edits the clip and its annotations, and the app’s undo takes each change back', async ({ page }) => {
   await reviewed(page);
 
   const before = await call<{ length: number; takes: unknown[]; cuts: unknown[] }>(page, 'describe');
@@ -227,10 +227,6 @@ test('a cut and a clip property through the surface land where a person sees it,
     (await call<{ properties: Array<{ id: string; value: string }> }>(page, 'describe'))
       .properties.find(property => property.id === 'title')?.value ?? '',
   ).toBe('');
-});
-
-test('an arrow and an image made through the surface are drawn, and a property change repaints them', async ({ page }) => {
-  await reviewed(page);
 
   // An arrow: made, marked on the lane, and described.
   const made = await call<{ ok: boolean; id?: string }>(page, 'edit.annotate', 'arrow', {
@@ -239,9 +235,9 @@ test('an arrow and an image made through the surface are drawn, and a property c
   });
   expect(made.ok).toBe(true);
   await expect(page.locator('#tl-annots > *')).not.toHaveCount(0);
-  const described = await call<{ annotations: Array<{ id: string; kind: string }> }>(page, 'describe');
-  expect(described.annotations).toHaveLength(1);
-  expect(described.annotations[0].kind).toBe('arrow');
+  const withArrow = await call<{ annotations: Array<{ id: string; kind: string }> }>(page, 'describe');
+  expect(withArrow.annotations).toHaveLength(1);
+  expect(withArrow.annotations[0].kind).toBe('arrow');
 
   // The clipboard's picture is placed as an image annotation, and painted where it was asked to
   // go — inside the rect and not outside, so a picture that failed to decode would leave the
@@ -285,42 +281,38 @@ test('an arrow and an image made through the surface are drawn, and a property c
   expect(undone).toEqual({ ok: true, change: 'annotation-changed' });
   await call(page, 'view.seek', 1.5);
   await expectArrowPainted(page, 'red');
-});
-
-test('a magnifier made through the surface is described, its zoom changes, and removing it undoes back', async ({ page }) => {
-  await reviewed(page);
 
   // A lens over the detail, at the centre, a 30% radius and a 3× zoom.
-  const made = await call<{ ok: boolean; id?: string }>(page, 'edit.annotate', 'magnifier', {
+  const lens = await call<{ ok: boolean; id?: string }>(page, 'edit.annotate', 'magnifier', {
     span: { s: 0.1, e: 0.9 },
     x: 0.5, y: 0.5, radius: 0.3, zoom: 3,
   });
-  expect(made.ok).toBe(true);
-  await expect(page.locator('#tl-annots > *')).toHaveCount(1);
+  expect(lens.ok).toBe(true);
+  await expect(page.locator('#tl-annots > *')).toHaveCount(3);
 
   // The agent reads the lens's own numbers, not a guess: its centre, radius and zoom.
-  const described = await call<{
+  const withLens = await call<{
     annotations: Array<{ id: string; kind: string; geometry: { x: number; y: number; radius: number; zoom: number } }>;
   }>(page, 'describe');
-  expect(described.annotations).toHaveLength(1);
-  expect(described.annotations[0]).toMatchObject({
+  expect(withLens.annotations).toHaveLength(3);
+  expect(withLens.annotations.find(annotation => annotation.kind === 'magnifier')).toMatchObject({
     kind: 'magnifier',
     geometry: { x: 0.5, y: 0.5, radius: 0.3, zoom: 3 },
   });
 
   // A zoom the kind takes lands on the lens and in the description.
-  const changed = await call<{ ok: boolean; value: string }>(page, 'edit.setProperty', made.id ?? '', 'zoom', '4');
-  expect(changed.ok).toBe(true);
-  const after = await call<{ annotations: Array<{ geometry: { zoom: number } }> }>(page, 'describe');
-  expect(after.annotations[0].geometry.zoom).toBe(4);
+  const zoomed = await call<{ ok: boolean; value: string }>(page, 'edit.setProperty', lens.id ?? '', 'zoom', '4');
+  expect(zoomed.ok).toBe(true);
+  const afterZoom = await call<{ annotations: Array<{ kind: string; geometry: { zoom: number } }> }>(page, 'describe');
+  expect(afterZoom.annotations.find(annotation => annotation.kind === 'magnifier')?.geometry.zoom).toBe(4);
 
   // Removing it takes the lens away; the app's own undo brings it back whole.
-  const removed = await call<{ ok: boolean; kind: string }>(page, 'edit.remove', made.id ?? '');
+  const removed = await call<{ ok: boolean; kind: string }>(page, 'edit.remove', lens.id ?? '');
   expect(removed).toEqual({ ok: true, kind: 'magnifier' });
-  await expect(page.locator('#tl-annots > *')).toHaveCount(0);
-  const undone = await call<{ ok: boolean; change: string }>(page, 'edit.undo');
-  expect(undone).toEqual({ ok: true, change: 'annotation-removed' });
-  await expect(page.locator('#tl-annots > *')).toHaveCount(1);
+  await expect(page.locator('#tl-annots > *')).toHaveCount(2);
+  const lensUndone = await call<{ ok: boolean; change: string }>(page, 'edit.undo');
+  expect(lensUndone).toEqual({ ok: true, change: 'annotation-removed' });
+  await expect(page.locator('#tl-annots > *')).toHaveCount(3);
 });
 
 test('a source press carries the activation the picker needs, and an export through the surface writes the file', async ({ page }) => {

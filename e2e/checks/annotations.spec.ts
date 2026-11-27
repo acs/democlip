@@ -100,6 +100,33 @@ await expect(page.locator('#annotate-bar .annotate-row')).toHaveCount(5);
     const { color, background, border } = await look('#props-btn');
     return { color, background, border };
   }).toEqual({ color: source.color, background: source.background, border: source.border });
+
+  // With no stretch selected, a kind starts at the playhead for the app's default two
+  // seconds: one click on the strip sets a mark, not a section, so there is nothing to
+  // bound the kind but the rule itself. The trial arrow is removed again before the rest
+  // of the story, so the lane starts clean.
+  await ready(page);
+  const strip = (await page.locator('#thumbs').boundingBox())!;
+  await page.mouse.click(strip.x + strip.width * 0.25, strip.y + strip.height / 2);
+  await page.locator('#annotate-bar .annotate-row[data-kind="arrow"]').click();
+  const trialPreview = (await page.locator('#preview').boundingBox())!;
+  await drag(
+    page,
+    { x: trialPreview.x + trialPreview.width * 0.3, y: trialPreview.y + trialPreview.height * 0.3 },
+    { x: trialPreview.x + trialPreview.width * 0.7, y: trialPreview.y + trialPreview.height * 0.7 },
+  );
+  const span = await page.evaluate(async url => {
+    const { session } = await import(/* @vite-ignore */ url);
+    const one = session.clip.annotations.all[0];
+    return one ? { s: one.span.s, e: one.span.e, total: session.clip.total() } : null;
+  }, HOOKS);
+  expect(span).not.toBeNull();
+  expect((span!.e - span!.s) * span!.total).toBeCloseTo(2, 1);   // DEFAULT_ANNOTATION_S
+  await expect(page.locator('#tl-marks .tl-sel')).toHaveCount(0); // no stretch was needed
+  await expect(page.locator('#tl-annots .tl-annot-band.on')).toHaveCount(1);
+  await page.keyboard.press('Delete');
+  await expect(page.locator('#tl-annots > *')).toHaveCount(0);
+
   await section(page);
   await expect(page.locator('#tl-marks .tl-act.ok')).toHaveCount(1);
   await expect(page.locator('#tl-marks .tl-act.ann')).toHaveCount(0);
@@ -192,21 +219,6 @@ async function parkAtFraction(page: Page, fraction: number): Promise<void> {
     } catch { /* the seek did not land; ask again */ }
   }
   await expect.poll(at).toBeCloseTo(fraction * 4, 1);
-}
-
-/** Click the timeline until the playhead settles near `seconds` of a 10 s clip. */
-async function parkAt(page: Page, seconds: number): Promise<void> {
-  const strip = (await page.locator('#thumbs').boundingBox())!;
-  const y = strip.y + strip.height / 2;
-  const at = () => page.evaluate(async url => (await import(/* @vite-ignore */ url)).player.time(), HOOKS);
-  for (let attempt = 0; attempt < 5; attempt++) {
-    await page.mouse.click(strip.x + strip.width * (seconds / 10), y);
-    try {
-      await expect.poll(at, { timeout: 3_000 }).toBeCloseTo(seconds, 0);
-      return;
-    } catch { /* the click landed before the take was ready; ask again */ }
-  }
-  expect(await at()).toBeCloseTo(seconds, 0);
 }
 
 /** A press-and-drag of the mouse, from one point to another. */
@@ -354,43 +366,6 @@ test('a text keeps the words’ shape when it is dragged small, and a press insi
   expect(floored.height).toBeCloseTo(0.02, 3);
   expect(floored.boxPx).toBeGreaterThan(floored.drawnPx * 0.9);
   expect(floored.boxPx).toBeLessThan(floored.drawnPx * 1.1);
-});
-
-test('a kind placed with no stretch selected starts at the playhead with the default duration', async ({ page }) => {
-  const app = boot(page);
-  await app.goto();
-
-  // Outside the review there are no annotate options at all.
-  await expect(page.locator('#annotate-bar')).not.toHaveClass(/on/);
-
-  const takes = await makeTakes(page, { width: 1280, height: 720, seconds: 10 });
-  await app.seed(takes);
-  await app.review();
-  await expect(page.locator('#annotate-bar .annotate-row')).toHaveCount(5);
-
-  // Put the playhead a quarter in with nothing selected — one click sets a mark, not a
-  // section — and place an arrow from the column.
-  await parkAt(page, 2.5);
-  await page.locator('#annotate-bar .annotate-row[data-kind="arrow"]').click();
-  const preview = (await page.locator('#preview').boundingBox())!;
-  await page.mouse.move(preview.x + preview.width * 0.3, preview.y + preview.height * 0.3);
-  await page.mouse.down();
-  await page.mouse.move(preview.x + preview.width * 0.7, preview.y + preview.height * 0.7, { steps: 8 });
-  await page.mouse.up();
-
-  // It is shown for the default two seconds, with no stretch selected at all — and it is the
-  // picked one, so its whole stretch is the active band. Where the moment itself lands is the
-  // playhead's, and a seek still settling can move that under a cross-read assertion, so this
-  // asserts the rule it is about — the default length with nothing selected — and not the instant.
-  const span = await page.evaluate(async url => {
-    const { session } = await import(/* @vite-ignore */ url);
-    const one = session.clip.annotations.all[0];
-    return one ? { s: one.span.s, e: one.span.e, total: session.clip.total() } : null;
-  }, HOOKS);
-  expect(span).not.toBeNull();
-  expect((span!.e - span!.s) * span!.total).toBeCloseTo(2, 1);   // DEFAULT_ANNOTATION_S
-  await expect(page.locator('#tl-marks .tl-sel')).toHaveCount(0); // no stretch was needed
-  await expect(page.locator('#tl-annots .tl-annot-band.on')).toHaveCount(1);
 });
 
 // A sound annotation is heard, not drawn: what is only a browser can show is that the app's own
@@ -722,20 +697,7 @@ test('a cut through a magnifier’s stretch takes the lens and its dim, and the 
   }).toBe(true);
 });
 
-test('a sound-only clip offers no magnifier, because there is no picture to read', async ({ page }) => {
-  const app = boot(page);
-  await app.goto();
-  const takes = await makeTakes(page, { soundOnly: true, seconds: 2 });
-  await app.seed(takes);
-  await app.reviewSoundOnly();
-
-  // The sound kind is the only one a sound-only clip offers: the drawn kinds need a picture.
-  await expect(page.locator('#annotate-bar .annotate-row')).toHaveCount(1);
-  await expect(page.locator('#annotate-bar .annotate-row[data-kind="sound"]')).toHaveCount(1);
-  await expect(page.locator('#annotate-bar .annotate-row[data-kind="magnifier"]')).toHaveCount(0);
-});
-
-test('a magnifier on a 2:1 picture is still a round lens, with its grips on the rim', async ({ page }) => {
+test('a magnifier is round on a 2:1 picture, with its grips on the rim, and a sound-only clip offers none', async ({ page }) => {
   const app = boot(page);
   await app.goto();
   const takes = await makeTakes(page, { width: 1200, height: 600, seconds: 4 });
@@ -770,4 +732,13 @@ test('a magnifier on a 2:1 picture is still a round lens, with its grips on the 
   const right = await pixelAt(page, 0.6, 0.5);
   expect(left.r).toBeGreaterThan(left.b);
   expect(right.r).toBeGreaterThan(right.b);
+
+  // A clip with no picture at all offers no kind that needs one: the sound kind is the only
+  // row, and the magnifier — which reads the picture beneath it — is absent.
+  const silent = await makeTakes(page, { soundOnly: true, seconds: 2 });
+  await app.seed(silent);
+  await app.reviewSoundOnly();
+  await expect(page.locator('#annotate-bar .annotate-row')).toHaveCount(1);
+  await expect(page.locator('#annotate-bar .annotate-row[data-kind="sound"]')).toHaveCount(1);
+  await expect(page.locator('#annotate-bar .annotate-row[data-kind="magnifier"]')).toHaveCount(0);
 });

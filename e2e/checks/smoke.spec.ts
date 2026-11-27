@@ -3,7 +3,7 @@
 import { expect, test } from '@playwright/test';
 import { boot } from '../helpers/app.js';
 
-test('the app boots, reads Ready, and its page carries no duplicate element ids', async ({ page }) => {
+test('the app boots, reads Ready, carries no duplicate ids, and wears the brand red in both themes', async ({ page }) => {
   await boot(page).goto();
   await expect(page.locator('#s-text')).toHaveText('Ready');
 
@@ -19,12 +19,6 @@ test('the app boots, reads Ready, and its page carries no duplicate element ids'
     return [...counts].filter(([, seen]) => seen > 1).map(([id]) => id).sort();
   });
   expect(duplicates).toEqual([]);
-});
-
-// ── The brand's red ────────────────────────────────────────────────────────────
-
-test('the wordmark, the guide link and the guide wear the record button’s red, in both themes', async ({ page }) => {
-  await boot(page).goto();
 
   // The default theme is dark, where the brand is the record button's own crimson.
   await expect(page.locator('.logo-title-accent')).toHaveCSS('color', 'rgb(229, 62, 62)');
