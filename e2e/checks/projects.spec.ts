@@ -86,6 +86,13 @@ test('an update keeps the recording, a project gathers new ones, and a removal m
   const app = boot(page);
   await app.goto();
 
+  // Both toolbar pills carry an icon and the colour of the entry they open, so the two
+  // are told apart before either is pressed.
+  await expect(page.locator('#project-btn .pill-ico')).toBeVisible();
+  await expect(page.locator('#profile-btn .pill-ico')).toBeVisible();
+  await expect(page.locator('#project-btn')).toHaveClass(/wears-colour/);
+  await expect(page.locator('#profile-btn')).toHaveClass(/wears-colour/);
+
   // The previous version's clip: a real take, a title, and the old stores.
   await makeTakes(page, { width: 320, height: 180, seconds: 2 });
   await seedLegacyClip(page, 'Kept');

@@ -18,7 +18,8 @@ import { onPhaseChange } from '../../state.js';
 import { el, toast } from '../dom.js';
 import { applyClipProfile } from './apply.js';
 import { controllingIn } from './control.js';
-import { avatarLetters, badgeInk, profileColour } from './profile-rows.js';
+import { avatarLetters, avatarTone, profileColour } from './profile-rows.js';
+import { paintPill } from '../shell/pill.js';
 import { profileMenu } from './profile-menu.js';
 import { profileDef } from './profile-def.js';
 import { recordings } from '../project/project-flow.js';
@@ -95,10 +96,7 @@ export function initProfiles(): void {
 export function paintProfileButton(): void {
   const active = session.clip.profile;
   el.profileInitials.textContent = avatarLetters(active.name);
-  const colour = profileColour(active);
-  el.profileBtn.style.background = colour ?? '';
-  el.profileBtn.style.color = colour ? badgeInk(colour) : '';
-  el.profileBtn.classList.toggle('wears-colour', colour !== null);
+  paintPill(el.profileBtn, { colour: profileColour(active), tone: avatarTone(active.id) });
   const label = `Profiles — making this clip under ${active.name}`;
   el.profileBtn.setAttribute('aria-label', label);
   el.profileBtn.title = label;

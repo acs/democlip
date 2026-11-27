@@ -12,6 +12,11 @@ import { Projects } from '../../domain/project/Projects.js';
 import type { Project } from '../../domain/project/Project.js';
 import { avatarLetters, avatarTone } from '../profile/profile-rows.js';
 
+/** A project's tone: its own, salted away from a profile that happens to share its id. */
+export function projectTone(id: string): number {
+  return avatarTone(`project:${id}`);
+}
+
 /** The flow's own operations, handed to the menu. Each answers nothing; the menu redraws. */
 export interface ProjectMenuHandlers {
   list(): Projects;
@@ -142,7 +147,7 @@ class ProjectMenu {
     pick.disabled = locked && !active;
 
     const avatar = document.createElement('span');
-    avatar.className = active ? 'profile-avatar project-avatar active' : `profile-avatar project-avatar av-${avatarTone(project.id)}`;
+    avatar.className = `profile-avatar project-avatar av-${projectTone(project.id)}`;
     avatar.textContent = avatarLetters(project.name);
     const name = document.createElement('span');
     name.className = 'profile-name';
