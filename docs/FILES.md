@@ -209,6 +209,7 @@ democlip/
 │   │   ├── problem-domain.md  # Actors, goals, the lifecycle, channels, constraints, gaps
 │   │   ├── solution-domain.md # The concepts, their home in the code, the two lifecycles
 │   │   ├── rules.md        # The invariants and business rules, with their owner and proof
+│   │   ├── alignment.md    # How it relates to the established audiovisual vocabularies
 │   │   └── ontology.jsonld # The same graph as data, kept in step by tools/check-ontology.mjs
 │   └── FILES.md          # This file: where the code lives
 ├── specs/                # A feature's spec, plan, tasks and contracts — one directory per feature

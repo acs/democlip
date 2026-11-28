@@ -42,6 +42,7 @@ could grow.
 | why the app exists, who it is for, what it must do | `docs/ontology/problem-domain.md` |
 | how the app models that, concept by concept, and where in the code | `docs/ontology/solution-domain.md` |
 | what must stay true, who owns it, where it is proved | `docs/ontology/rules.md` |
+| how it relates to the established audiovisual vocabularies | `docs/ontology/alignment.md` |
 | the graph as data, to read or query | `docs/ontology/ontology.jsonld` |
 | what a word means | `docs/GLOSSARY.md` |
 | what the app is, in one sitting | the **Project overview** skill |

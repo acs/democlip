@@ -35,6 +35,7 @@ concept realises is a gap, and naming it is how the model earns its keep.
 | why the app exists, who it is for, what it must do | [`problem-domain.md`](problem-domain.md) |
 | how the app models that reality, concept by concept | [`solution-domain.md`](solution-domain.md) |
 | what must stay true, and who enforces it | [`rules.md`](rules.md) |
+| how this model relates to the established audiovisual vocabularies | [`alignment.md`](alignment.md) |
 | the graph as data an agent or a tool can query | [`ontology.jsonld`](ontology.jsonld) |
 | where a new rule belongs | `.agents/skills/domain-model` |
 | how a change is made, and how it is proved | `.agents/skills/project-workflow`, `.agents/skills/verification` |
@@ -111,6 +112,9 @@ colour (the table in [`solution-domain.md`](solution-domain.md) has the detail) 
 - **`solution-domain.md`** — DemoClip's concepts, mapped to the problem domain, to the
   four layers of the code, and to the specs; with the concept map and the two lifecycles.
 - **`rules.md`** — the invariants and business rules, each with its owner and its proof.
+- **`alignment.md`** — how this model relates to the established audiovisual vocabularies
+  (media fragments, `oa`, `ma-ont`/`EBUCore`, schema.org, PROV-O): what lines up, what they
+  model that we do not, and what is ours alone.
 - **`ontology.jsonld`** — the same graph as data: nodes for every concept, edges for the
   relations, the rules and their owners, and the traceability to the code.
 

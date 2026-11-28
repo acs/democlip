@@ -15,8 +15,16 @@
   "sources": {
     "words": "docs/GLOSSARY.md",
     "reasoning": "docs/research/PROBLEM_DOMAIN_MODEL.md",
-    "humanView": ["docs/ontology/README.md", "docs/ontology/problem-domain.md", "docs/ontology/solution-domain.md", "docs/ontology/rules.md"]
+    "humanView": ["docs/ontology/README.md", "docs/ontology/problem-domain.md", "docs/ontology/solution-domain.md", "docs/ontology/rules.md", "docs/ontology/alignment.md"]
   },
+  "relatedOntologies": [
+    { "id": "ma-ont", "name": "W3C Ontology for Media Resources 1.0", "uri": "https://www.w3.org/TR/mediaont-10/", "namespace": "http://www.w3.org/ns/ma-ont#", "note": "core vocabulary for media resources; the closest general one" },
+    { "id": "ebucore", "name": "EBUCore", "uri": "https://www.ebu.ch/metadata/ontologies/ebucore/ebucore", "note": "the EBU's audiovisual metadata, an extension of ma-ont; used with the EBU CCDM" },
+    { "id": "oa", "name": "W3C Web Annotation Data Model", "uri": "https://www.w3.org/TR/annotation-model/", "namespace": "http://www.w3.org/ns/oa#", "note": "annotations with a body, a target and selectors" },
+    { "id": "media-frags", "name": "W3C Media Fragments URI 1.0", "uri": "https://www.w3.org/TR/media-frags/", "note": "temporal t= and spatial xywh fragments" },
+    { "id": "schema-org", "name": "schema.org", "uri": "https://schema.org/", "note": "VideoObject, Clip, CreativeWork; the web publishing side" },
+    { "id": "prov-o", "name": "W3C PROV Ontology", "uri": "https://www.w3.org/TR/prov-o/", "namespace": "http://www.w3.org/ns/prov#", "note": "provenance: Entity, Activity, Agent" }
+  ],
   "@graph": [
     { "@id": "creator", "@type": "Actor", "label": "Creator", "layer": "problem", "area": "actors", "summary": "The person producing the content." },
     { "@id": "audience", "@type": "Actor", "label": "Audience", "layer": "problem", "area": "actors", "summary": "The person the content is made for. Not modelled by DemoClip." },
