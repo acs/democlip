@@ -41,40 +41,67 @@ concept realises is a gap, and naming it is how the model earns its keep.
 
 ## The map
 
-The reality, stage by stage, and how much of it the app covers. This is a **coverage**
-view, not a wiring diagram — a stage is usually served by several concepts, and some
-concerns are served by none.
+The reality and what the app makes of it, head to head. The colour is **coverage** — how much
+of the concern the app actually serves.
 
 ```mermaid
 %%{init: {"layout": "elk"}}%%
-flowchart TB
-    intent["Intent<br/>why, for whom?"]:::partial --> capture["Capture<br/>what material?"]:::served
-    capture --> organise["Organise<br/>whose work?"]:::served
-    organise --> review["Review<br/>what to keep?"]:::served
-    review --> cut["Cut<br/>what to drop?"]:::served
-    cut --> compose["Compose<br/>what explains it?"]:::served
-    compose --> prepare["Prepare<br/>what file?"]:::served
-    prepare --> distribute["Distribute<br/>which channel?"]:::partial
-    distribute --> keep["Keep & resume<br/>come back later?"]:::served
+flowchart LR
+    subgraph PD["Problem domain — the reality"]
+        direction TB
+        intent["Intent<br/>why, for whom?"]:::partial
+        capture["Capture<br/>what material?"]:::served
+        organise["Organise<br/>whose work?"]:::served
+        review["Review<br/>what to keep?"]:::served
+        compose["Compose<br/>what explains it?"]:::served
+        prepare["Prepare<br/>what file?"]:::served
+        distribute["Distribute<br/>which channel?"]:::partial
+        keep["Keep & resume<br/>come back later?"]:::served
+    end
+
+    subgraph SD["Solution domain — what the app does"]
+        direction TB
+        project["Project"]:::partial
+        take["Take"]:::served
+        clip["Clip"]:::served
+        cut["Cut"]:::served
+        annotation["Annotation"]:::served
+        exportplan["Export plan"]:::served
+        publish["Publish"]:::partial
+        store["Recording store"]:::served
+    end
+
+    subgraph GAP["Problem domain — not modelled"]
+        direction TB
+        audience["The audience"]:::none
+        plan["A structured recording plan"]:::none
+        creators["Several creators on one production"]:::none
+        variants["One production, several channels"]:::none
+        more["A destination beyond the two"]:::none
+    end
+
+    intent --> project
+    capture --> take
+    organise --> clip
+    review --> cut
+    compose --> annotation
+    prepare --> exportplan
+    distribute --> publish
+    keep --> store
 
     classDef served fill:#2e7d3222,stroke:#2e7d32,stroke-width:1px
     classDef partial fill:#b26a0022,stroke:#b26a00,stroke-width:1px
+    classDef none fill:#9e9e9e22,stroke:#9e9e9e,stroke-dasharray:4 3,stroke-width:1px
 ```
 
-Green is served, amber is partial. Capture, organise, review, cut, compose, prepare and keep
-are served in full; **intent** is only partly (a project's free-text description stands in for
-a plan) and **distribute** only partly (Bluesky and YouTube, one at a time).
+**Green** is served, **amber** is partly served, **dashed grey** is not modelled at all — five
+concerns with nothing on the other side. Only **intent** (a free-text description stands in for
+a plan) and **distribute** (Bluesky and YouTube, one at a time) are partial.
 
-Outside the chain sit the concerns no part of the app serves — the audience, a structured
-recording plan, several creators on one production, one production across several channels,
-and a destination beyond the two. They are named, with why, in
-[`problem-domain.md`](problem-domain.md#what-democlip-does-not-model); the concept-by-concept
-mapping, one concern to several concepts, is the table in
-[`solution-domain.md`](solution-domain.md).
-
-So this is a **partial, many-to-one projection** of the reality — strong through the middle of
-the lifecycle, thin at the ends and at scale. The gaps are the reason to keep the model, not a
-flaw in the drawing.
+The colours say what tidier wiring would hide: the mapping is **many-to-one** — cutting is served
+by `Span`, `SpanSet` and `Selection`, branding by the logo, the watermark, the title card and the
+colour (the table in [`solution-domain.md`](solution-domain.md) has the detail) — and it is
+**partial**. The dashed concerns are the reason to keep the model, not a flaw in the drawing.
 
 ## The files
 
