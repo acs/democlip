@@ -44,8 +44,13 @@ const WATERMARK_TITLE_ID = 'watermark-title';
  */
 export type WatermarkChange = 'logo' | 'title' | 'colour' | 'picture';
 
-// Bumped on every run, so a file that finishes loading after a newer change is dropped.
-let seq = 0;
+// The syncs are **chained**, not run at once. A change to the **logo** and then to the **title**
+// arrive as two events in quick succession — an agent sets one property per call, with no wait
+// between — and each reads the clip's watermark and writes the whole of it back. Run at once, the
+// later write drops the part the earlier one placed, and a logo still loading is thrown away
+// before its mark is ever made. Chained, each places its own part on top of what the one before
+// it left.
+let queue: Promise<void> = Promise.resolve();
 
 /** Make the clip's watermark follow its logo and its title. Called once, at startup. */
 export function initWatermark(): void {
@@ -60,6 +65,13 @@ export function initWatermark(): void {
   });
 }
 
+/** Put the moved property's part in step, once every sync asked for before it has finished. */
+export function syncWatermark(what: WatermarkChange): Promise<void> {
+  const run = queue.then(() => applyWatermark(what));
+  queue = run.catch(() => {});
+  return run;
+}
+
 /**
  * Put the clip's watermark where its **logo**, its **title** and its **annotation colour** ask,
  * or take a part away.
@@ -70,8 +82,7 @@ export function initWatermark(): void {
  * `picture` is a clip that has just got a picture to draw on, or one being opened: the watermark
  * is placed only when the clip wears **none**, so a removal survives both.
  */
-export async function syncWatermark(what: WatermarkChange): Promise<void> {
-  const mine = ++seq;
+async function applyWatermark(what: WatermarkChange): Promise<void> {
   const name = session.clip.properties.get('logo');
   const title = session.clip.properties.get('title').trim();
   const colour = annotationColour(session.clip.properties);
@@ -96,8 +107,8 @@ export async function syncWatermark(what: WatermarkChange): Promise<void> {
         imageId = null;
       }
     }
-    // Overtaken while the file loaded, or the logo changed under us.
-    if (mine !== seq || session.clip.properties.get('logo') !== name) return;
+    // The logo changed under us while its file loaded: that change's own sync will place its mark.
+    if (session.clip.properties.get('logo') !== name) return;
   }
 
   // A clip that already wears one keeps it: what is missing was taken away, or was never wanted.
