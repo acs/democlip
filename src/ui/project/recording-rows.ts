@@ -13,8 +13,17 @@ export interface RecordingRow {
   readonly seconds: number;
   readonly state: 'in-progress' | 'finished';
   readonly projectId: string;
+  /** When the recording was made — its first take landed — as epoch milliseconds. */
+  readonly createdAt: number;
   /** The profile the recording was made under, by name. */
   readonly profileName: string;
+}
+
+/** When a recording was made, as a person reads it: `28 Nov, 10:45`. Empty if unreadable. */
+export function formatMadeAt(at: number): string {
+  const when = new Date(at);
+  if (Number.isNaN(when.getTime())) return '';
+  return when.toLocaleString(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 }
 
 /** The label a recording is listed under. */
@@ -24,11 +33,8 @@ export function recordingLabel(
 ): string {
   const title = recording.title.trim();
   if (title !== '') return title;
-  const when = new Date(recording.createdAt);
-  const stamp = Number.isNaN(when.getTime())
-    ? ''
-    : ` · ${when.toLocaleString(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}`;
-  return `${projectName}${stamp}`;
+  const stamp = formatMadeAt(recording.createdAt);
+  return stamp ? `${projectName} · ${stamp}` : projectName;
 }
 
 /** A recording's length as a person reads it: 3:07, or 1:02:03 past an hour. */
@@ -52,6 +58,7 @@ export function recordingRows(
     seconds: recording.duration,
     state: recording.state,
     projectId: recording.projectId,
+    createdAt: recording.createdAt,
     profileName: recording.profile.name,
   }));
 }

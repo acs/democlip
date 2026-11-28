@@ -262,7 +262,7 @@ export const es_ES: Record<TranslationKey, string> = {
   'project.overview.progress': '{finished} de {total} terminadas',
   'project.overview.allFinished': 'Todas las grabaciones de este proyecto están terminadas.',
   'project.overview.storage': 'Almacenamiento: usando ~{used} de ~{total}',
-  'project.overview.rowMeta': '{length} · {state} · {profile}',
+  'project.overview.rowMeta': '{length} · {state} · {profile} · {when}',
   'project.overview.open': 'Abrir',
   'project.overview.move': 'Mover…',
   'project.overview.moveAria': 'Mover {title} a otro proyecto',

@@ -14,7 +14,7 @@ import type { RecordingProgress, RecordingSummary } from '../../application/reco
 import type { Project } from '../../domain/project/Project.js';
 import { Projects } from '../../domain/project/Projects.js';
 import type { StorageReading } from '../../infra/storage.js';
-import { formatLength, recordingRows } from './recording-rows.js';
+import { formatLength, formatMadeAt, recordingRows } from './recording-rows.js';
 import { storageLine } from './storage-line.js';
 
 export interface ProjectOverviewHandlers {
@@ -132,6 +132,7 @@ class ProjectOverview {
       length: formatLength(row.seconds),
       state: t(row.state === 'in-progress' ? 'project.state.inProgress' : 'project.state.finished'),
       profile: row.profileName,
+      when: formatMadeAt(row.createdAt),
     });
     main.append(title, meta);
 
