@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { formatLength, recordingLabel, recordingRows } from './recording-rows.js';
+import { formatLength, formatMadeAt, recordingLabel, recordingRows } from './recording-rows.js';
 import { ClipProfile } from '../../domain/clip/ClipProfile.js';
 import type { RecordingSummary } from '../../application/recordings.js';
 
@@ -46,5 +46,15 @@ describe('recordingRows', () => {
     expect(rows[0]!.profileName).toBe('DemoTV');
     expect(rows[0]!.state).toBe('in-progress');
     expect(rows[1]!.state).toBe('finished');
+  });
+
+  it('reads when a recording was made, so rows that look alike can be told apart', () => {
+    const at = new Date('2026-11-27T14:32:00Z').getTime();
+
+    expect(formatMadeAt(at).length).toBeGreaterThan(0);
+    expect(formatMadeAt(Number.NaN)).toBe('');
+
+    const rows = recordingRows([recording()], 'Launch');
+    expect(rows[0]!.createdAt).toBe(at);
   });
 });

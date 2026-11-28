@@ -265,7 +265,7 @@ export const en_UK = {
   'project.overview.progress': '{finished} of {total} finished',
   'project.overview.allFinished': 'Every recording in this project is finished.',
   'project.overview.storage': 'Storage: using ~{used} of ~{total}',
-  'project.overview.rowMeta': '{length} · {state} · {profile}',
+  'project.overview.rowMeta': '{length} · {state} · {profile} · {when}',
   'project.overview.open': 'Open',
   'project.overview.move': 'Move…',
   'project.overview.moveAria': 'Move {title} to another project',
