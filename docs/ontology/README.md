@@ -41,46 +41,40 @@ concept realises is a gap, and naming it is how the model earns its keep.
 
 ## The map
 
+The reality, stage by stage, and how much of it the app covers. This is a **coverage**
+view, not a wiring diagram — a stage is usually served by several concepts, and some
+concerns are served by none.
+
 ```mermaid
 %%{init: {"layout": "elk"}}%%
-flowchart LR
-    subgraph PD["Problem domain — the reality"]
-        direction TB
-        intent["Intent"]
-        capture["Capture"]
-        organise["Organise"]
-        review["Review"]
-        compose["Compose"]
-        prepare["Prepare"]
-        distribute["Distribute"]
-        keep["Keep"]
-    end
+flowchart TB
+    intent["Intent<br/>why, for whom?"]:::partial --> capture["Capture<br/>what material?"]:::served
+    capture --> organise["Organise<br/>whose work?"]:::served
+    organise --> review["Review<br/>what to keep?"]:::served
+    review --> cut["Cut<br/>what to drop?"]:::served
+    cut --> compose["Compose<br/>what explains it?"]:::served
+    compose --> prepare["Prepare<br/>what file?"]:::served
+    prepare --> distribute["Distribute<br/>which channel?"]:::partial
+    distribute --> keep["Keep & resume<br/>come back later?"]:::served
 
-    subgraph SD["Solution domain — how DemoClip does it"]
-        direction TB
-        project["Project"]
-        clip["Clip"]
-        take["Take"]
-        cut["Cut"]
-        annotation["Annotation"]
-        exportplan["Export plan"]
-        publish["Publish"]
-        store["Recording store"]
-    end
-
-    intent --> project
-    capture --> take
-    organise --> clip
-    review --> cut
-    compose --> annotation
-    prepare --> exportplan
-    distribute --> publish
-    keep --> store
+    classDef served fill:#2e7d3222,stroke:#2e7d32,stroke-width:1px
+    classDef partial fill:#b26a0022,stroke:#b26a00,stroke-width:1px
 ```
 
-Each stage of the reality maps onto the concept that realises it. The flows *within* each
-domain — the production lifecycle and the concept map — are on the two pages this links to,
-so this diagram stays a map of the relationship between the domains.
+Green is served, amber is partial. Capture, organise, review, cut, compose, prepare and keep
+are served in full; **intent** is only partly (a project's free-text description stands in for
+a plan) and **distribute** only partly (Bluesky and YouTube, one at a time).
+
+Outside the chain sit the concerns no part of the app serves — the audience, a structured
+recording plan, several creators on one production, one production across several channels,
+and a destination beyond the two. They are named, with why, in
+[`problem-domain.md`](problem-domain.md#what-democlip-does-not-model); the concept-by-concept
+mapping, one concern to several concepts, is the table in
+[`solution-domain.md`](solution-domain.md).
+
+So this is a **partial, many-to-one projection** of the reality — strong through the middle of
+the lifecycle, thin at the ends and at scale. The gaps are the reason to keep the model, not a
+flaw in the drawing.
 
 ## The files
 
