@@ -42,37 +42,45 @@ concept realises is a gap, and naming it is how the model earns its keep.
 ## The map
 
 ```mermaid
-flowchart TB
+%%{init: {"layout": "elk"}}%%
+flowchart LR
     subgraph PD["Problem domain — the reality"]
-        intent["Intent<br/>why and for whom"]
-        capture["Capture<br/>record or import"]
-        organise["Organise<br/>project, recording"]
-        review["Review & select<br/>marks, sections, cuts"]
-        compose["Compose<br/>annotations, branding"]
-        prepare["Prepare<br/>resolution, format, card"]
-        distribute["Distribute<br/>publish to a channel"]
-        keep["Keep & resume"]
+        direction TB
+        intent["Intent"]
+        capture["Capture"]
+        organise["Organise"]
+        review["Review"]
+        compose["Compose"]
+        prepare["Prepare"]
+        distribute["Distribute"]
+        keep["Keep"]
     end
 
     subgraph SD["Solution domain — how DemoClip does it"]
+        direction TB
         project["Project"]
-        clip["Clip (aggregate)"]
+        clip["Clip"]
         take["Take"]
-        cut["Cut · Span · SpanSet"]
-        annotation["Annotation family"]
-        exportplan["ExportPlan"]
-        publish["publishToBluesky<br/>publishToYouTube"]
-        store["recording store<br/>project book"]
+        cut["Cut"]
+        annotation["Annotation"]
+        exportplan["Export plan"]
+        publish["Publish"]
+        store["Recording store"]
     end
 
-    intent --> organise --> project
-    capture --> take --> clip
-    review --> cut --> clip
-    compose --> annotation --> clip
-    clip --> exportplan --> prepare
-    exportplan --> publish --> distribute
-    clip --> store --> keep
+    intent --> project
+    capture --> take
+    organise --> clip
+    review --> cut
+    compose --> annotation
+    prepare --> exportplan
+    distribute --> publish
+    keep --> store
 ```
+
+Each stage of the reality maps onto the concept that realises it. The flows *within* each
+domain — the production lifecycle and the concept map — are on the two pages this links to,
+so this diagram stays a map of the relationship between the domains.
 
 ## The files
 

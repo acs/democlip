@@ -10,6 +10,7 @@ The full statement of a rule is in its owner's code and test; the words are in
 and where the proof is.
 
 ```mermaid
+%%{init: {"layout": "elk"}}%%
 flowchart LR
     subgraph value["value objects"]
         span["[[span]]"] --> r1["[[rule-spanset-no-overlap]]"]

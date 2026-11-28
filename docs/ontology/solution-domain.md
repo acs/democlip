@@ -11,6 +11,7 @@ rule belongs is in `.agents/skills/domain-model`; the rules themselves are in
 The dependency arrow points inward. A concept's home follows from what it is.
 
 ```mermaid
+%%{init: {"layout": "elk"}}%%
 flowchart TB
     subgraph domain["src/domain — pure rules"]
         d["Clip · Take · Span · SpanSet<br/>Annotation family · Profile · Project<br/>Session · ExportPlan"]
@@ -43,6 +44,7 @@ aggregate; about a take → `Take`; about the browser → an adapter or a flow.*
 ## Traceability — which solution concept realises which reality
 
 ```mermaid
+%%{init: {"layout": "elk"}}%%
 flowchart LR
     production["[[production]]"] --> project["[[project]]"]
     env["[[production-environment]]"] --> profile["[[profile]]"]
@@ -77,6 +79,7 @@ flowchart LR
 The aggregate and its parts, and the things beside it.
 
 ```mermaid
+%%{init: {"layout": "elk"}}%%
 classDiagram
     direction TB
     class Project {
@@ -204,7 +207,8 @@ kind that reads the picture beneath it. Both are ordinary kinds in every other w
 ## Output and distribution
 
 ```mermaid
-flowchart LR
+%%{init: {"layout": "elk"}}%%
+flowchart TB
     clip["[[clip]]"] --> seg["[[segment]]s<br/>kept stretches of one take"]
     seg --> plan["[[export-plan]]<br/>pieces + joins"]
     plan --> enc["offline encoder<br/>WebCodecs"]
@@ -248,6 +252,7 @@ agent works on is the model a person works on.
 **The recording lifecycle** — derived, never stored as a flag:
 
 ```mermaid
+%%{init: {"layout": "elk"}}%%
 stateDiagram-v2
     [*] --> draft
     draft --> inProgress : first take
@@ -259,6 +264,7 @@ stateDiagram-v2
 **The export pipeline** — the same answer for the review and every file:
 
 ```mermaid
+%%{init: {"layout": "elk"}}%%
 sequenceDiagram
     participant Clip
     participant Plan as ExportPlan

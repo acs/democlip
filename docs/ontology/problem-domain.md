@@ -10,14 +10,15 @@ DemoClip answers it is in [`solution-domain.md`](solution-domain.md).
 Who is in the picture, and what each one wants.
 
 ```mermaid
+%%{init: {"layout": "elk"}}%%
 flowchart LR
-    creator["[[creator]]"] -->|makes content for| audience["[[audience]]"]
-    creator -->|works with| agent["[[ai-agent]]"]
-    creator -->|works on a file with| tool["[[external-tool]]"]
-    creator -->|publishes to| dest["[[destination]]"]
-    audience -->|watches on| dest
-    dest -->|exposes| channel["[[channel]]"]
-    creator -->|records and edits in| browser["[[host-browser]]"]
+    creator["[[creator]]"] -->|for| audience["[[audience]]"]
+    creator -->|with| agent["[[ai-agent]]"]
+    creator -->|on a file| tool["[[external-tool]]"]
+    creator -->|publishes| dest["[[destination]]"]
+    audience -->|watches| dest
+    dest -->|shows| channel["[[channel]]"]
+    creator -->|records| browser["[[host-browser]]"]
 ```
 
 | id | who | what they want | in DemoClip |
@@ -52,7 +53,8 @@ The stages a piece of content passes through. Each stage is a **process**, and e
 answers a question.
 
 ```mermaid
-flowchart LR
+%%{init: {"layout": "elk"}}%%
+flowchart TB
     intent["[[process-intent]]<br/>why, for whom?"] --> capture["[[process-capture]]<br/>what material?"]
     capture --> organise["[[process-organise]]<br/>whose work?"]
     organise --> review["[[process-review]]<br/>what to keep?"]
