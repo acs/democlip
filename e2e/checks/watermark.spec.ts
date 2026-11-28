@@ -234,3 +234,24 @@ test('a part of the watermark taken away stays away, and the mark is picked, mov
   await setTitle(page, 'A demo again');
   await expect.poll(async () => (await watermarkTitleRect(page))?.text ?? null).toBe('A demo again');
 });
+
+test('a logo set and then a title, with no wait between, leaves both in the watermark', async ({ page }) => {
+  const app = boot(page);
+  await app.goto();
+  const takes = await makeTakes(page, { width: 1280, height: 720, seconds: 4 });
+  await app.seed(takes);
+  await app.review();
+
+  // An agent sets one property per call, with no wait for the watermark to settle in between, so
+  // the title's sync arrives while the mark's own file is still loading. That must not lose the
+  // mark: the two parts are placed in turn, not at once. (Set on the clip directly — the surface's
+  // `setClipProperty` is the same event, and this is the timing that matters.)
+  await page.evaluate(async url => {
+    const { session } = await import(/* @vite-ignore */ url);
+    session.clip.setProperty('logo', 'graditone');
+    session.clip.setProperty('title', 'Play a Score');
+  }, HOOKS);
+
+  await expect.poll(() => worn(page, 'image')).toBe(true);
+  await expect.poll(() => worn(page, 'text')).toBe(true);
+});
