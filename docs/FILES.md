@@ -177,6 +177,7 @@ democlip/
 │           ├── view.ts       # The transport: seek, play, pause
 │           ├── takes.ts      # The sources and the takes, through the app's own flow
 │           ├── projects.ts   # The projects an agent may drive: list, read, create, select, edit, move
+│           ├── profiles.ts   # The profiles an agent may drive: list, create, and change what one fixes
 │           └── out.ts        # The file, and the post
 ├── mcp/                  # The MCP server: a second artefact, released with the app
 │   ├── package.json      # Its own dependencies (Playwright, the MCP SDK) and its version

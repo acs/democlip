@@ -48,7 +48,7 @@ import { youTubeAccount, uploadClip } from './ui/publishing/youtube-flow.js';
 import { blueskyAccount, publishClip } from './ui/publishing/publish-flow.js';
 import { keep } from './ui/keeping/keep.js';
 import { resumeClip } from './ui/keeping/resume-flow.js';
-import { loadProfiles, applyProfile, initProfiles, controlling } from './ui/profile/profile-flow.js';
+import { loadProfiles, applyProfile, initProfiles, controlling, createAgentProfiles } from './ui/profile/profile-flow.js';
 import { loadProjects, initProjects, adoptLegacyRecording, createAgentProjects } from './ui/project/project-flow.js';
 import { capture } from './infra/capture.js';
 
@@ -229,6 +229,7 @@ function init(): void {
     window.democlip = createAgentSurface({
       version: appVersion(),
       projects: createAgentProjects(),
+      profiles: createAgentProfiles(),
       describe: () => describeClip(session.clip, controlling),
       sources: () => recording.sources(),
       takes: createTakes(session.clip, recording),

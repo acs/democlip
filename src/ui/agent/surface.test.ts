@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { agentAskedFor, createAgentSurface } from './surface.js';
+import type { ProfileSummary, Result } from './surface.js';
 import { describeClip } from './describe.js';
 import { Clip } from '../../domain/clip/Clip.js';
 import { Span } from '../../domain/clip/Span.js';
@@ -97,9 +98,15 @@ describe('the gate', () => {
         edit: async () => ({ ok: false, reason: 'none' }),
         move: async () => ({ ok: false, reason: 'none' }),
       },
+      profiles: {
+        list: (): Result<{ profiles: ProfileSummary[]; activeId: string }> =>
+          ({ ok: true, profiles: [], activeId: 'default' }),
+        create: async () => ({ ok: false, reason: 'none' }),
+        edit: async () => ({ ok: false, reason: 'none' }),
+      },
     });
     expect(surface.version).toBe('1.2.3');
-    expect(Object.keys(surface).sort()).toEqual(['describe', 'edit', 'out', 'projects', 'sources', 'takes', 'version', 'view']);
+    expect(Object.keys(surface).sort()).toEqual(['describe', 'edit', 'out', 'profiles', 'projects', 'sources', 'takes', 'version', 'view']);
   });
 });
 

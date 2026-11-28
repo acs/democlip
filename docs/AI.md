@@ -35,8 +35,14 @@ The debugging port still lives only as long as the session.
 
 The agent's reach is the app's own operations and nothing more — cut, annotate,
 place the picture on your clipboard, set a property, remove, undo, seek, record a
-take, import a video file as a take, export, publish, and read the
-clip. One of them names a file on your machine, and only one: `import_take`, which
+take, import a video file as a take, export, publish, read the
+clip, and organise the projects and the **profiles** it is made under. A profile is
+a named set of the clip's own properties an agent may make and fix — the logo, the
+annotation colour, the title card, the export resolution, the sound boost — so
+every clip made under it opens with them; a project names one as its default, which
+is how a series of videos is branded the same way. (The title and the description
+are each clip's own free words, so a profile does not carry them.) One of the
+tools names a file on your machine, and only one: `import_take`, which
 is the app's own **Import** told what to bring in. There is no way for it to run code
 in the page, and the recording is never re-encoded. An export writes the same file a
 person would get, to your Downloads folder — and that file can come back in as a

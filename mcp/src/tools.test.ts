@@ -32,13 +32,17 @@ describe('the tool list', () => {
       'select_project',
       'edit_project',
       'move_recording',
+      'list_profiles',
+      'create_profile',
+      'edit_profile',
     ]);
   });
 
   it('offers no tool that evaluates code or scripts the page', () => {
     // The guarantee is the list itself: a tool that ran code would have to be named
     // here, and this is the list. Nothing generic, nothing that takes a script.
-    const forbidden = /eval|exec|script|shell|command|fetch|http|file|write|path/i;
+    // `\bfile` and not `file`: a profile's own name holds "files" without naming a file.
+    const forbidden = /eval|exec|script|shell|command|fetch|http|\bfile|write|path/i;
     for (const tool of toolList()) expect(tool.name).not.toMatch(forbidden);
   });
 
@@ -97,6 +101,16 @@ describe('the tool list', () => {
     expect(byName.get('select_project')!.inputSchema.required).toEqual(['project']);
     expect(byName.get('edit_project')!.inputSchema.required).toEqual(['project']);
     expect(byName.get('move_recording')!.inputSchema.required).toEqual(['recording', 'project']);
+    // A profile is made with a name and the items it fixes, changed by name, and listed whole.
+    expect(byName.get('list_profiles')!.inputSchema.required).toEqual([]);
+    expect(byName.get('create_profile')!.inputSchema).toMatchObject({
+      required: ['name'],
+      properties: { name: { type: 'string' }, controls: { type: 'object' } },
+    });
+    expect(byName.get('edit_profile')!.inputSchema).toMatchObject({
+      required: ['profile'],
+      properties: { profile: { type: 'string' }, controls: { type: 'object' } },
+    });
     for (const name of ['turn_source_on', 'turn_source_off']) {
       expect(byName.get(name)!.inputSchema.required).toEqual(['source']);
     }

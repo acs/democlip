@@ -25,6 +25,8 @@ import { profileMenu } from './profile-menu.js';
 import { profileDef } from './profile-def.js';
 import { recordings } from '../project/project-flow.js';
 import { t } from '../i18n/index.js';
+import { createProfilesSurface } from '../agent/profiles.js';
+import type { ProfilesSurface } from '../agent/surface.js';
 
 export const profiles = new ManageProfiles({
   store: profileStore,
@@ -127,15 +129,42 @@ async function chooseProfile(id: string): Promise<void> {
  */
 function report(outcome: ProfileResult): void {
   if (!outcome.ok) { toast(outcome.reason); return; }
+  followProfile();
+}
+
+/**
+ * After a change to the book, keep the draft's clip in step with the profile it is under: the
+ * pill, the open selector behind it, and — until the session captures — the clip's own profile.
+ * A profile let go of while it is the draft's falls back to the free one, exactly as the book's
+ * own active profile does. Shared by a person's tap and the automation surface, so both reach
+ * the clip the same way.
+ */
+function followProfile(): void {
   paintProfileButton();
   // The selector is open behind the profile's dialog, so it follows a name or an item changed
   // there — and a change to the clip's own profile reaches the clip before it captures.
   profileMenu.refresh();
-  if (!locked()) {
-    const live = profiles.current.get(session.clip.profile.id);
-    // A profile the person lets go of while it is the draft's falls back to the free one,
-    // exactly as the book's own active profile does.
-    void recordings.chooseProfile(live ? ClipProfile.of(live) : ClipProfile.DEFAULT);
-    applyProfile();
-  }
+  if (locked()) return;
+  const live = profiles.current.get(session.clip.profile.id);
+  void recordings.chooseProfile(live ? ClipProfile.of(live) : ClipProfile.DEFAULT);
+  applyProfile();
+}
+
+/** The profiles an agent may drive: list them, make one, and change what it fixes. */
+export function createAgentProfiles(): ProfilesSurface {
+  return createProfilesSurface({
+    list: () => profiles.current,
+    activeId: () => session.clip.profile.id,
+    create: async name => profiles.create(name),
+    declare: async (id, property, value) => {
+      const outcome = profiles.declare(id, property, value);
+      if (outcome.ok) followProfile();
+      return outcome;
+    },
+    rename: async (id, name) => {
+      const outcome = profiles.rename(id, name);
+      if (outcome.ok) followProfile();
+      return outcome;
+    },
+  });
 }
