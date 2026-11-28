@@ -111,6 +111,40 @@ export interface ProjectsSurface {
   move(recordingId: string, projectId: string): Promise<Result<{ recordingId: string; projectId: string }>>;
 }
 
+/** One profile, as an agent reads it. */
+export interface ProfileSummary {
+  readonly id: string;
+  readonly name: string;
+  /** The items it fixes, by clip-property id, at the value each is fixed at. A key present is a declaration. */
+  readonly controls: Readonly<Record<string, string>>;
+  /** True for the profile the clip in front of the person is made under. */
+  readonly active: boolean;
+}
+
+/**
+ * What an agent may do with profiles: read them, make one, and change what it fixes.
+ *
+ * A profile **declares** its items: a declared item is applied to a clip made under that profile
+ * and is not the person's — or the agent's — to change (`edit.setClipProperty` says so). That is
+ * what makes it a production setting rather than a default. The app applies only the properties it
+ * **preloads** (its logo, its annotation colour, the title card, the export resolution and the
+ * sound boost); a declaration for another item is kept but never applied. There is deliberately no
+ * removal: it needs the person's confirmation.
+ */
+export interface ProfilesSurface {
+  list(): Result<{ profiles: ProfileSummary[]; activeId: string }>;
+  create(input: {
+    name: string;
+    /** The items it fixes: a clip-property id to the value it is fixed at. */
+    controls?: Readonly<Record<string, string>>;
+  }): Promise<Result<{ profile: ProfileSummary }>>;
+  edit(id: string, input: {
+    name?: string;
+    /** The whole set it fixes; an item left out is handed back to the person. */
+    controls?: Readonly<Record<string, string>>;
+  }): Promise<Result<{ profile: ProfileSummary }>>;
+}
+
 /** The numbers and strings a kind needs to make a new annotation. */
 export type AnnotationParams = Readonly<Record<string, unknown>>;
 
@@ -156,6 +190,8 @@ export interface AgentSurface {
   };
   /** Projects: list, read, create, select, edit, and move a recording. Never delete. */
   readonly projects: ProjectsSurface;
+  /** Profiles: list, make one, and change what it fixes. Never remove. */
+  readonly profiles: ProfilesSurface;
   /** What leaves the browser: the file, the post, and the video. */
   readonly out: {
     /** `annotations` is `drawn` (in the picture) or `carried` (beside it, for a sidecar). */
@@ -191,6 +227,7 @@ export interface AgentParts {
   readonly view: AgentSurface['view'];
   readonly out: AgentSurface['out'];
   readonly projects: AgentSurface['projects'];
+  readonly profiles: AgentSurface['profiles'];
 }
 
 /** The surface: the parts it was given, and nothing else of its own. */
@@ -204,6 +241,7 @@ export function createAgentSurface(parts: AgentParts): AgentSurface {
     view: parts.view,
     out: parts.out,
     projects: parts.projects,
+    profiles: parts.profiles,
   };
 }
 

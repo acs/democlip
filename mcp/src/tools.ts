@@ -324,6 +324,18 @@ async function resolveProject(session: Session, wanted: string): Promise<{ ok: t
   return match ? { ok: true, id: match.id } : { ok: false, reason: `there is no project called ${wanted}` };
 }
 
+/** Resolve a profile by its id or, as a person would say it, its name. */
+async function resolveProfile(session: Session, wanted: string): Promise<{ ok: true; id: string } | { ok: false; reason: string }> {
+  const listed = await callSurface<{ ok: boolean; profiles?: Array<{ id: string; name: string }>; reason?: string }>(
+    session, 'profiles.list',
+  );
+  if (!listed.ok) return { ok: false, reason: listed.reason ?? 'the profiles could not be read' };
+  const wantedText = wanted.trim().toLocaleLowerCase();
+  const match = (listed.profiles ?? []).find(profile =>
+    profile.id === wanted || profile.name.toLocaleLowerCase() === wantedText);
+  return match ? { ok: true, id: match.id } : { ok: false, reason: `there is no profile called ${wanted}` };
+}
+
 /** List the projects and which one the app is in. */
 const listProjects: Tool = {
   name: 'list_projects',
@@ -420,6 +432,53 @@ const moveRecording: Tool = {
   },
 };
 
+/** List the profiles: what each fixes, and which one the clip is made under. */
+const listProfiles: Tool = {
+  name: 'list_profiles',
+  description:
+    'List the profiles on this machine: each one\u2019s name, the clip properties it **fixes** and at what value, and which is the one the clip in front of the person is made under. A fixed property is applied to every clip made under the profile, and is not the person\u2019s — or the agent\u2019s — to change. Read-only; call it before making one, or before naming one as a project\u2019s default.',
+  inputSchema: objectSchema(),
+  run: session => callSurface(session, 'profiles.list'),
+};
+
+/** Make a profile, with the items it fixes. */
+const createProfile: Tool = {
+  name: 'create_profile',
+  description:
+    'Make a profile: a named set of the clip\u2019s own properties it **fixes** at a value, so a clip made under it opens with them and they cannot be changed while it is in force. `controls` maps a clip-property id to the value it is fixed at. The app applies only the properties it preloads \u2014 `logo`, `annotationColour`, `addToExport`, `exportResolution`, `soundBoost`; a declaration for another item (the `title`, the `description`) is kept but never applied. It does not become active on its own; name it as a project\u2019s default with edit_project so recordings made in that project are made under it.',
+  inputSchema: objectSchema({
+    name: { type: 'string', description: 'The profile\u2019s name; required' },
+    controls: {
+      type: 'object',
+      description: 'The items it fixes: a clip-property id to the value, e.g. {"logo": "graditone", "annotationColour": "#ff6c23"}',
+    },
+  }, ['name']),
+  run: (session, args) => callSurface(session, 'profiles.create', {
+    name: args.name,
+    ...(args.controls === undefined ? {} : { controls: args.controls }),
+  }),
+};
+
+/** Change a profile: its name, or the items it fixes. */
+const editProfile: Tool = {
+  name: 'edit_profile',
+  description:
+    'Change a profile: its name, or the items it fixes. `controls` replaces the whole set, so an item left out is handed back to the person. The built-in Empty profile cannot be changed. The active profile is fixed once a session has begun to capture.',
+  inputSchema: objectSchema({
+    profile: { type: 'string', description: 'The profile\u2019s name (or id)' },
+    name: { type: 'string', description: 'A new name' },
+    controls: { type: 'object', description: 'The whole set of items it fixes: a clip-property id to the value' },
+  }, ['profile']),
+  async run(session, args) {
+    const profile = await resolveProfile(session, String(args.profile ?? ''));
+    if (!profile.ok) return profile;
+    return callSurface(session, 'profiles.edit', profile.id, {
+      ...(args.name === undefined ? {} : { name: args.name }),
+      ...(args.controls === undefined ? {} : { controls: args.controls }),
+    });
+  },
+};
+
 /** Every tool the server offers, in the order a reader should meet them. */
 export function toolList(): readonly Tool[] {
   return [
@@ -445,6 +504,9 @@ export function toolList(): readonly Tool[] {
     selectProject,
     editProject,
     moveRecording,
+    listProfiles,
+    createProfile,
+    editProfile,
   ];
 }
 

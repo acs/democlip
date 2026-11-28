@@ -538,3 +538,69 @@ test.describe('on a phone', () => {
     await expect(page.locator('.profile-row:not([data-id="default"]) .profile-name')).toHaveText('DemoClipTV');
   });
 });
+
+// ── An agent makes a profile, and brands a project with it ──────────────────────────
+
+test('an agent makes a profile that fixes the branding, and names it a project’s default', async ({ page }) => {
+  const app = boot(page);
+  await app.gotoAgent();
+  await expect(page.locator('#s-text')).toHaveText('Ready');
+
+  // A profile that fixes the clip's own **logo** and annotation **colour** — the branding a
+  // Graditone project's profile carries, so a series of videos wears one brand. The title and
+  // the description are the clip's own **free** words, not preloaded by the app, so they are
+  // left to each clip (a declaration for them is kept, never applied — `clip-properties.ts`).
+  const made = await page.evaluate(async () => {
+    const surface = (globalThis as unknown as {
+      democlip: { profiles: { create(input: unknown): Promise<{ ok: boolean; profile?: { id: string; controls: Record<string, string> } }> } };
+    }).democlip;
+    return surface.profiles.create({
+      name: 'Graditone',
+      controls: {
+        logo: 'graditone',
+        annotationColour: '#ff6c23',
+      },
+    });
+  });
+  expect(made.ok).toBe(true);
+  expect(made.profile!.controls).toEqual({ logo: 'graditone', annotationColour: '#ff6c23' });
+
+  // It is in the book beside the built-in Empty.
+  const listed = await page.evaluate(() => {
+    const surface = (globalThis as unknown as {
+      democlip: { profiles: { list(): { ok: boolean; profiles: Array<{ name: string }> } } };
+    }).democlip;
+    return surface.profiles.list();
+  });
+  expect(listed.profiles.map(one => one.name)).toEqual(['Empty', 'Graditone']);
+
+  // A project names it as its default, and a recording made in that project is made under it.
+  await page.evaluate(async (profileId) => {
+    const surface = (globalThis as unknown as {
+      democlip: {
+        projects: {
+          create(input: unknown): Promise<{ ok: boolean; id: string }>;
+          edit(id: string, input: unknown): Promise<unknown>;
+        };
+      };
+    }).democlip;
+    const project = await surface.projects.create({ name: 'Graditone' });
+    await surface.projects.edit(project.id, { defaultProfile: profileId });
+  }, made.profile!.id);
+
+  const takes = await makeTakes(page, { width: 640, height: 360, seconds: 1 });
+  await app.add(takes);
+  await app.review();
+
+  const applied = await page.evaluate(async url => {
+    const { session } = await import(/* @vite-ignore */ url);
+    return {
+      logo: session.clip.properties.get('logo'),
+      title: session.clip.properties.get('title'),
+      description: session.clip.properties.get('description'),
+      colour: session.clip.properties.get('annotationColour'),
+    };
+  }, HOOKS);
+  // The fixed logo and colour are on the clip; the title and the description stay the clip's own.
+  expect(applied).toEqual({ logo: 'graditone', title: '', description: '', colour: '#ff6c23' });
+});
