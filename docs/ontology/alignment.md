@@ -10,20 +10,25 @@ archived, broadcast or embedded; this model describes a production as it is bein
 its rules. So the two meet on the *resource* and the *publication* — and part company on the
 *editing*.
 
-## The vocabularies
+## The standards reviewed
 
-| vocabulary | what it is | why it is here |
+The model was checked against these. Six are drawn on in the tables below; the rest were
+looked at and set aside, and the reason is the useful part.
+
+| standard | what it is | verdict |
 |---|---|---|
-| [W3C Ontology for Media Resources 1.0](https://www.w3.org/TR/mediaont-10/) (`ma-ont`) | a core vocabulary of media properties, with mappings to a dozen metadata formats | the closest general one; a media resource with `fragment` and `namedFragment` |
-| [EBUCore](https://www.ebu.ch/metadata/ontologies/ebucore/ebucore) + [EBU CCDM](https://www.ebu.ch/metadata/ontologies/ccdm/ccdm) | the EBU's audiovisual metadata — *a rich extension of `ma-ont`* — with its Class Conceptual Data Model | the broadcast industry's, and the one a production tool would most likely exchange with |
-| [W3C Web Annotation Data Model](https://www.w3.org/TR/annotation-model/) (`oa`) | annotations over web resources: a body, a target, and selectors | our annotation family maps onto it closely |
-| [W3C Media Fragments URI 1.0](https://www.w3.org/TR/media-frags/) | addressing a temporal (`t=`) or spatial (`xywh`) part of media | our `Span` and crop map onto it exactly |
-| [schema.org](https://schema.org/VideoObject) (`VideoObject`, `Clip`, `CreativeWork`) | web-scale types for content and its embedding | the publishing side; `Clip` carries `startOffset`/`endOffset` |
-| [PROV-O](https://www.w3.org/TR/prov-o/) | provenance: Entity, Activity, Agent and their relations | our take → clip → file derivation |
-
-Others are adjacent but not used here: MPEG-7 and MPEG-21 (content description),
-Dublin Core (general metadata), PBCore (US public media), IPTC Video Metadata Hub, and
-FRBR (abstraction levels, below).
+| [W3C Ontology for Media Resources 1.0](https://www.w3.org/TR/mediaont-10/) (`ma-ont`) | a core vocabulary of media properties, with mappings to a dozen metadata formats | **drawn on** — the closest general one; a media resource with `fragment` and `namedFragment` |
+| [EBUCore](https://www.ebu.ch/metadata/ontologies/ebucore/ebucore) + [EBU CCDM](https://www.ebu.ch/metadata/ontologies/ccdm/ccdm) | the EBU's audiovisual metadata — *a rich extension of `ma-ont`* — with its Class Conceptual Data Model | **drawn on** — the broadcast industry's, and the one a production tool would most likely exchange with |
+| [W3C Web Annotation Data Model](https://www.w3.org/TR/annotation-model/) (`oa`) | annotations over web resources: a body, a target, and selectors | **drawn on** — our annotation family maps onto it closely |
+| [W3C Media Fragments URI 1.0](https://www.w3.org/TR/media-frags/) | addressing a temporal (`t=`) or spatial (`xywh`) part of media | **drawn on** — our `Span` and crop map onto it exactly |
+| [schema.org](https://schema.org/VideoObject) (`VideoObject`, `Clip`, `CreativeWork`) | web-scale types for content and its embedding | **drawn on** — the publishing side; `Clip` carries `startOffset`/`endOffset` |
+| [PROV-O](https://www.w3.org/TR/prov-o/) | provenance: Entity, Activity, Agent and their relations | **drawn on** — our take → clip → file derivation |
+| [Dublin Core](https://www.dublincore.org/specifications/dublin-core/dcmi-terms/) | the general resource metadata terms: title, creator, date, rights | set aside — too general, and `ma-ont` already maps it |
+| [MPEG-7](https://www.iso.org/standard/61210.html) | content description: visual and audio features, segments, for search and retrieval | set aside — built for analysis and retrieval, not for making something |
+| [MPEG-21](https://www.iso.org/standard/62816.html) | a Digital Item framework for the whole media value chain | set aside — a framework rather than a vocabulary (`ma-ont` puts it out of scope) |
+| [PBCore](https://pbcore.org/) | the US public-media metadata dictionary | set aside — a sibling of `EBUCore`, and not RDF-first |
+| [IPTC Video Metadata Hub](https://iptc.org/standards/video-metadata-hub/) | a practical field set for news video | set aside — a field list, not an ontology |
+| [FRBR](https://www.ifla.org/publications/functional-requirements-for-bibliographic-records/) | work / expression / manifestation / item | noted — the abstraction levels, kept in mind (below) |
 
 ## Where we line up
 
