@@ -12,13 +12,13 @@ Who is in the picture, and what each one wants.
 ```mermaid
 %%{init: {"layout": "elk"}}%%
 flowchart LR
-    creator["[[creator]]"] -->|for| audience["[[audience]]"]
-    creator -->|with| agent["[[ai-agent]]"]
-    creator -->|on a file| tool["[[external-tool]]"]
-    creator -->|publishes| dest["[[destination]]"]
-    audience -->|watches| dest
-    dest -->|shows| channel["[[channel]]"]
-    creator -->|records| browser["[[host-browser]]"]
+    creator["Creator"] -->|makes content for| audience["Audience"]
+    creator -->|works with| agent["AI agent"]
+    creator -->|works on a file with| tool["External tool"]
+    creator -->|records and edits in| browser["Host browser"]
+    creator -->|publishes to| dest["Destination"]
+    dest -->|exposes| channel["Channel"]
+    audience -->|watches on| dest
 ```
 
 | id | who | what they want | in DemoClip |
@@ -55,14 +55,14 @@ answers a question.
 ```mermaid
 %%{init: {"layout": "elk"}}%%
 flowchart TB
-    intent["[[process-intent]]<br/>why, for whom?"] --> capture["[[process-capture]]<br/>what material?"]
-    capture --> organise["[[process-organise]]<br/>whose work?"]
-    organise --> review["[[process-review]]<br/>what to keep?"]
-    review --> cut["[[process-cut]]<br/>what to drop?"]
-    cut --> compose["[[process-compose]]<br/>what explains it?"]
-    compose --> prepare["[[process-prepare]]<br/>what file?"]
-    prepare --> distribute["[[process-distribute]]<br/>which channel?"]
-    distribute --> keep["[[process-keep]]<br/>come back later?"]
+    intent["Intent<br/>why, for whom?"] --> capture["Capture<br/>what material?"]
+    capture --> organise["Organise<br/>whose work?"]
+    organise --> review["Review<br/>what to keep?"]
+    review --> cut["Cut<br/>what to drop?"]
+    cut --> compose["Compose<br/>what explains it?"]
+    compose --> prepare["Prepare<br/>what file?"]
+    prepare --> distribute["Distribute<br/>which channel?"]
+    distribute --> keep["Keep & resume<br/>come back later?"]
 ```
 
 | id | process | the question it answers | the problem concepts it works on |

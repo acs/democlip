@@ -46,17 +46,17 @@ aggregate; about a take → `Take`; about the browser → an adapter or a flow.*
 ```mermaid
 %%{init: {"layout": "elk"}}%%
 flowchart LR
-    production["[[production]]"] --> project["[[project]]"]
-    env["[[production-environment]]"] --> profile["[[profile]]"]
-    instance["[[production-instance]]"] --> clip["[[clip]]"]
-    instance --> recording["[[recording]]"]
-    material["[[source-material]]"] --> take["[[take]]"]
-    cutting["[[cutting]]"] --> cut["[[cut]]"]
-    composition["[[composition]]"] --> annotation["[[annotation]]"]
-    branding["[[branding]]"] --> clipprops["[[clip-properties]]"]
-    output["[[output]]"] --> exportplan["[[export-plan]]"]
-    publication["[[publication]]"] --> publish["[[publish-to-bluesky]]"]
-    channel["[[channel]]"] --> visibility["[[visibility]]"]
+    production["Production"] --> project["Project"]
+    env["Production environment"] --> profile["Profile"]
+    instance["Production instance"] --> clip["Clip"]
+    instance --> recording["Recording"]
+    material["Source material"] --> take["Take"]
+    cutting["Cutting"] --> cut["Cut"]
+    composition["Composition"] --> annotation["Annotation"]
+    branding["Branding"] --> clipprops["Clip properties"]
+    output["Output"] --> exportplan["Export plan"]
+    publication["Publication"] --> publish["Publish to Bluesky"]
+    channel["Channel"] --> visibility["Visibility"]
 ```
 
 | problem concept | realised by | where |
@@ -209,14 +209,14 @@ kind that reads the picture beneath it. Both are ordinary kinds in every other w
 ```mermaid
 %%{init: {"layout": "elk"}}%%
 flowchart TB
-    clip["[[clip]]"] --> seg["[[segment]]s<br/>kept stretches of one take"]
-    seg --> plan["[[export-plan]]<br/>pieces + joins"]
-    plan --> enc["offline encoder<br/>WebCodecs"]
-    enc --> webm["WebM<br/>download / editing"]
-    enc --> mp4["MP4<br/>Bluesky / YouTube"]
-    plan --> sidecar["[[sidecar]]<br/>annotations carried"]
-    mp4 --> pub["[[publication]]"]
-    pub --> dest["[[destination]]"]
+    clip["Clip"] --> seg["Segments — kept stretches of one take"]
+    seg --> plan["Export plan — pieces + joins"]
+    plan --> enc["Offline encoder (WebCodecs)"]
+    plan --> sidecar["Sidecar — annotations carried"]
+    enc --> webm["WebM — download / editing"]
+    enc --> mp4["MP4 — Bluesky / YouTube"]
+    mp4 --> pub["Publication"]
+    pub --> dest["Destination"]
 ```
 
 | id | concept | role in the model | code |

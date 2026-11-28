@@ -13,18 +13,18 @@ and where the proof is.
 %%{init: {"layout": "elk"}}%%
 flowchart LR
     subgraph value["value objects"]
-        span["[[span]]"] --> r1["[[rule-spanset-no-overlap]]"]
-        spanset["[[spanset]]"]
+        span["Span"] --> r1["cut ranges never overlap"]
+        spanset["Span set"] --> r1
     end
     subgraph agg["the aggregate"]
-        clip["[[clip]]"] --> r2["[[rule-length-derived]]"]
-        clip --> r3["[[rule-cut-skipped]]"]
-        clip --> r4["[[rule-one-undo]]"]
-        clip --> r5["[[rule-snapshot-config]]"]
+        clip["Clip"] --> r2["length = sum of the takes"]
+        clip --> r3["a cut is skipped"]
+        clip --> r4["one undo only"]
+        clip --> r5["the profile snapshot stays"]
     end
     subgraph sitting["the sitting"]
-        session["[[session]]"] --> r6["[[rule-profile-fixed]]"]
-        recording["[[recording]]"] --> r7["[[rule-one-open-recording]]"]
+        session["Session"] --> r6["the profile is fixed at capture"]
+        recording["Recording"] --> r7["at most one recording is open"]
     end
 ```
 
