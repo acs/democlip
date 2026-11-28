@@ -11,7 +11,7 @@ import { join } from 'node:path';
 import type { Page } from 'playwright';
 import { serveApp, type AppServer } from './serve.js';
 import { openApp, type BrowserIdentity, type OpenedApp } from './browser.js';
-import { downloadsDirectory } from './downloads.js';
+import { downloadsDirectory, useRealDownloadNames } from './downloads.js';
 import { serverVersion, versionMismatchReason } from './version.js';
 
 export interface Session {
@@ -23,6 +23,12 @@ export interface Session {
   readonly browser: BrowserIdentity;
   /** Where an exported file is saved. */
   readonly downloadsDir: string;
+  /**
+   * True when the browser writes its downloads under their real names, in `downloadsDir`
+   * (see `useRealDownloadNames`); false leaves Playwright's own, GUID-named behaviour, and
+   * an export is copied out of its artifacts instead.
+   */
+  readonly downloadsNamed: boolean;
   close(): Promise<void>;
 }
 
@@ -67,12 +73,17 @@ export async function openSession(options: SessionOptions = {}): Promise<Session
     const version = await readSurfaceVersion(opened.page);
     const mismatch = versionMismatchReason(version, serverVersion());
     if (mismatch) throw new Error(mismatch);
+    // Ask the browser to write downloads under their real names, in the person's own
+    // directory, so the file their download list holds is one they can open.
+    const downloadsDir = options.downloadsDir ?? downloadsDirectory();
+    const downloadsNamed = await useRealDownloadNames(opened.page, downloadsDir);
     const session: Session = {
       page: opened.page,
       origin: app.origin,
       version,
       browser: opened.browser,
-      downloadsDir: options.downloadsDir ?? downloadsDirectory(),
+      downloadsDir,
+      downloadsNamed,
       close: async () => {
         await opened?.close().catch(() => {});
         await app.close().catch(() => {});
