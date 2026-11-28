@@ -85,12 +85,15 @@ describe('the tool list', () => {
     expect(byName.get('cut')!.inputSchema.required).toEqual(['from', 'to']);
     expect(byName.get('add_image')!.inputSchema.required).toEqual(['span']);
     expect(byName.get('set_property')!.inputSchema.required).toEqual(['id', 'property', 'value']);
-    // The clip's own properties are its own four — the two words and the two switches —
-    // and no id: there is one clip.
-    expect(byName.get('set_clip_property')!.inputSchema).toMatchObject({
-      required: ['property', 'value'],
-      properties: { property: { enum: ['title', 'description', 'addToExport', 'soundBoost'] } },
-    });
+    // The clip's own properties are not enumerated: the clip is the one that knows
+    // them (describe_clip reports its `properties`), so `property` is a plain string
+    // and the surface refuses one it does not hold — or one a profile fixes — in
+    // words. The schema must not list a subset, which would reject real properties
+    // (logo, annotationColour, exportResolution) before the surface ever saw them.
+    // There is no id: there is one clip.
+    expect(byName.get('set_clip_property')!.inputSchema.required).toEqual(['property', 'value']);
+    expect(byName.get('set_clip_property')!.inputSchema.properties!.property).toMatchObject({ type: 'string' });
+    expect(byName.get('set_clip_property')!.inputSchema.properties!.property).not.toHaveProperty('enum');
     expect(byName.get('seek')!.inputSchema.required).toEqual(['seconds']);
     expect(byName.get('list_projects')!.inputSchema.required).toEqual([]);
     expect(byName.get('read_project')!.inputSchema.required).toEqual(['project']);
