@@ -1,3 +1,6 @@
+import { mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import { openSession } from './session.js';
@@ -15,10 +18,20 @@ describe('opening a session', () => {
 
   it('says plainly when no browser can be opened, and leaves no server behind', async () => {
     // A browser that is not there stands in for a machine with none installed, or no
-    // display: the launch fails, and the failure is the person's to read.
-    await expect(
-      openApp('http://127.0.0.1:1', { headless: true, executablePath: '/definitely/not/a/browser' }),
-    ).rejects.toThrow();
+    // display: the launch fails, and the failure is the person's to read. The profile
+    // is the check's own, so a failing launch never touches the person's tenant.
+    const profile = await mkdtemp(join(tmpdir(), 'democlip-profile-'));
+    try {
+      await expect(
+        openApp('http://127.0.0.1:1', {
+          headless: true,
+          executablePath: '/definitely/not/a/browser',
+          profile,
+        }),
+      ).rejects.toThrow();
+    } finally {
+      await rm(profile, { recursive: true, force: true });
+    }
   });
 });
 

@@ -10,7 +10,7 @@ opencode mcp add democlip --global -- npx -y democlip-mcp
 ```
 
 Then, in a chat, ask for a DemoClip session. **Your own Chrome** opens on the app, on a
-profile of its own, and the server drives that page through the browser's own
+**persistent** profile of its own, and the server drives that page through the browser's own
 **DevTools Protocol** — the interface DevTools itself uses, over a debugging port on
 loopback that lives only as long as the session. Your Chrome rather than one the server
 ships is deliberate on macOS: screen recording is granted per application, so only a
@@ -23,6 +23,15 @@ at 0:12, colour it yellow"*. The changes land in that window as you watch, and t
 own **undo** takes any of them back, in one action, whoever made it. Copy a screenshot
 and ask for it to be placed at 0:20, and the server reads your clipboard and adds it as
 an image annotation — no path and nothing to upload.
+
+DemoClip is a client-only app: its projects and profiles live in `localStorage`, its
+recordings in IndexedDB, and browser storage is keyed by the whole origin — scheme, host
+*and port*. So the server serves the app on a **fixed port** (`DEMOCLIP_PORT`, default
+57364) and **reuses** a DemoClip already answering there, and it drives a **persistent**
+profile kept per **host name** (`~/.democlip/browser/<host>`). All your work on a host is
+therefore **one tenant**: the server, the app and a demo run all open the same projects and
+recordings, and a session closing no longer throws them away — past clips stay openable.
+The debugging port still lives only as long as the session.
 
 The agent's reach is the app's own operations and nothing more — cut, annotate,
 place the picture on your clipboard, set a property, remove, undo, seek, record a

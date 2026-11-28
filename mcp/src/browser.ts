@@ -1,9 +1,10 @@
 // The browser the server owns.
 //
 // It is launched **headful**, on purpose: the person is watching the edits land, and
-// that is the feature. It runs on a **profile of its own** — a directory of ours, not
-// the person's everyday browser — so their real profile is untouched and the
-// publishing sign-in has a home of its own that lasts the session and no longer.
+// that is the feature. It runs on a **persistent profile of its own** — a directory of
+// ours, not the person's everyday browser — so their real profile is untouched, and
+// the app's projects, profiles, recordings and publishing sign-in have a home that
+// outlives the session: one tenant per host, so past demos stay openable.
 //
 // It is the person's **own Chrome** by default, and how it is started matters as much
 // as which browser it is. macOS grants Screen Recording per *application bundle*, and
@@ -18,11 +19,10 @@
 // about the app changes: it is a normal browser on DemoClip.
 
 import { execFile } from 'node:child_process';
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdir } from 'node:fs/promises';
 import { createServer } from 'node:http';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
 import { chromium, type BrowserContext, type Page } from 'playwright';
+import { LOOPBACK_HOST, profileDirFor } from './loopback.js';
 
 /** Which browser was opened, and whether the system can grant it the screen. */
 export interface BrowserIdentity {
@@ -58,6 +58,12 @@ export interface LaunchOptions {
    * session for a person passes none: it records what is really there.
    */
   readonly args?: readonly string[];
+  /**
+   * The browser profile to drive. Left out, a **persistent** one per host
+   * (`~/.democlip/browser/<host>`) is used, so a host is one tenant that outlives
+   * the session; a check passes its own so it cannot touch the person's.
+   */
+  readonly profile?: string;
 }
 
 const LABELS: Readonly<Record<string, string>> = {
@@ -76,7 +82,8 @@ interface Launched {
 
 /** Open the app, in a browser of the person's, on the page that asked to be driven. */
 export async function openApp(origin: string, options: LaunchOptions = {}): Promise<OpenedApp> {
-  const profile = await mkdtemp(join(tmpdir(), 'democlip-profile-'));
+  const profile = options.profile ?? profileDirFor(hostOf(origin));
+  await mkdir(profile, { recursive: true });
   const launched = await launch(profile, options);
   try {
     const page = launched.context.pages()[0] ?? (await launched.context.newPage());
@@ -104,7 +111,7 @@ async function launch(profile: string, options: LaunchOptions): Promise<Launched
     return {
       context,
       browser: { label: options.executablePath, grantable: true },
-      close: () => closeAndForget(context, profile),
+      close: () => closeContext(context),
     };
   }
 
@@ -121,13 +128,13 @@ async function launch(profile: string, options: LaunchOptions): Promise<Launched
       // see. A default may fall back — and the browser it fell back to says why, later.
       if (asked) throw error;
       const context = await chromium.launchPersistentContext(profile, common);
-      return { context, browser: BUNDLED, close: () => closeAndForget(context, profile) };
+      return { context, browser: BUNDLED, close: () => closeContext(context) };
     }
   }
 
   if (!channel) {
     const context = await chromium.launchPersistentContext(profile, common);
-    return { context, browser: BUNDLED, close: () => closeAndForget(context, profile) };
+    return { context, browser: BUNDLED, close: () => closeContext(context) };
   }
 
   try {
@@ -135,12 +142,12 @@ async function launch(profile: string, options: LaunchOptions): Promise<Launched
     return {
       context,
       browser: { label: LABELS[channel] ?? channel, grantable: true },
-      close: () => closeAndForget(context, profile),
+      close: () => closeContext(context),
     };
   } catch (error) {
     if (asked) throw error;
     const context = await chromium.launchPersistentContext(profile, common);
-    return { context, browser: BUNDLED, close: () => closeAndForget(context, profile) };
+    return { context, browser: BUNDLED, close: () => closeContext(context) };
   }
 }
 
@@ -181,10 +188,10 @@ async function launchAsAnApp(profile: string, channel: string, extra: readonly s
     browser: { label: app, grantable: true },
     close: async () => {
       // Disconnecting does not end a browser the system started, so the session ends
-      // it by the one profile only it uses.
+      // it by the one profile only it uses — but the profile itself is kept, with the
+      // projects and recordings in it.
       await remote.close().catch(() => {});
       await closeByProfile(profile);
-      await forgetProfile(profile);
     },
   };
 }
@@ -219,24 +226,21 @@ export async function waitForEndpoint(endpoint: string, timeoutMs: number): Prom
   }
 }
 
-async function closeAndForget(context: BrowserContext, profile: string): Promise<void> {
+async function closeContext(context: BrowserContext): Promise<void> {
   await context.close().catch(() => {});
-  await forgetProfile(profile);
 }
 
-/**
- * Let the profile go when the session does.
- *
- * It is the session's own directory — the publishing sign-in lives in it and is meant
- * to last the session and no longer — so nothing is lost by removing it, and a
- * directory per session would otherwise pile up in the system's temporary folder.
- */
-function forgetProfile(profile: string): Promise<void> {
-  return rm(profile, { recursive: true, force: true, maxRetries: 3 }).catch(() => {});
+/** The host name of a served origin, so the profile is named for the host it is under. */
+function hostOf(origin: string): string {
+  try {
+    return new URL(origin).hostname || LOOPBACK_HOST;
+  } catch {
+    return LOOPBACK_HOST;
+  }
 }
 
 function closeByProfile(profile: string): Promise<void> {
-  // The profile path is unique to this session, so it names the browser and nothing else.
+  // The profile path names the browser and nothing else, so only this host's is ended.
   return run('pkill', ['-f', `user-data-dir=${profile}`], true);
 }
 

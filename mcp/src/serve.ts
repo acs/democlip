@@ -12,6 +12,7 @@
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import { readFile, stat } from 'node:fs/promises';
 import { extname, join, resolve, sep } from 'node:path';
+import { appPort, LOOPBACK_HOST } from './loopback.js';
 
 const TYPES: Readonly<Record<string, string>> = {
   '.html': 'text/html; charset=utf-8',
@@ -41,26 +42,74 @@ export interface AppServer {
   readonly origin: string;
   /** The directory being served. */
   readonly root: string;
+  /** True when an app already on the port was reused instead of one being started. */
+  readonly reused: boolean;
   close(): Promise<void>;
 }
 
-/** Serve a directory of the app's build on loopback, at a free port. */
-export async function serveApp(root: string): Promise<AppServer> {
+export interface ServeOptions {
+  /**
+   * The port to serve on. Default: the fixed `DEMOCLIP_PORT`. `0` asks for a free
+   * port instead and never reuses — what a check uses so it cannot land on a
+   * person's own tenant.
+   */
+  readonly port?: number;
+}
+
+/** How a page on the port is told from DemoClip itself. */
+const DEMOCLIP_TITLE = /<title>\s*DemoClip\s*<\/title>/i;
+
+/** Whether DemoClip already answers at `origin` — the MCP's own, or a demo run's. */
+async function demoClipServingAt(origin: string): Promise<boolean> {
+  try {
+    const response = await fetch(`${origin}/`);
+    return response.ok && DEMOCLIP_TITLE.test(await response.text());
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Serve a directory of the app's build on loopback.
+ *
+ * The port is **fixed** (`DEMOCLIP_PORT`, default 57364) so the origin — and the
+ * browser storage keyed by it — does not move between sessions, and a DemoClip
+ * already answering there is **reused**, so an agent session and a demo run share one
+ * tenant rather than each opening an empty one. A port held by something that is not
+ * DemoClip is refused, never silently worked around.
+ */
+export async function serveApp(root: string, options: ServeOptions = {}): Promise<AppServer> {
   const base = resolve(root);
+  const fixed = options.port ?? appPort();
+  const origin = `http://${LOOPBACK_HOST}:${fixed}`;
+  if (fixed !== 0 && (await demoClipServingAt(origin))) {
+    return { origin, root: base, reused: true, close: async () => {} };
+  }
+
   const server = createServer((req, res) => {
     void respond(base, req, res);
   });
 
   await new Promise<void>((done, fail) => {
     server.once('error', fail);
-    server.listen(0, '127.0.0.1', () => done());
+    server.listen(fixed, LOOPBACK_HOST, () => done());
+  }).catch((error: unknown) => {
+    server.close();
+    if ((error as { code?: string }).code === 'EADDRINUSE') {
+      throw new Error(
+        `port ${fixed} is already in use by something that is not DemoClip — ` +
+          `set DEMOCLIP_PORT to another port, or free it`,
+      );
+    }
+    throw error;
   });
 
   const address = server.address();
-  const port = typeof address === 'object' && address ? address.port : 0;
+  const port = typeof address === 'object' && address ? address.port : fixed;
   return {
-    origin: `http://127.0.0.1:${port}`,
+    origin: `http://${LOOPBACK_HOST}:${port}`,
     root: base,
+    reused: false,
     close: () => new Promise<void>(done => server.close(() => done())),
   };
 }

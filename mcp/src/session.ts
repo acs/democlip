@@ -37,6 +37,14 @@ export interface SessionOptions {
   readonly executablePath?: string;
   /** Extra browser flags, for a check that needs hardware the machine has not got. */
   readonly args?: readonly string[];
+  /**
+   * The port to serve on; the fixed `DEMOCLIP_PORT` by default, so the origin — and
+   * the app's browser storage — does not move. `0` asks for a free port instead,
+   * which a check uses so it cannot land on the person's own tenant.
+   */
+  readonly port?: number;
+  /** The browser profile to drive; a persistent one per host by default. */
+  readonly profile?: string;
 }
 
 export async function openSession(options: SessionOptions = {}): Promise<Session> {
@@ -47,13 +55,14 @@ export async function openSession(options: SessionOptions = {}): Promise<Session
     );
   }
 
-  const app: AppServer = await serveApp(root);
+  const app: AppServer = await serveApp(root, { port: options.port });
   let opened: OpenedApp | null = null;
   try {
     opened = await openApp(app.origin, {
       headless: options.headless,
       executablePath: options.executablePath,
       args: options.args,
+      profile: options.profile,
     });
     const version = await readSurfaceVersion(opened.page);
     const mismatch = versionMismatchReason(version, serverVersion());
