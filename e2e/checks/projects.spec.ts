@@ -187,10 +187,23 @@ test('an update keeps the recording, a project gathers new ones, and a Delete de
   await openOverview(page, 'Launch');
   await expect(page.locator('#project-ov-progress')).toHaveText('1 of 1 finished');
 
-  // Delete it where it is: the confirmation names it, and it is destroyed in place — there is
-  // no move to Default first — so Launch goes back to empty.
-  page.once('dialog', dialog => dialog.accept());
-  await page.locator('.proj-row').first().locator('.proj-btn', { hasText: 'Delete' }).click();
+  // Delete it where it is: the app's own confirmation names it — not the browser's dialog,
+  // which an agent-driven window dismisses before a person can answer — and cancelling leaves
+  // it alone. Confirming destroys it in place (no move to Default first), so Launch goes back
+  // to empty.
+  const remove = page.locator('.proj-row').first().locator('.proj-btn', { hasText: 'Delete' });
+  await remove.click();
+  await expect(page.locator('#confirm')).toHaveClass(/on/);
+  await page.locator('#confirm-cancel').click();
+  await expect(page.locator('#confirm')).not.toHaveClass(/on/);
+  await expect(page.locator('#project-ov-progress')).toHaveText('1 of 1 finished');
+
+  await remove.click();
+  await expect(page.locator('#confirm')).toHaveClass(/on/);
+  await expect(page.locator('#confirm-message')).toContainText('destroyed');
+  await expect(page.locator('#confirm-ok')).toHaveText('Delete');
+  await page.locator('#confirm-ok').click();
+  await expect(page.locator('#confirm')).not.toHaveClass(/on/);
   await expect(page.locator('#project-ov-progress')).toHaveText('No recordings yet.');
   await page.locator('#project-ov-close').click();
 

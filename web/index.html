@@ -305,6 +305,17 @@
   </div>
 </div>
 
+<!-- CONFIRM — the app's own yes/no for an action that cannot be undone -->
+<div class="cfm-bd" id="confirm" role="alertdialog" aria-modal="true" aria-labelledby="confirm-message">
+  <div class="cfm-panel">
+    <p class="cfm-message" id="confirm-message"></p>
+    <div class="cfm-actions">
+      <button class="cfm-cancel" id="confirm-cancel" type="button" data-i18n="common.cancel">Cancel</button>
+      <button class="cfm-ok danger" id="confirm-ok" type="button"></button>
+    </div>
+  </div>
+</div>
+
 <!-- EXPORT MENU — at the body, because the header clips what overflows it -->
 <div class="export-menu" id="exp-menu" role="menu" data-i18n-aria-label="export.button.aria" aria-label="Export">
   <button class="export-item" id="exp-webm" role="menuitem"><span class="export-item-name" data-i18n="export.menu.webm.name">WebM file</span><span class="export-item-note" data-i18n="export.menu.webm.note">Small and sharp — PRs, chat</span></button>

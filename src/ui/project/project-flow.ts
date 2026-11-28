@@ -21,6 +21,7 @@ import { images } from '../../infra/images.js';
 import { setPhase } from '../../state.js';
 import { el, toast } from '../dom.js';
 import { t } from '../i18n/index.js';
+import { confirm } from '../shell/confirm.js';
 import { applyProfile, paintProfileButton, profiles } from '../profile/profile-flow.js';
 import { avatarLetters } from '../profile/profile-rows.js';
 import { paintPill } from '../shell/pill.js';
@@ -203,7 +204,11 @@ async function removeProject(id: string): Promise<void> {
     return;
   }
   const recordingsIn = await recordings.listProject(id);
-  if (!window.confirm(t('project.flow.confirmRemove', { name: project.name }))) return;
+  const sure = await confirm.ask({
+    message: t('project.flow.confirmRemove', { name: project.name }),
+    okLabel: t('common.remove'),
+  });
+  if (!sure) return;
 
   const wasCurrent = projects.current.currentId === id;
   const removed = projects.remove(id);
@@ -252,7 +257,11 @@ async function deleteRecording(id: string): Promise<void> {
   const recording = (await recordings.list()).find(one => one.id === id);
   if (!recording) return;
   const label = recording.title.trim() || t('project.flow.thisRecording');
-  if (!window.confirm(t('project.flow.confirmDelete', { label }))) return;
+  const sure = await confirm.ask({
+    message: t('project.flow.confirmDelete', { label }),
+    okLabel: t('project.overview.delete'),
+  });
+  if (!sure) return;
   const wasOpen = session.recordingId === id;
   const outcome = await recordings.delete(id);
   if (!outcome.ok) { toast(outcome.reason); return; }

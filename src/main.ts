@@ -25,6 +25,7 @@ import { initAnnotationLane } from './ui/annotating/annotation-lane.js';
 import { initWatermark } from './ui/clip/watermark.js';
 import { inspector } from './ui/annotating/properties-inspector.js';
 import { textEntry } from './ui/annotating/text-entry.js';
+import { confirm } from './ui/shell/confirm.js';
 import { clipPropertiesPanel } from './ui/clip/properties-panel.js';
 import { initBoost } from './ui/clip/boost.js';
 import { initSounds } from './ui/clip/sounds.js';
@@ -116,6 +117,7 @@ function init(): void {
   initWatermark();        // and a clip that wears a logo wears it over the whole clip
   inspector.init();       // and a picked annotation's settings open its properties
   textEntry.init();       // the one dialog for typing a line, for entering and editing
+  confirm.init();         // the app's own yes/no for an action that cannot be undone
 
   // What the clip says about itself — its title and its description — edited from a
   // settings control in the timeline header, and used when the clip is published.
