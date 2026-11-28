@@ -17,3 +17,7 @@ words, and the words we do not use.
 - **The logo and the name:** the **Branding** skill — the mark is an image and the
   name is live text, so the app sets its font; the colours come from `logo.svg`,
   and the files that carry the text banner are only for places with no CSS.
+- **Understanding the domain:** the **Domain ontology** skill — the problem domain
+  (the reality: actors, goals, processes, channels, constraints) and the solution
+  domain (how the app models it), the rules that hold, and the traceability to the
+  code — in `docs/ontology/`, kept in step by `npm run ontology:check`.

@@ -18,6 +18,7 @@
     "test:watch": "vitest",
     "test:mcp": "npm --prefix mcp run build && npm --prefix mcp test",
     "test:e2e": "playwright test --config e2e/playwright.config.ts",
+    "ontology:check": "node tools/check-ontology.mjs",
     "prepare": "husky"
   },
   "lint-staged": {

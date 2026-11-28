@@ -204,10 +204,16 @@ democlip/
 │   ├── DEVELOPMENT.md    # Setting up, the commands and the tests
 │   ├── DEPLOYMENT.md     # Serving your own build, and the YouTube setup
 │   ├── AI.md             # Driving the app from an agent
+│   ├── ontology/         # The domain model: the problem and solution domains, their rules, and the graph
+│   │   ├── README.md       # What the ontology is, the two layers, where to look
+│   │   ├── problem-domain.md  # Actors, goals, the lifecycle, channels, constraints, gaps
+│   │   ├── solution-domain.md # The concepts, their home in the code, the two lifecycles
+│   │   ├── rules.md        # The invariants and business rules, with their owner and proof
+│   │   └── ontology.jsonld # The same graph as data, kept in step by tools/check-ontology.mjs
 │   └── FILES.md          # This file: where the code lives
 ├── specs/                # A feature's spec, plan, tasks and contracts — one directory per feature
 ├── THIRD-PARTY-NOTICES.template.txt  # Licences of what we bundle; the build fills in the versions
-├── .agents/skills/       # How work is done here: verifying a change, the domain model, the workflow, branding
+├── .agents/skills/       # How work is done here: verifying a change, the domain model, the domain ontology, the workflow, branding
 └── .husky/pre-commit     # Runs lint-staged on commit
 ```
 
