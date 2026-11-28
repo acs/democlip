@@ -47,13 +47,20 @@ describe('the server, end to end', () => {
   let session: Session;
   /** Where the file an export writes goes — and what the import is handed straight back. */
   let work = '';
+  /** A profile of the check's own, so it never touches the person's own tenant. */
+  let profile = '';
 
   beforeAll(async () => {
     ensureBuiltApp();
     work = await mkdtemp(join(tmpdir(), 'democlip-round-trip-'));
+    profile = await mkdtemp(join(tmpdir(), 'democlip-profile-'));
     // The build from *this checkout*, explicitly: the released server prefers the
     // build packaged inside it, which is right for a release and wrong for a check —
     // a stale packaged copy must never be able to make this pass.
+    //
+    // `port: 0` and the profile of its own keep the check off the person's tenant: a
+    // free port so it cannot reuse a running DemoClip, and a fresh profile so a past
+    // recording can never be restored under the assertions.
     session = await openSession({
       headless: true,
       appRoot: fileURLToPath(new URL('../../dist', import.meta.url)),
@@ -61,12 +68,15 @@ describe('the server, end to end', () => {
       // a check: these are the two flags the end-to-end suite launches its browser with.
       args: ['--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream'],
       downloadsDir: work,
+      port: 0,
+      profile,
     });
   }, 300_000);
 
   afterAll(async () => {
     await session?.close();
     if (work) await rm(work, { recursive: true, force: true });
+    if (profile) await rm(profile, { recursive: true, force: true });
   });
 
   const options = (): BuildOptions => ({ openSession: async () => session });
