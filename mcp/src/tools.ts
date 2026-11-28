@@ -148,10 +148,10 @@ const setProperty: Tool = {
 const setClipProperty: Tool = {
   name: 'set_clip_property',
   description:
-    'Change what the clip says about itself. `property` is "title" or "description" (the words), "addToExport" (whether an export puts a title card — those words over the clip\u2019s first frame — at the head of the file), or "soundBoost" (whether the clip\u2019s sound is brought to a competitive loudness, in the review and in every file; on by default). For the two words, `value` is the text; for the two switches, "true" turns one on and anything else turns it off. Publishing fills its fields from the title and description, so a clip is branded once. One undo takes it back.',
+    'Change one of the clip\u2019s own properties. `property` is an id the clip reports in describe_clip\u2019s `properties`; the ones it preloads are "title" and "description" (the words), "logo" (the mark an export wears at its head — a name the app serves, or "" for none), "addToExport" (whether an export puts a title card — the logo, title and description over the clip\u2019s first frame — at the head of the file), "annotationColour" (the colour a new annotation is made in — one of the clip\u2019s palette colours), "soundBoost" (whether the clip\u2019s sound is brought to a competitive loudness, in the review and in every file; on by default), and "exportResolution" (the height the file is written at — a level such as "1080", or "" for the clip size). `value` is the text for the two words, "true" / "" for the two switches, and one of the choices describe_clip reports for "logo", "annotationColour" and "exportResolution". It is the clip that knows its own properties, so a wrong one — or one a profile fixes — is refused in words rather than by a list here; that is why `property` is not enumerated, as with set_property. Publishing fills its fields from the title and description, so a clip is branded once. One undo takes it back.',
   inputSchema: objectSchema({
-    property: { type: 'string', enum: ['title', 'description', 'addToExport', 'soundBoost'], description: 'Which of the clip\u2019s own properties' },
-    value: { type: 'string', description: 'The new text, or "true" / "" for "addToExport" or "soundBoost"' },
+    property: { type: 'string', description: 'Which of the clip\u2019s own properties, such as "title", "logo" or "annotationColour"' },
+    value: { type: 'string', description: 'The new value — the text, "true"/"" for a switch, or one of the clip\u2019s own choices' },
   }, ['property', 'value']),
   run: (session, args) => callSurface(session, 'edit.setClipProperty', args.property, args.value),
 };
