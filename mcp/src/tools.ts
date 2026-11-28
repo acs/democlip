@@ -265,8 +265,15 @@ const exportClip: Tool = {
       };
     }
     // A file that carries its annotations is written with a sidecar beside it: two
-    // downloads, and the watcher goes up before the export is asked for.
-    const watcher = watchDownloads(session.page, session.downloadsDir, annotations === 'carried' ? 2 : 1);
+    // downloads, and the watcher goes up before the export is asked for. When the browser
+    // writes downloads under their real names they are read where it wrote them, so the
+    // file the person's download list holds is the one handed back.
+    const watcher = watchDownloads(
+      session.page,
+      session.downloadsDir,
+      annotations === 'carried' ? 2 : 1,
+      { named: session.downloadsNamed },
+    );
     const outcome = await callSurface<{ ok: boolean; filename?: string; reason?: string }>(
       session, 'out.export', target, annotations,
     );

@@ -17,6 +17,7 @@ function sessionWith(answer: unknown): Session {
     version: '1.2.3',
     browser: { label: 'Google Chrome', grantable: true },
     downloadsDir: '/tmp',
+    downloadsNamed: false,
     close: async () => {},
   };
 }
