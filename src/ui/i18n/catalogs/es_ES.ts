@@ -70,6 +70,7 @@ export const es_ES: Record<TranslationKey, string> = {
   // Words shared by more than one dialog
   'common.close': 'Cerrar',
   'common.cancel': 'Cancelar',
+  'common.remove': 'Quitar',
   'common.done': 'Hecho',
   'common.signout': 'Cerrar sesión',
 

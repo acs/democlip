@@ -443,6 +443,20 @@ select.prop-input option,select.pdef-select option{background:var(--bg);color:va
 .prop-colour{display:inline-flex;align-items:center;gap:7px;}
 
 /* TEXT ENTRY — the app's dialog for typing a line, used for entering and for editing */
+/* Confirm — the app's own yes/no for an action that cannot be undone. Above the
+   project dialogs (pdef-bd, z-index 150), because they are what open it. */
+.cfm-bd{position:fixed;inset:0;z-index:160;display:flex;align-items:center;justify-content:center;background:rgba(3,4,10,0.55);opacity:0;visibility:hidden;transition:opacity .16s,visibility 0s linear .16s;}
+.cfm-bd.on{opacity:1;visibility:visible;transition:opacity .16s,visibility 0s;}
+.cfm-panel{width:min(92vw,400px);padding:18px;border-radius:12px;border:1px solid var(--glass-b2);background:var(--surface);backdrop-filter:blur(20px) saturate(1.4);-webkit-backdrop-filter:blur(20px) saturate(1.4);display:flex;flex-direction:column;gap:14px;box-shadow:0 18px 50px rgba(0,0,0,.45);}
+.cfm-message{margin:0;font-family:var(--font-ui);font-size:13px;line-height:1.5;color:var(--text);}
+.cfm-actions{display:flex;justify-content:flex-end;gap:8px;}
+.cfm-cancel,.cfm-ok{padding:8px 14px;border-radius:8px;border:1px solid var(--control-line);background:var(--control);color:var(--control-text);font-family:var(--font-ui);font-size:13px;cursor:pointer;transition:background .15s,filter .15s,color .15s;}
+.cfm-cancel:hover{background:var(--control-hover);color:var(--text);}
+.cfm-ok{background:var(--crimson);border-color:var(--crimson);color:#fff;font-weight:600;}
+.cfm-ok:hover{filter:brightness(1.08);}
+.cfm-ok:not(.danger){background:var(--control);border-color:var(--control-line);color:var(--control-text);font-weight:400;}
+.cfm-ok:not(.danger):hover{background:var(--control-hover);color:var(--text);filter:none;}
+
 .te-bd{position:fixed;inset:0;z-index:140;display:flex;align-items:center;justify-content:center;background:rgba(3,4,10,0.55);opacity:0;visibility:hidden;transition:opacity .16s,visibility 0s linear .16s;}
 .te-bd.on{opacity:1;visibility:visible;transition:opacity .16s,visibility 0s;}
 .te-panel{width:min(92vw,360px);padding:18px;border-radius:12px;border:1px solid var(--glass-b2);background:var(--surface);backdrop-filter:blur(20px) saturate(1.4);-webkit-backdrop-filter:blur(20px) saturate(1.4);display:flex;flex-direction:column;gap:12px;box-shadow:0 18px 50px rgba(0,0,0,.45);}

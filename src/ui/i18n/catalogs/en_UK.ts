@@ -73,6 +73,7 @@ export const en_UK = {
   // Words shared by more than one dialog
   'common.close': 'Close',
   'common.cancel': 'Cancel',
+  'common.remove': 'Remove',
   'common.done': 'Done',
   'common.signout': 'Sign out',
 
